@@ -1,0 +1,80 @@
+Thinking an app that will allow you to fill out a questionnaire which is used to train the agent aka your gift recipient list (or yourself).  Thinking a simple json.
+
+The goal is to monetize two offerings.  "Buy what you need" and continual use.  Thinking $1 gives you 5 queries, there needs to be a character limit, counter, and injection sanitation on submissions.  Also a subscription offering for those who don't want to continually buying individually.
+
+The problem being solved:  I have a hard time picking gifts for people.  Friends & family, etc.  I would love recommendations from popular storefronts (amazon, wal-mart etc.)  So the app will connect to their APIs and allow you to pass in metadata tag parameters and return products.
+
+Monetization ideas
+  Tiers go up to add more queries.
+  All reset on a monthly cycle.
+	  Pay-as-you-go ($5) - 1 free profile
+	Subscription ($5)
+
+  Sell profile spots.  The non-subscription can only do 1 and they pay as they go.
+  The Subscriptions tier allowing more profiles and more queries.
+
+Tech Stack:  I'm hoping to make it compatible with both iphone and android.
+
+Landing Page
+New profile button which points to a form
+Or click one of the existing profiles
+Buttons on the footer area Settings - Pricing - Terms of service
+I don't want the landing page to scroll, just make it all fit.  No sugarcoating, straight to the product.  Simplest app in the world.
+About button with basic information about the app that will explain to the customer what the app is and how it works.  
+
+Questionnaire Form.
+	Button: Shopping for yourself / Shopping for another
+	Age - slide wheel
+	Event you're shopping for.  
+		Birthday
+		Anniversary
+		Christmas
+		Valentine's Day
+		Other (Dont worry, you can rename)
+	Gender:  
+	(answer simply or in depth.  The more info you provide, the better trained the agent will be.  Note:  You can add more context later if you wish.)
+	Relationship to recipient (if another is selected): 
+	Personality:
+	Interests:	
+
+
+
+Once a profile is selected, chat box - and chat history
+	Chatbox initial response is short & direct.  Perhaps give a quick recap of the profile person.  Never give exact ages, but instead age ranges.
+
+There will be a chatbox that is connected and an llm api backend.  Looking for utmost security.  
+
+Authentication I'm thinking google to start with.
+
+Ideas on Groupings??  But this might be too complicated for the MVP, but I wouldn't mind it noted in a readme or something as a future potential item.
+	Baby
+	Toddler
+	Small kids
+	Big kids
+	Pre-teen
+	Young Teenager
+	Old teenager
+	Young College
+	Old College
+	No-College
+	Girlfriend
+	Boyfriend
+	Young Wife
+	Young Husband
+	Medium Wife
+	Medium Husband
+	Old Wife
+	Old Husband
+	Relatives
+		
+	
+	
+		
+Maybe another settings button on the profile-selected page.
+	Switch Profiles
+	Edit profile name
+	Add more context
+	Reset profile
+		You have selected to reset your profile to default.  Please note:  You will be required to resubmit the questionnaire.
+	Delete profile
+		Warning!  You are deleting your profile.  Are you sure?
