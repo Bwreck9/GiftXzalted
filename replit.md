@@ -74,9 +74,21 @@ shared/
 - `VITE_FIREBASE_APP_ID` - Firebase app ID
 - `VITE_FIREBASE_API_KEY` - Firebase API key
 - `OPENAI_API_KEY` - OpenAI API key for GPT-5
-- `STRIPE_SECRET_KEY` - Stripe secret key
-- `VITE_STRIPE_PUBLIC_KEY` - Stripe publishable key
+- `STRIPE_SECRET_KEY` - Stripe secret key ⚠️ **CURRENTLY TEST KEY - UPDATE TO PRODUCTION BEFORE LAUNCH**
+- `VITE_STRIPE_PUBLIC_KEY` - Stripe publishable key ⚠️ **CURRENTLY TEST KEY - UPDATE TO PRODUCTION BEFORE LAUNCH**
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret ⚠️ **CURRENTLY TEST KEY - UPDATE TO PRODUCTION BEFORE LAUNCH**
 - `DATABASE_URL` - PostgreSQL connection string
+
+## ⚠️ IMPORTANT: Production Deployment Checklist
+Before going live with real customers:
+1. **Replace ALL Stripe test keys with production keys:**
+   - Update `STRIPE_SECRET_KEY` (remove `sk_test_` → use `sk_live_`)
+   - Update `VITE_STRIPE_PUBLIC_KEY` (remove `pk_test_` → use `pk_live_`)
+   - Create NEW webhook endpoint in Stripe for production URL
+   - Update `STRIPE_WEBHOOK_SECRET` with production webhook secret
+2. **Update Firebase authorized domains** to include your production domain
+3. **Test payment flow end-to-end** in Stripe test mode first
+4. **Enable Stripe webhook monitoring** in production dashboard
 
 ## Design System
 Following Material Design 3 principles:

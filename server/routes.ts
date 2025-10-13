@@ -137,7 +137,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      const validated = insertProfileSchema.partial().parse(req.body);
+      // Remove userId from request body to prevent ownership reassignment
+      const { userId: _removed, ...updateData } = req.body;
+      
+      const validated = insertProfileSchema.partial().parse(updateData);
       const updated = await storage.updateProfile(id, validated);
       res.json(updated);
     } catch (error: any) {
@@ -353,17 +356,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = await storage.getUser(userId);
           
           if (user) {
+            // Add credits to user account
             await storage.updateUserCredits(userId, user.credits + credits);
+            
+            // Note: Transaction record was already created in create-payment-intent endpoint
+            // No need to create duplicate transaction here
           }
-
-          // Update transaction status
-          await storage.createTransaction({
-            userId,
-            amount: paymentIntent.amount,
-            credits,
-            stripePaymentIntentId: paymentIntent.id,
-            status: 'completed',
-          });
         }
       }
 
