@@ -6,7 +6,7 @@ import { z } from "zod";
 
 // Users table - Firebase authenticated users
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey(), // Firebase UID
+  id: text("id").primaryKey(), // Firebase UID (no default, set explicitly)
   email: text("email").notNull().unique(),
   displayName: text("display_name"),
   photoURL: text("photo_url"),
@@ -80,7 +80,6 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
   credits: true,
   createdAt: true,
 });
