@@ -1,0 +1,125 @@
+So what I'm thinking is to have a simple free way for people to use the app without using the AI-powered service.  Give the customers a way to create a custom gift list to store their own gift ideas.  This functionality would basically rival notepad, but hoping the customer being in the app may increase the chance for them to buy the AI-service.  Thinking a simple list that the customer can store gift ideas.  List functionality = Title of list and rows that they can add/edit/delete from the row.
+
+
+TOKEN-BASED (Paid service)
+Open the app, fill out a questionnaire about the person, send it to the LLM and have it return gift recommendations Simple idea right? Give me an example of the questionnaire that would help return a good prompt.
+
+### 🎁 Gift Recommendation Questionnaire
+
+**Section 1: About the Recipient**
+
+1. What’s their first name or nickname?
+    
+2. What’s their age range?
+    
+    - ☐ Child (0–12)
+        
+    - ☐ Teen (13–19)
+        
+    - ☐ Young Adult (20–30)
+        
+    - ☐ Adult (31–50)
+        
+    - ☐ Senior (50+)
+        
+3. Gender identity (optional):
+    
+4. How would you describe their personality?
+    
+    - ☐ Adventurous
+        
+    - ☐ Thoughtful
+        
+    - ☐ Funny / Lighthearted
+        
+    - ☐ Introverted
+        
+    - ☐ Outgoing
+        
+    - ☐ Artistic
+        
+    - ☐ Tech-savvy
+        
+    - ☐ Sentimental  
+        _(You can select multiple)_
+        
+5. What are some of their main interests or hobbies? (e.g., hiking, gaming, cooking, reading, fashion)
+    
+
+---
+
+**Section 2: Occasion & Relationship**  
+6. What is the occasion?
+
+- ☐ Birthday
+    
+- ☐ Anniversary
+    
+- ☐ Graduation
+    
+- ☐ Holiday
+    
+- ☐ Just because
+    
+- ☐ Other: _________
+    
+
+7. What’s your relationship to them?
+    
+    - ☐ Partner
+        
+    - ☐ Family
+        
+    - ☐ Friend
+        
+    - ☐ Coworker
+        
+    - ☐ Acquaintance
+        
+8. How long have you known them or how close are you?
+    
+    - ☐ Very close
+        
+    - ☐ Somewhat close
+        
+    - ☐ Casual
+        
+
+---
+
+**Section 3: Preferences & Constraints**  
+9. What’s your budget range?
+
+- ☐ Under $25
+    
+- ☐ $25–$50
+    
+- ☐ $50–$100
+    
+- ☐ $100+
+    
+
+10. Do they prefer:
+    
+
+- ☐ Practical gifts
+    
+- ☐ Sentimental / personalized gifts
+    
+- ☐ Experiences (tickets, trips, events)
+    
+- ☐ Funny / novelty items
+    
+
+11. Any dislikes or no-go areas? (e.g., no alcohol, no perfumes, avoid tech)
+    
+12. Do you want the gift to be **unique and thoughtful** or **safe and popular**?
+    
+
+---
+
+**Section 4: Optional Details**  
+13. Where do they live (city/country)?  
+_(Helps tailor weather, regional, or store-based ideas)_  
+14. Anything else you’d like to mention about them?  
+_(e.g., “They love their dog more than anything,” “They recently started a new job,” etc.)_

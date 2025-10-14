@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { getGiftRecommendations } from "./openai";
-import { insertProfileSchema, insertMessageSchema, users } from "@shared/schema";
+import { insertProfileSchema, insertMessageSchema, insertGiftListSchema, insertGiftItemSchema, users } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { requireAuth, type AuthRequest } from "./middleware/auth";
@@ -14,7 +14,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-11-20.acacia",
+  apiVersion: "2025-09-30.clover",
 });
 
 const CREDITS_PER_PURCHASE = 10; // $5 gets you 10 queries
@@ -315,6 +315,232 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error creating payment intent:", error);
       res.status(500).json({ error: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  // Gift Lists (Free Feature)
+  
+  // Get all gift lists for current user
+  app.get("/api/gift-lists", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.userId!;
+      const lists = await storage.getGiftListsByUserId(userId);
+      res.json(lists);
+    } catch (error: any) {
+      console.error("Error getting gift lists:", error);
+      res.status(500).json({ error: "Failed to get gift lists" });
+    }
+  });
+
+  // Get single gift list
+  app.get("/api/gift-lists/:id", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.userId!;
+
+      const list = await storage.getGiftList(id);
+      
+      if (!list) {
+        return res.status(404).json({ error: "Gift list not found" });
+      }
+
+      if (list.userId !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      res.json(list);
+    } catch (error: any) {
+      console.error("Error getting gift list:", error);
+      res.status(500).json({ error: "Failed to get gift list" });
+    }
+  });
+
+  // Create gift list
+  app.post("/api/gift-lists", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.userId!;
+
+      const validated = insertGiftListSchema.parse({
+        ...req.body,
+        userId,
+      });
+
+      const list = await storage.createGiftList(validated);
+      res.json(list);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid gift list data", details: error.errors });
+      }
+      console.error("Error creating gift list:", error);
+      res.status(500).json({ error: "Failed to create gift list" });
+    }
+  });
+
+  // Update gift list
+  app.patch("/api/gift-lists/:id", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.userId!;
+
+      const list = await storage.getGiftList(id);
+      
+      if (!list) {
+        return res.status(404).json({ error: "Gift list not found" });
+      }
+
+      if (list.userId !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      // Don't allow changing userId
+      const { userId: _, ...updates } = req.body;
+      const validated = insertGiftListSchema.partial().parse(updates);
+
+      const updatedList = await storage.updateGiftList(id, validated);
+      res.json(updatedList);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid gift list data", details: error.errors });
+      }
+      console.error("Error updating gift list:", error);
+      res.status(500).json({ error: "Failed to update gift list" });
+    }
+  });
+
+  // Delete gift list
+  app.delete("/api/gift-lists/:id", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.userId!;
+
+      const list = await storage.getGiftList(id);
+      
+      if (!list) {
+        return res.status(404).json({ error: "Gift list not found" });
+      }
+
+      if (list.userId !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      await storage.deleteGiftList(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting gift list:", error);
+      res.status(500).json({ error: "Failed to delete gift list" });
+    }
+  });
+
+  // Gift Items
+  
+  // Get items for a gift list
+  app.get("/api/gift-lists/:listId/items", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const { listId } = req.params;
+      const userId = req.userId!;
+
+      const list = await storage.getGiftList(listId);
+      
+      if (!list) {
+        return res.status(404).json({ error: "Gift list not found" });
+      }
+
+      if (list.userId !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const items = await storage.getGiftItemsByListId(listId);
+      res.json(items);
+    } catch (error: any) {
+      console.error("Error getting gift items:", error);
+      res.status(500).json({ error: "Failed to get gift items" });
+    }
+  });
+
+  // Create gift item
+  app.post("/api/gift-lists/:listId/items", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const { listId } = req.params;
+      const userId = req.userId!;
+
+      const list = await storage.getGiftList(listId);
+      
+      if (!list) {
+        return res.status(404).json({ error: "Gift list not found" });
+      }
+
+      if (list.userId !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const validated = insertGiftItemSchema.parse({
+        ...req.body,
+        listId,
+      });
+
+      const item = await storage.createGiftItem(validated);
+      res.json(item);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid gift item data", details: error.errors });
+      }
+      console.error("Error creating gift item:", error);
+      res.status(500).json({ error: "Failed to create gift item" });
+    }
+  });
+
+  // Update gift item
+  app.patch("/api/gift-lists/:listId/items/:itemId", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const { listId, itemId } = req.params;
+      const userId = req.userId!;
+
+      const list = await storage.getGiftList(listId);
+      
+      if (!list) {
+        return res.status(404).json({ error: "Gift list not found" });
+      }
+
+      if (list.userId !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      // Don't allow changing listId
+      const { listId: _, ...updates } = req.body;
+      const validated = insertGiftItemSchema.partial().parse(updates);
+
+      const updatedItem = await storage.updateGiftItem(itemId, validated);
+      res.json(updatedItem);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid gift item data", details: error.errors });
+      }
+      console.error("Error updating gift item:", error);
+      res.status(500).json({ error: "Failed to update gift item" });
+    }
+  });
+
+  // Delete gift item
+  app.delete("/api/gift-lists/:listId/items/:itemId", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const { listId, itemId } = req.params;
+      const userId = req.userId!;
+
+      const list = await storage.getGiftList(listId);
+      
+      if (!list) {
+        return res.status(404).json({ error: "Gift list not found" });
+      }
+
+      if (list.userId !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      await storage.deleteGiftItem(itemId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting gift item:", error);
+      res.status(500).json({ error: "Failed to delete gift item" });
     }
   });
 

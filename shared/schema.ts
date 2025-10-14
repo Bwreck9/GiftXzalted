@@ -50,10 +50,31 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Gift lists (free feature - user's custom gift idea lists)
+export const giftLists = pgTable("gift_lists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Gift items (individual items within a gift list)
+export const giftItems = pgTable("gift_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  listId: varchar("list_id").notNull().references(() => giftLists.id, { onDelete: "cascade" }),
+  text: text("text").notNull(),
+  completed: boolean("completed").notNull().default(false),
+  order: integer("order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   profiles: many(profiles),
   transactions: many(transactions),
+  giftLists: many(giftLists),
 }));
 
 export const profilesRelations = relations(profiles, ({ one, many }) => ({
@@ -75,6 +96,21 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   user: one(users, {
     fields: [transactions.userId],
     references: [users.id],
+  }),
+}));
+
+export const giftListsRelations = relations(giftLists, ({ one, many }) => ({
+  user: one(users, {
+    fields: [giftLists.userId],
+    references: [users.id],
+  }),
+  items: many(giftItems),
+}));
+
+export const giftItemsRelations = relations(giftItems, ({ one }) => ({
+  list: one(giftLists, {
+    fields: [giftItems.listId],
+    references: [giftLists.id],
   }),
 }));
 
@@ -109,6 +145,22 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
   createdAt: true,
 });
 
+export const insertGiftListSchema = createInsertSchema(giftLists).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  title: z.string().min(1).max(200),
+});
+
+export const insertGiftItemSchema = createInsertSchema(giftItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  text: z.string().min(1).max(500),
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -121,3 +173,9 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+
+export type GiftList = typeof giftLists.$inferSelect;
+export type InsertGiftList = z.infer<typeof insertGiftListSchema>;
+
+export type GiftItem = typeof giftItems.$inferSelect;
+export type InsertGiftItem = z.infer<typeof insertGiftItemSchema>;
