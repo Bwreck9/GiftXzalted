@@ -7,7 +7,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { ProfileCard } from '@/components/ProfileCard';
 import { NewProfileCard } from '@/components/NewProfileCard';
 import type { Profile } from '@shared/schema';
-import { Gift, Settings, DollarSign, FileText } from 'lucide-react';
+import { Gift, Settings, DollarSign, FileText, ListPlus, Sparkles } from 'lucide-react';
 import { SiGoogle } from 'react-icons/si';
 
 export default function Landing() {
@@ -106,32 +106,61 @@ export default function Landing() {
       </header>
 
       <main className="flex-1 overflow-auto p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Your Profiles</h1>
-            <p className="text-muted-foreground">
-              Select a profile to get gift recommendations
-            </p>
+        <div className="max-w-6xl mx-auto space-y-12">
+          
+          {/* Free Gift Lists Section */}
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
+                  <ListPlus className="h-6 w-6 text-primary" />
+                  My Gift Lists
+                </h2>
+                <p className="text-muted-foreground">
+                  Keep track of gift ideas - completely free!
+                </p>
+              </div>
+              <Button
+                onClick={() => setLocation('/gift-lists')}
+                variant="outline"
+                data-testid="button-view-gift-lists"
+              >
+                View All Lists
+              </Button>
+            </div>
           </div>
 
-          {profilesLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-48 bg-card animate-pulse rounded-xl" />
-              ))}
+          {/* AI Profiles Section */}
+          <div>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-primary" />
+                AI Gift Recommendations
+              </h2>
+              <p className="text-muted-foreground">
+                Get personalized recommendations using AI
+              </p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <NewProfileCard onClick={() => setLocation('/profile/new')} />
-              {profiles?.map(profile => (
-                <ProfileCard
-                  key={profile.id}
-                  profile={profile}
-                  onClick={() => setLocation(`/chat/${profile.id}`)}
-                />
-              ))}
-            </div>
-          )}
+
+            {profilesLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-48 bg-card animate-pulse rounded-xl" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <NewProfileCard onClick={() => setLocation('/profile/new')} />
+                {profiles?.map(profile => (
+                  <ProfileCard
+                    key={profile.id}
+                    profile={profile}
+                    onClick={() => setLocation(`/chat/${profile.id}`)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </main>
 

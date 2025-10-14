@@ -7,10 +7,10 @@ Gift Finder helps users discover the perfect gift for anyone in their life using
 
 ### ✅ All Features Implemented
 - **Authentication**: Firebase Google OAuth with secure token verification
-- **Database**: PostgreSQL with all tables (users, profiles, messages, credits, transactions)
-- **Profile Management**: Complete CRUD with validation and ownership enforcement
-- **AI Chat**: OpenAI GPT-5 integration with conversation history
-- **Credit System**: Pay-as-you-go model ($5 for 10 credits, 1 credit per query)
+- **Database**: PostgreSQL with all tables (users, profiles, messages, credits, transactions, gift_lists, gift_items)
+- **FREE Gift Lists**: Notepad-style lists with create/edit/delete/reorder items (no credit cost)
+- **PAID AI Profiles**: OpenAI GPT-5 personalized gift recommendations (1 credit per query)
+- **Credit System**: Pay-as-you-go model ($5 for 10 credits)
 - **Stripe Payments**: Secure checkout with webhook signature verification
 - **Amazon Links**: Automatic detection and parsing of affiliate links
 - **UI/UX**: Material Design 3 with responsive design and dark mode
