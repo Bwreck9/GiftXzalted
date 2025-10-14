@@ -13,6 +13,8 @@ import About from "@/pages/About";
 import Pricing from "@/pages/Pricing";
 import Checkout from "@/pages/Checkout";
 import PaymentSuccess from "@/pages/PaymentSuccess";
+import GiftLists from "@/pages/GiftLists";
+import GiftListDetail from "@/pages/GiftListDetail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +23,8 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/profile/:id" component={ProfileForm} />
       <Route path="/chat/:id" component={Chat} />
+      <Route path="/gift-lists" component={GiftLists} />
+      <Route path="/gift-lists/:id" component={GiftListDetail} />
       <Route path="/settings" component={Settings} />
       <Route path="/about" component={About} />
       <Route path="/pricing" component={Pricing} />
