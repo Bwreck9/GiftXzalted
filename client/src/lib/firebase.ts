@@ -2,12 +2,17 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, User } from "firebase/auth";
 
+// Trim environment variables to remove any leading/trailing spaces
+const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID?.trim();
+const apiKey = import.meta.env.VITE_FIREBASE_API_KEY?.trim();
+const appId = import.meta.env.VITE_FIREBASE_APP_ID?.trim();
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebasestorage.app`,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey,
+  authDomain: `${projectId}.firebaseapp.com`,
+  projectId,
+  storageBucket: `${projectId}.firebasestorage.app`,
+  appId,
 };
 
 const app = initializeApp(firebaseConfig);
