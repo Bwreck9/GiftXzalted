@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { useLocation, useParams } from 'wouter';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { insertProfileSchema, type InsertProfile, type Profile, type User } from '@shared/schema';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { usePersistedDraft } from '@/hooks/usePersistedDraft';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -16,70 +17,87 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Gift, Sparkles, Coins } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { ArrowLeft, Gift, Sparkles, Coins, Lock } from 'lucide-react';
 import { z } from 'zod';
+import { auth } from '@/lib/firebase';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
 const formSchema = insertProfileSchema.extend({
   userId: z.string().optional(),
+  color: z.string().default('blue'),
 });
 
 const MAX_FREE_PROFILES = 5;
 const TOKENS_PER_GENERATION = 500;
 
-export default function ProfileForm() {
-  const { id } = useParams();
-  const isEdit = id !== 'new';
+type FormValues = z.infer<typeof formSchema>;
+
+const defaultValues: FormValues = {
+  name: '',
+  shoppingFor: 'another' as const,
+  age: 25,
+  event: 'Birthday' as const,
+  gender: '',
+  relationship: '',
+  personality: '',
+  interests: '',
+  color: 'blue',
+};
+
+export default function Questionnaire() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [pendingGenerate, setPendingGenerate] = useState(false);
 
-  const { data: profile } = useQuery<Profile>({
-    queryKey: ['/api/profiles', id],
-    enabled: isEdit,
+  // Draft persistence for unauthenticated users
+  const { draft, setDraft, clearDraft } = usePersistedDraft<FormValues>(
+    'gift-spark-questionnaire-draft',
+    defaultValues
+  );
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: draft,
   });
+
+  // Watch form values and persist to draft
+  useEffect(() => {
+    const subscription = form.watch((values) => {
+      setDraft(values as FormValues);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, setDraft]);
 
   const { data: profiles } = useQuery<Profile[]>({
     queryKey: ['/api/profiles'],
-    enabled: !isEdit,
+    enabled: !!user,
   });
 
   const { data: userData } = useQuery<User>({
     queryKey: ['/api/user'],
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: profile ? {
-      name: profile.name,
-      shoppingFor: profile.shoppingFor as 'self' | 'another',
-      age: profile.age,
-      event: profile.event as any,
-      gender: profile.gender,
-      relationship: profile.relationship ?? '',
-      personality: profile.personality,
-      interests: profile.interests,
-    } : {
-      name: '',
-      shoppingFor: 'another' as const,
-      age: 25,
-      event: 'Birthday' as const,
-      gender: '',
-      relationship: '',
-      personality: '',
-      interests: '',
-    },
+    enabled: !!user,
   });
 
   const createMutation = useMutation({
     mutationFn: async ({ data, generateResponse }: { data: InsertProfile; generateResponse: boolean }) => {
-      const res = await apiRequest('POST', '/api/profiles', { ...data, generateResponse });
-      return res.json();
+      return apiRequest('POST', '/api/profiles', { ...data, generateResponse });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      clearDraft(); // Clear draft after successful creation
       toast({ 
         title: isGenerating ? 'Profile created with AI response!' : 'Profile created!', 
         description: isGenerating ? 'Your AI-powered gift recommendations are ready.' : 'Your profile has been saved.' 
@@ -87,60 +105,68 @@ export default function ProfileForm() {
       setLocation(`/profile/${data.id}`);
     },
     onError: (error: any) => {
-      toast({ title: 'Error', description: error.message || 'Failed to create profile', variant: 'destructive' });
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Failed to create profile', 
+        variant: 'destructive' 
+      });
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (data: InsertProfile) => {
-      const res = await apiRequest('PATCH', `/api/profiles/${id}`, data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
-      toast({ title: 'Profile updated!', description: 'Your changes have been saved.' });
-      setLocation('/');
-    },
-    onError: () => {
-      toast({ title: 'Error', description: 'Failed to update profile', variant: 'destructive' });
-    },
-  });
+  const handleGoogleSignIn = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      setShowAuthModal(false);
+      
+      // After auth, retry submission with pending generation state
+      if (pendingGenerate) {
+        handleSubmit(true)();
+      } else {
+        handleSubmit(false)();
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Sign-in failed',
+        description: error.message || 'Please try again',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleSubmit = (generateResponse: boolean) => {
-    return form.handleSubmit((data: z.infer<typeof formSchema>) => {
+    return form.handleSubmit((data: FormValues) => {
+      // Check if user is authenticated
+      if (!user) {
+        setPendingGenerate(generateResponse);
+        setShowAuthModal(true);
+        return;
+      }
+
       const profileData: InsertProfile = {
         ...data,
-        userId: user!.uid,
+        userId: user.uid,
       };
       
-      if (isEdit) {
-        updateMutation.mutate(profileData);
-      } else {
-        // Check profile limit for free users
-        const profileCount = profiles?.length || 0;
-        if (profileCount >= MAX_FREE_PROFILES) {
-          toast({ 
-            title: 'Profile limit reached', 
-            description: `You've reached the maximum of ${MAX_FREE_PROFILES} free profiles.`, 
-            variant: 'destructive' 
-          });
-          return;
-        }
-
-        // Check token balance for premium generation
-        if (generateResponse && (!userData || userData.tokens < TOKENS_PER_GENERATION)) {
-          toast({ 
-            title: 'Insufficient tokens', 
-            description: `You need ${TOKENS_PER_GENERATION} tokens to generate AI recommendations.`, 
-            variant: 'destructive' 
-          });
-          setLocation('/pricing');
-          return;
-        }
-
-        setIsGenerating(generateResponse);
-        createMutation.mutate({ data: profileData, generateResponse });
+      // Check profile limit for free users
+      const profileCount = profiles?.length || 0;
+      if (profileCount >= MAX_FREE_PROFILES) {
+        toast({ 
+          title: 'Profile limit reached', 
+          description: `You've reached the maximum of ${MAX_FREE_PROFILES} free profiles.`, 
+          variant: 'destructive' 
+        });
+        return;
       }
+
+      // Check token balance for premium generation
+      if (generateResponse && (!userData || userData.tokens < TOKENS_PER_GENERATION)) {
+        setShowTokenModal(true);
+        return;
+      }
+
+      setIsGenerating(generateResponse);
+      createMutation.mutate({ data: profileData, generateResponse });
     });
   };
 
@@ -149,7 +175,7 @@ export default function ProfileForm() {
 
   const profileCount = profiles?.length || 0;
   const hasEnoughTokens = userData && userData.tokens >= TOKENS_PER_GENERATION;
-  const canCreateProfile = !isEdit && profileCount < MAX_FREE_PROFILES;
+  const canCreateProfile = profileCount < MAX_FREE_PROFILES;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -165,20 +191,18 @@ export default function ProfileForm() {
         </Button>
         <div className="flex-1 flex items-center justify-center gap-2">
           <Gift className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">
-            {isEdit ? 'Edit Profile' : 'New Profile'}
-          </h1>
+          <h1 className="text-lg font-semibold">New Profile</h1>
         </div>
-        {!isEdit && userData && (
-          <Badge variant="secondary" className="gap-1">
+        {user && userData && (
+          <Badge variant="secondary" className="gap-1" data-testid="badge-tokens">
             <Coins className="h-3 w-3" />
             {userData.tokens}
           </Badge>
         )}
-        {isEdit && <div className="w-10" />}
+        {!user && <div className="w-10" />}
       </header>
 
-      {!isEdit && (
+      {user && (
         <div className="border-b bg-muted/50 px-4 py-3">
           <div className="max-w-lg mx-auto flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
@@ -383,75 +407,130 @@ export default function ProfileForm() {
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
         <div className="max-w-lg mx-auto space-y-3">
-          {isEdit ? (
-            <Button
-              onClick={handleSubmit(false)}
-              disabled={updateMutation.isPending}
-              className="w-full h-12 text-base hover-elevate active-elevate-2"
-              data-testid="button-save-profile"
-            >
-              {updateMutation.isPending ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
-                  Saving...
-                </div>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          ) : (
-            <>
-              <Button
-                onClick={handleSubmit(false)}
-                disabled={createMutation.isPending || !canCreateProfile}
-                variant="outline"
-                className="w-full h-12 text-base hover-elevate active-elevate-2"
-                data-testid="button-create-profile"
-              >
-                {createMutation.isPending && !isGenerating ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin w-4 h-4 border-2 border-foreground border-t-transparent rounded-full" />
-                    Creating...
-                  </div>
-                ) : (
-                  'Create Profile (Free)'
-                )}
-              </Button>
-              
-              <Button
-                onClick={handleSubmit(true)}
-                disabled={createMutation.isPending || !canCreateProfile || !hasEnoughTokens}
-                className="w-full h-12 text-base hover-elevate active-elevate-2"
-                data-testid="button-create-with-ai"
-              >
-                {createMutation.isPending && isGenerating ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
-                    Generating AI Response...
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    Create + Generate Response ({TOKENS_PER_GENERATION} tokens)
-                  </div>
-                )}
-              </Button>
+          <Button
+            onClick={handleSubmit(false)}
+            disabled={createMutation.isPending || (!!user && !canCreateProfile)}
+            variant="outline"
+            className="w-full h-12 text-base hover-elevate active-elevate-2"
+            data-testid="button-create-profile"
+          >
+            {createMutation.isPending && !isGenerating ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin w-4 h-4 border-2 border-foreground border-t-transparent rounded-full" />
+                Creating...
+              </div>
+            ) : (
+              <>
+                {!user && <Lock className="w-4 h-4 mr-2" />}
+                Create Profile (Free)
+              </>
+            )}
+          </Button>
+          
+          <Button
+            onClick={handleSubmit(true)}
+            disabled={createMutation.isPending || (!!user && (!canCreateProfile || !hasEnoughTokens))}
+            className="w-full h-12 text-base hover-elevate active-elevate-2"
+            data-testid="button-create-with-ai"
+          >
+            {createMutation.isPending && isGenerating ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
+                Generating AI Response...
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                Create + Generate Response ({TOKENS_PER_GENERATION} tokens)
+              </div>
+            )}
+          </Button>
 
-              {!hasEnoughTokens && (
-                <p className="text-xs text-center text-muted-foreground">
-                  Need more tokens?{' '}
-                  <button
-                    onClick={() => setLocation('/pricing')}
-                    className="text-primary underline"
-                  >
-                    View Pricing
-                  </button>
-                </p>
-              )}
-            </>
+          {user && !hasEnoughTokens && (
+            <p className="text-xs text-center text-muted-foreground">
+              Need more tokens?{' '}
+              <button
+                onClick={() => setLocation('/pricing')}
+                className="text-primary underline"
+              >
+                View Pricing
+              </button>
+            </p>
           )}
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
+        <DialogContent data-testid="dialog-auth">
+          <DialogHeader>
+            <DialogTitle>Sign In to Continue</DialogTitle>
+            <DialogDescription>
+              Create a free account to save your profile and unlock AI-powered gift recommendations.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Button
+              onClick={handleGoogleSignIn}
+              className="w-full"
+              size="lg"
+              data-testid="button-google-signin"
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continue with Google
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Token Gate Modal */}
+      <Dialog open={showTokenModal} onOpenChange={setShowTokenModal}>
+        <DialogContent data-testid="dialog-token-gate">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Tokens Required
+            </DialogTitle>
+            <DialogDescription>
+              You need {TOKENS_PER_GENERATION} tokens to generate AI-powered gift recommendations.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-2">
+            <p className="text-sm text-muted-foreground mb-4">
+              Your current balance: <strong>{userData?.tokens || 0} tokens</strong>
+            </p>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowTokenModal(false)}
+              className="w-full sm:w-auto"
+              data-testid="button-token-cancel"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowTokenModal(false);
+                setLocation('/pricing?highlight=buytokens');
+              }}
+              className="w-full sm:w-auto"
+              data-testid="button-token-buy"
+            >
+              <Coins className="w-4 h-4 mr-2" />
+              Buy Tokens
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
