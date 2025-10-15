@@ -25,44 +25,44 @@ Gift Spark helps users discover the perfect gift for anyone in their life. Users
   - Accessible footer links on all pages
 - **Navigation**: Consistent "Back to Home" buttons across pages
 
-### 🎉 Major Redesign Complete (October 15, 2025)
-- **Questionnaire Page** (`/questionnaire`):
-  - ✅ Unauthenticated access with draft persistence (localStorage)
-  - ✅ Auto-save drafts with 300ms debounce
-  - ✅ Auth modal when submitting without login
-  - ✅ Token gate modal when generating AI without sufficient tokens
-  - ✅ Clean draft after successful profile creation
+### 🎉 Major UX Simplification Complete (October 15, 2025)
+**Focus: "Most simple execution ever for the customer"**
+
+- **Landing Page** (`/`):
+  - ✅ "Create New Gift List" button opens name-only dialog
+  - ✅ Minimal profile creation with just a name
+  - ✅ Auto-navigation to gift list detail after creation
+  - ✅ Existing gift lists displayed as scrollable tiles
   
-- **Profile Detail Page** (`/profile/:id`):
-  - ✅ Colored gradient header based on profile color
-  - ✅ Profile info display (age, gender, relationship, event, personality, interests)
-  - ✅ Manual Gift Ideas section (collapsible):
-    - Add/remove ideas with textarea input
-    - List of saved ideas with delete buttons
-  - ✅ Premium AI Recommendations section (collapsible):
-    - Display AI-generated gift suggestions
-    - Copy to clipboard with toast feedback
-    - Generate AI button (costs 500 tokens)
-  - ✅ Clear All Data button (removes manual ideas and AI results)
+- **Gift List Detail Page** (`/profile/:id`):
+  - ✅ **5+ Manual Text Boxes**: Editable gift idea inputs (expandable)
+  - ✅ **GEAR Button**: Delete confirmation with "Please confirm that you want to delete your profile"
+  - ✅ **GENERATE RESPONSES Button**: Triggers AI generation
+  - ✅ **Questionnaire Check**: Shows dialog if questionnaire not filled
+  - ✅ **AI Results**: Displayed as read-only text boxes with gift + reason format
+  - ✅ Auto-save manual ideas with debounce
   
-- **Profiles List Page** (`/profiles`):
-  - ✅ Grid view of all user profiles
-  - ✅ Profile cards with color badges
-  - ✅ Manual ideas count indicator
-  - ✅ AI recommendations indicator (Sparkles icon)
-  - ✅ Click to view profile details
+- **Questionnaire Dialog** (`QuestionnaireDialog.tsx`):
+  - ✅ Appears when user clicks GENERATE RESPONSES without questionnaire data
+  - ✅ Embedded form for filling profile details (age, gender, event, etc.)
+  - ✅ Saves profile and immediately triggers AI generation
+  - ✅ Closes automatically after successful submission
   
-- **Backend API**:
-  - ✅ POST `/api/profiles/:id/clear` - Clear manual ideas and premium results
-  - ✅ PATCH `/api/profiles/:id` - Update profile (already existed)
-  - ✅ DELETE `/api/profiles/:id` - Delete profile (already existed)
+- **Schema Updates** (`shared/schema.ts`):
+  - ✅ Made all profile fields optional except `name`
+  - ✅ Supports minimal profile creation (name only)
+  - ✅ Questionnaire required only for AI generation
   
-- **Copy to Clipboard Utility**:
-  - ✅ `useCopyToClipboard` hook with toast notifications
-  - ✅ Success and error handling
-  
-- **Bug Fixes**:
-  - ✅ Landing page delete action now calls mutation (was TODO)
+- **Backend Validation** (`server/routes.ts`):
+  - ✅ Validates questionnaire fields before AI generation
+  - ✅ Returns proper error if questionnaire incomplete
+  - ✅ Handles optional profile fields correctly
+
+**User Flow:**
+1. Landing → "Create New Gift List" → Enter name → Navigate to gift list
+2. Gift list → Add manual ideas (5+ text boxes) → Auto-saved
+3. Click "GENERATE RESPONSES" → If no questionnaire, show dialog → Fill → AI generates
+4. AI recommendations displayed below manual ideas
 
 ### 📝 Phase 3 Features (Disabled/Commented Out)
 - Amazon affiliate links (parseAmazonLinks, AmazonProductCard)
