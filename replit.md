@@ -3,7 +3,7 @@
 ## Overview
 Gift Spark helps users discover the perfect gift for anyone in their life. Users can create free gift lists, build detailed profiles, and optionally use AI-powered recommendations to get personalized gift suggestions based on personality, interests, and occasion.
 
-## Current State (Phase 1 MVP in Progress)
+## Current State (Phase 1 MVP Complete)
 
 ### ✅ Completed Features
 - **Authentication**: Firebase Google OAuth with secure token verification
@@ -25,13 +25,44 @@ Gift Spark helps users discover the perfect gift for anyone in their life. Users
   - Accessible footer links on all pages
 - **Navigation**: Consistent "Back to Home" buttons across pages
 
-### 🚧 In Progress
-- **Profile Page Redesign**: Converting from chat interface to notepad-style with:
-  - Manual notes section (top, collapsible)
-  - AI response section (bottom, collapsible)
-  - "Generate Response" button (costs 500 tokens)
-- **Stripe Product Setup**: Creating products for token packages and subscriptions
-- **Route Updates**: Changing /chat/:id to /profile/:id
+### 🎉 Major Redesign Complete (October 15, 2025)
+- **Questionnaire Page** (`/questionnaire`):
+  - ✅ Unauthenticated access with draft persistence (localStorage)
+  - ✅ Auto-save drafts with 300ms debounce
+  - ✅ Auth modal when submitting without login
+  - ✅ Token gate modal when generating AI without sufficient tokens
+  - ✅ Clean draft after successful profile creation
+  
+- **Profile Detail Page** (`/profile/:id`):
+  - ✅ Colored gradient header based on profile color
+  - ✅ Profile info display (age, gender, relationship, event, personality, interests)
+  - ✅ Manual Gift Ideas section (collapsible):
+    - Add/remove ideas with textarea input
+    - List of saved ideas with delete buttons
+  - ✅ Premium AI Recommendations section (collapsible):
+    - Display AI-generated gift suggestions
+    - Copy to clipboard with toast feedback
+    - Generate AI button (costs 500 tokens)
+  - ✅ Clear All Data button (removes manual ideas and AI results)
+  
+- **Profiles List Page** (`/profiles`):
+  - ✅ Grid view of all user profiles
+  - ✅ Profile cards with color badges
+  - ✅ Manual ideas count indicator
+  - ✅ AI recommendations indicator (Sparkles icon)
+  - ✅ Click to view profile details
+  
+- **Backend API**:
+  - ✅ POST `/api/profiles/:id/clear` - Clear manual ideas and premium results
+  - ✅ PATCH `/api/profiles/:id` - Update profile (already existed)
+  - ✅ DELETE `/api/profiles/:id` - Delete profile (already existed)
+  
+- **Copy to Clipboard Utility**:
+  - ✅ `useCopyToClipboard` hook with toast notifications
+  - ✅ Success and error handling
+  
+- **Bug Fixes**:
+  - ✅ Landing page delete action now calls mutation (was TODO)
 
 ### 📝 Phase 3 Features (Disabled/Commented Out)
 - Amazon affiliate links (parseAmazonLinks, AmazonProductCard)
@@ -105,6 +136,16 @@ Before going live:
 - **Dark mode**: Full support across all pages
 
 ## Recent Changes (October 15, 2025)
+
+### Major Redesign Complete ✅
+- **Questionnaire Page**: Transformed to support unauthenticated access with localStorage draft persistence, auth modal on submit, and token gate modal for AI generation
+- **Profile Detail Page**: Complete redesign with colored gradient header, collapsible manual ideas section (add/remove), collapsible AI recommendations section (copy to clipboard), and clear data functionality
+- **Profiles List Page**: Built comprehensive list view with profile cards, manual ideas count badge, AI indicator, and click-to-view navigation
+- **Backend API**: Added POST `/api/profiles/:id/clear` endpoint for clearing profile data
+- **Copy to Clipboard**: Created reusable hook with toast notifications
+- **Bug Fix**: Landing page delete action now properly calls mutation (was previously TODO)
+
+### Earlier Updates
 - Created Privacy Policy (/privacy) and Terms & Conditions (/terms) pages for app store compliance
 - Added third-party services disclosure and data retention policies
 - Integrated legal page links in footer across all screens
