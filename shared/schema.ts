@@ -24,6 +24,7 @@ export const profiles = pgTable("profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  color: text("color").notNull().default('#3B82F6'), // Profile card color (hex or preset key)
   shoppingFor: text("shopping_for").notNull(), // 'self' or 'another'
   age: integer("age").notNull(),
   event: text("event").notNull(), // Birthday, Anniversary, Christmas, Valentine's Day, Other
@@ -31,8 +32,10 @@ export const profiles = pgTable("profiles", {
   relationship: text("relationship"), // Only if shoppingFor is 'another'
   personality: text("personality").notNull(),
   interests: text("interests").notNull(),
-  aiResponse: text("ai_response"), // Premium AI-generated gift suggestions (nullable - only if generated)
-  manualNotes: text("manual_notes"), // User's manual notes/text entry
+  manualIdeas: text("manual_ideas").array().notNull().default(sql`ARRAY[]::text[]`), // Free manual notes/ideas as array
+  premiumResults: text("premium_results"), // JSON string of premium AI results: Array<{id, title, reason, createdAt}>
+  aiResponse: text("ai_response"), // Legacy field - keeping for backward compatibility
+  manualNotes: text("manual_notes"), // Legacy field - keeping for backward compatibility
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -136,17 +139,30 @@ export const insertUserSchema = createInsertSchema(users).omit({
 
 export const insertProfileSchema = createInsertSchema(profiles).omit({
   id: true,
+  manualIdeas: true,
+  premiumResults: true,
   aiResponse: true,
   manualNotes: true,
   createdAt: true,
   updatedAt: true,
 }).extend({
+  color: z.string().optional(), // Hex color or preset key
   age: z.number().min(1).max(120),
   shoppingFor: z.enum(['self', 'another']),
   event: z.enum(['Birthday', 'Anniversary', 'Christmas', "Valentine's Day", 'Other']),
   personality: z.string().min(1).max(1000),
   interests: z.string().min(1).max(1000),
 });
+
+// Premium result type for storing in premiumResults JSON
+export const premiumResultSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  reason: z.string(),
+  createdAt: z.string(),
+});
+
+export type PremiumResult = z.infer<typeof premiumResultSchema>;
 
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,

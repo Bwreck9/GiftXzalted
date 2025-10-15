@@ -6,7 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Landing from "@/pages/Landing";
-import ProfileForm from "@/pages/ProfileForm";
+import Questionnaire from "@/pages/Questionnaire";
+import ProfileDetail from "@/pages/ProfileDetail";
+import ProfilesList from "@/pages/ProfilesList";
 import Chat from "@/pages/Chat";
 import Settings from "@/pages/Settings";
 import About from "@/pages/About";
@@ -23,7 +25,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/profile/:id" component={ProfileForm} />
+      <Route path="/questionnaire" component={Questionnaire} />
+      <Route path="/profiles" component={ProfilesList} />
+      <Route path="/profile/:id" component={ProfileDetail} />
       <Route path="/chat/:id" component={Chat} />
       <Route path="/gift-lists" component={GiftLists} />
       <Route path="/gift-lists/:id" component={GiftListDetail} />
