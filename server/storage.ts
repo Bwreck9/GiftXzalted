@@ -8,12 +8,12 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUserCredits(id: string, credits: number): Promise<User>;
+  updateUserTokens(id: string, tokens: number): Promise<User>;
 
   // Profiles
   getProfilesByUserId(userId: string): Promise<Profile[]>;
   getProfile(id: string): Promise<Profile | undefined>;
-  createProfile(profile: InsertProfile): Promise<Profile>;
+  createProfile(profile: InsertProfile, aiResponse?: string): Promise<Profile>;
   updateProfile(id: string, profile: Partial<InsertProfile>): Promise<Profile>;
   deleteProfile(id: string): Promise<void>;
 
@@ -59,10 +59,10 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserCredits(id: string, credits: number): Promise<User> {
+  async updateUserTokens(id: string, tokens: number): Promise<User> {
     const [user] = await db
       .update(users)
-      .set({ credits })
+      .set({ tokens })
       .where(eq(users.id, id))
       .returning();
     return user;
@@ -78,11 +78,12 @@ export class DatabaseStorage implements IStorage {
     return profile || undefined;
   }
 
-  async createProfile(insertProfile: InsertProfile): Promise<Profile> {
+  async createProfile(insertProfile: InsertProfile, aiResponse?: string): Promise<Profile> {
     const [profile] = await db
       .insert(profiles)
       .values({
         ...insertProfile,
+        aiResponse: aiResponse || null,
         updatedAt: new Date(),
       })
       .returning();

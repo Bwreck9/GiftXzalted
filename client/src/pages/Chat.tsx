@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { AmazonProductCard } from '@/components/AmazonProductCard';
+// PHASE 3: Amazon integration - commented out for Phase 1
+// import { AmazonProductCard } from '@/components/AmazonProductCard';
 import type { Profile, Message, User } from '@shared/schema';
 import { ArrowLeft, Send, Settings, Coins, Sparkles } from 'lucide-react';
 import {
@@ -94,10 +95,10 @@ export default function Chat() {
   const handleSend = () => {
     if (!message.trim() || sendMutation.isPending) return;
     
-    if (userData && userData.credits <= 0) {
+    if (userData && userData.tokens <= 0) {
       toast({
-        title: 'No credits remaining',
-        description: 'Purchase more credits to continue chatting.',
+        title: 'No tokens remaining',
+        description: 'Purchase more tokens to continue chatting.',
         variant: 'destructive',
       });
       return;
@@ -106,32 +107,33 @@ export default function Chat() {
     sendMutation.mutate(message.trim());
   };
 
-  const parseAmazonLinks = (text: string) => {
-    const amazonRegex = /(https?:\/\/)?(www\.)?(amazon\.com\/[^\s]+|amzn\.to\/[^\s]+)/gi;
-    const parts: Array<{ type: 'text' | 'link'; content: string }> = [];
-    let lastIndex = 0;
+  // PHASE 3: Amazon link parsing - commented out for Phase 1
+  // const parseAmazonLinks = (text: string) => {
+  //   const amazonRegex = /(https?:\/\/)?(www\.)?(amazon\.com\/[^\s]+|amzn\.to\/[^\s]+)/gi;
+  //   const parts: Array<{ type: 'text' | 'link'; content: string }> = [];
+  //   let lastIndex = 0;
 
-    let match;
-    while ((match = amazonRegex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
-      }
+  //   let match;
+  //   while ((match = amazonRegex.exec(text)) !== null) {
+  //     if (match.index > lastIndex) {
+  //       parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+  //     }
       
-      let url = match[0];
-      if (!url.startsWith('http')) {
-        url = 'https://' + url;
-      }
+  //     let url = match[0];
+  //     if (!url.startsWith('http')) {
+  //       url = 'https://' + url;
+  //     }
       
-      parts.push({ type: 'link', content: url });
-      lastIndex = match.index + match[0].length;
-    }
+  //     parts.push({ type: 'link', content: url });
+  //     lastIndex = match.index + match[0].length;
+  //   }
 
-    if (lastIndex < text.length) {
-      parts.push({ type: 'text', content: text.slice(lastIndex) });
-    }
+  //   if (lastIndex < text.length) {
+  //     parts.push({ type: 'text', content: text.slice(lastIndex) });
+  //   }
 
-    return parts.length > 0 ? parts : [{ type: 'text', content: text }];
-  };
+  //   return parts.length > 0 ? parts : [{ type: 'text', content: text }];
+  // };
 
   if (!profile) {
     return (
@@ -167,9 +169,9 @@ export default function Chat() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="gap-1" data-testid="badge-credits">
+          <Badge variant="secondary" className="gap-1" data-testid="badge-tokens">
             <Coins className="h-3 w-3" />
-            {userData?.credits || 0}
+            {userData?.tokens || 0}
           </Badge>
           
           <DropdownMenu>
@@ -238,15 +240,8 @@ export default function Chat() {
                       : 'bg-card text-card-foreground'
                   }`}
                 >
-                  {parseAmazonLinks(msg.content).map((part, i) =>
-                    part.type === 'link' ? (
-                      <div key={i} className="mt-2">
-                        <AmazonProductCard url={part.content} />
-                      </div>
-                    ) : (
-                      <p key={i} className="whitespace-pre-wrap break-words">{part.content}</p>
-                    )
-                  )}
+                  {/* PHASE 3: Amazon link parsing disabled for Phase 1 - just show plain text */}
+                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 px-2">
                   {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

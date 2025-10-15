@@ -17,8 +17,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-09-30.clover",
 });
 
-const CREDITS_PER_PURCHASE = 10; // $5 gets you 10 queries
-const PURCHASE_AMOUNT = 5; // $5
+const TOKENS_PER_ONETIME_PURCHASE = 5000; // $5 gets you 5,000 tokens
+const ONETIME_PURCHASE_AMOUNT = 5; // $5
+const TOKENS_PER_GENERATION = 500; // Each AI generation costs 500 tokens
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -104,20 +105,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/profiles", requireAuth, async (req: AuthRequest, res) => {
     try {
       const userId = req.userId!;
+      const { generateResponse, ...profileData } = req.body;
 
       const validated = insertProfileSchema.parse({
-        ...req.body,
+        ...profileData,
         userId,
       });
 
-      const profile = await storage.createProfile(validated);
+      // If AI generation requested, check tokens and generate response
+      let aiResponse: string | undefined = undefined;
+      if (generateResponse === true) {
+        const user = await storage.getUser(userId);
+        
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        if (user.tokens < TOKENS_PER_GENERATION) {
+          return res.status(400).json({ error: "Insufficient tokens", required: TOKENS_PER_GENERATION });
+        }
+
+        // Deduct tokens
+        await storage.updateUserTokens(userId, user.tokens - TOKENS_PER_GENERATION);
+
+        // Generate AI response
+        try {
+          aiResponse = await getGiftRecommendations(
+            validated,
+            `Generate thoughtful gift recommendations for ${validated.name} based on their profile.`,
+            []
+          );
+        } catch (error) {
+          // Refund tokens if AI generation fails
+          await storage.updateUserTokens(userId, user.tokens);
+          throw error;
+        }
+      }
+
+      const profile = await storage.createProfile(validated, aiResponse);
       res.json(profile);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid profile data", details: error.errors });
       }
       console.error("Error creating profile:", error);
-      res.status(500).json({ error: "Failed to create profile" });
+      res.status(500).json({ error: error.message || "Failed to create profile" });
     }
   });
 
@@ -232,11 +264,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      // Check credits
+      // Check tokens
       const user = await storage.getUser(userId);
       
-      if (!user || user.credits <= 0) {
-        return res.status(402).json({ error: "Insufficient credits" });
+      if (!user || user.tokens <= 0) {
+        return res.status(402).json({ error: "Insufficient tokens" });
       }
 
       // Save user message
@@ -274,8 +306,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: aiResponse,
       });
 
-      // Deduct credit
-      await storage.updateUserCredits(userId, user.credits - 1);
+      // Deduct token (500 tokens per chat message)
+      await storage.updateUserTokens(userId, user.tokens - TOKENS_PER_GENERATION);
 
       res.json(assistantMessage);
     } catch (error: any) {
@@ -291,14 +323,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/create-payment-intent", requireAuth, async (req: AuthRequest, res) => {
     try {
       const userId = req.userId!;
-      const amount = PURCHASE_AMOUNT;
+      const amount = ONETIME_PURCHASE_AMOUNT;
       
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: "usd",
         metadata: {
           userId,
-          credits: CREDITS_PER_PURCHASE.toString(),
+          tokens: TOKENS_PER_ONETIME_PURCHASE.toString(),
         },
       });
 
@@ -306,7 +338,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createTransaction({
         userId,
         amount: amount * 100,
-        credits: CREDITS_PER_PURCHASE,
+        tokens: TOKENS_PER_ONETIME_PURCHASE,
+        type: 'one-time',
         stripePaymentIntentId: paymentIntent.id,
         status: 'pending',
       });
@@ -576,14 +609,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (event.type === 'payment_intent.succeeded') {
         const paymentIntent = event.data.object;
         const userId = paymentIntent.metadata.userId;
-        const credits = parseInt(paymentIntent.metadata.credits);
+        const tokens = parseInt(paymentIntent.metadata.tokens);
 
-        if (userId && credits) {
+        if (userId && tokens) {
           const user = await storage.getUser(userId);
           
           if (user) {
-            // Add credits to user account
-            await storage.updateUserCredits(userId, user.credits + credits);
+            // Add tokens to user account
+            await storage.updateUserTokens(userId, user.tokens + tokens);
             
             // Note: Transaction record was already created in create-payment-intent endpoint
             // No need to create duplicate transaction here
