@@ -11,6 +11,8 @@ import Chat from "@/pages/Chat";
 import Settings from "@/pages/Settings";
 import About from "@/pages/About";
 import Pricing from "@/pages/Pricing";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsConditions from "@/pages/TermsConditions";
 import Checkout from "@/pages/Checkout";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import GiftLists from "@/pages/GiftLists";
@@ -28,6 +30,8 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/about" component={About} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/terms" component={TermsConditions} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/payment-success" component={PaymentSuccess} />
       <Route component={NotFound} />

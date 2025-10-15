@@ -70,37 +70,56 @@ export default function Landing() {
           </div>
         </main>
 
-        <footer className="h-16 border-t flex items-center justify-center gap-8 px-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation('/about')}
-            data-testid="link-about"
-            className="hover-elevate"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            About
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation('/pricing')}
-            data-testid="link-pricing"
-            className="hover-elevate"
-          >
-            <DollarSign className="h-4 w-4 mr-2" />
-            Pricing
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowSplash(true)}
-            data-testid="button-splash"
-            className="hover-elevate"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Splash
-          </Button>
+        <footer className="border-t">
+          <div className="flex items-center justify-center gap-8 px-6 py-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation('/about')}
+              data-testid="link-about"
+              className="hover-elevate"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              About
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation('/pricing')}
+              data-testid="link-pricing"
+              className="hover-elevate"
+            >
+              <DollarSign className="h-4 w-4 mr-2" />
+              Pricing
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSplash(true)}
+              data-testid="button-splash"
+              className="hover-elevate"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Splash
+            </Button>
+          </div>
+          <div className="flex items-center justify-center gap-4 px-6 py-2 text-xs text-muted-foreground border-t">
+            <button
+              onClick={() => setLocation('/privacy')}
+              className="hover:text-foreground transition-colors hover:underline"
+              data-testid="link-privacy"
+            >
+              Privacy Policy
+            </button>
+            <span>•</span>
+            <button
+              onClick={() => setLocation('/terms')}
+              className="hover:text-foreground transition-colors hover:underline"
+              data-testid="link-terms"
+            >
+              Terms & Conditions
+            </button>
+          </div>
         </footer>
       </div>
     );
@@ -189,47 +208,66 @@ export default function Landing() {
         </div>
       </main>
 
-      <footer className="h-16 border-t flex items-center justify-center gap-8 px-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setLocation('/gift-lists')}
-          data-testid="link-gift-lists"
-          className="hover-elevate"
-        >
-          <Gift className="h-4 w-4 mr-2" />
-          Gift Lists
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setLocation('/pricing')}
-          data-testid="link-pricing"
-          className="hover-elevate"
-        >
-          <DollarSign className="h-4 w-4 mr-2" />
-          Pricing
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setLocation('/about')}
-          data-testid="link-about"
-          className="hover-elevate"
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          About
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowSplash(true)}
-          data-testid="button-splash"
-          className="hover-elevate"
-        >
-          <Sparkles className="h-4 w-4 mr-2" />
-          Splash
-        </Button>
+      <footer className="border-t">
+        <div className="flex items-center justify-center gap-8 px-6 py-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation('/gift-lists')}
+            data-testid="link-gift-lists"
+            className="hover-elevate"
+          >
+            <Gift className="h-4 w-4 mr-2" />
+            Gift Lists
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation('/pricing')}
+            data-testid="link-pricing"
+            className="hover-elevate"
+          >
+            <DollarSign className="h-4 w-4 mr-2" />
+            Pricing
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation('/about')}
+            data-testid="link-about"
+            className="hover-elevate"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            About
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSplash(true)}
+            data-testid="button-splash"
+            className="hover-elevate"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Splash
+          </Button>
+        </div>
+        <div className="flex items-center justify-center gap-4 px-6 py-2 text-xs text-muted-foreground border-t">
+          <button
+            onClick={() => setLocation('/privacy')}
+            className="hover:text-foreground transition-colors hover:underline"
+            data-testid="link-privacy"
+          >
+            Privacy Policy
+          </button>
+          <span>•</span>
+          <button
+            onClick={() => setLocation('/terms')}
+            className="hover:text-foreground transition-colors hover:underline"
+            data-testid="link-terms"
+          >
+            Terms & Conditions
+          </button>
+        </div>
       </footer>
     </div>
   );

@@ -1,0 +1,116 @@
+You are adding two new pages to the “Gift Spark” app:
+1. Privacy Policy
+2. Terms & Conditions
+
+GOAL
+Create two professional, plain-English pages that meet Apple App Store and Google Play submission requirements. 
+Keep them short, human, and compliant — no legal jargon or deep jurisdiction clauses. 
+Include contact info (support@xzalted.com) and a footer line crediting Xzalted.
+
+--------------------------------------------
+PAGE 1 — PRIVACY POLICY
+--------------------------------------------
+Title: Privacy Policy
+Last Updated: (auto-fill today’s date)
+
+Content:
+Gift Spark values your privacy. This policy explains what information we collect, why we collect it, and how we use it.
+
+1. Information We Collect
+- Basic profile info: names, gift ideas, and notes you enter.
+- Usage data: how you interact with the app to help improve features.
+- Optional contact info: only if you choose to create an account or subscribe.
+
+2. How We Use Your Information
+- To save your wishlists and personalize gift suggestions.
+- To manage subscriptions, tokens, and profile limits.
+- To improve app performance and user experience.
+
+3. Data Storage & Security
+- Your data is stored securely and never sold or shared with third parties.
+- Access is limited to Gift Spark systems and authorized service providers.
+
+4. Your Choices
+- You can delete profiles, wishlists, or your entire account at any time.
+- To request full data deletion, contact us at: support@xzalted.com
+
+5. Children’s Privacy
+- Gift Spark is intended for general audiences and not designed for children under 13.
+
+6. Updates
+- We may update this policy from time to time as features evolve.
+- Any significant updates will be announced in the app or on our website.
+
+Footer:
+© (current year) Gift Spark. Created & managed by Xzalted. All rights reserved.
+
+--------------------------------------------
+PAGE 2 — TERMS & CONDITIONS
+--------------------------------------------
+Title: Terms & Conditions
+Last Updated: (auto-fill today’s date)
+
+Content:
+Welcome to Gift Spark! By using this app, you agree to these terms.
+
+1. Overview
+Gift Spark helps you organize gift ideas and discover new suggestions. 
+You may use the app freely within the limits of your plan.
+
+2. Accounts & Profiles
+- Free users can save up to 5 profiles.
+- Premium users receive additional profiles and monthly token allowances.
+- You are responsible for keeping your account secure.
+
+3. Tokens & Subscriptions
+- Tokens are digital credits used for generating personalized gift suggestions.
+- Subscription tokens reset monthly and may include bonus tokens.
+- You can also purchase additional tokens anytime through “Premium Tokens.”
+- All payments are handled securely through the App Store or Google Play.
+
+4. Refunds
+- Refunds for in-app purchases follow Apple or Google’s refund policies.
+- Gift Spark does not process refunds directly.
+
+5. Acceptable Use
+- Please use Gift Spark responsibly. 
+- Do not upload or share inappropriate or offensive content.
+
+6. Intellectual Property
+- All branding, design, and content in Gift Spark are owned by its creators.
+- You may not copy or redistribute materials from the app without permission.
+
+7. Disclaimer
+- Gift suggestions are provided for inspiration and convenience only.
+- We make no guarantees of satisfaction or suitability of any recommended item.
+
+8. Support
+- For questions, technical issues, or data requests, contact: support@xzalted.com
+
+Footer:
+© (current year) Gift Spark. Created & managed by Xzalted. All rights reserved.
+
+--------------------------------------------
+DESIGN & PLACEMENT
+--------------------------------------------
+- Create two new routes/pages: `/privacy` and `/terms`
+- Use a centered layout with a clean white background and dark text.
+- Max width: 700–800px.
+- Add a “← Back to Home” button at both top and bottom of each page.
+- Keep consistent font and colors with the rest of the Gift Spark site.
+- Include footer links to these pages from every screen (e.g., bottom nav or footer bar).
+
+--------------------------------------------
+ACCESSIBILITY
+--------------------------------------------
+- Use semantic headings (H1, H2).
+- Add ARIA labels for buttons and navigation.
+- Maintain focus outlines for keyboard users.
+
+--------------------------------------------
+DELIVERABLE
+--------------------------------------------
+- Create PrivacyPolicy.jsx and TermsConditions.jsx (or .html/.md if static).
+- Implement routing for `/privacy` and `/terms`.
+- Add footer text “© (year) Gift Spark. Created & managed by Xzalted.”
+- Use consistent layout styling with the Pricing and About pages.
