@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Gift, Sparkles, ListPlus } from 'lucide-react';
 
-const WELCOME_DIALOG_KEY = 'xzalted-welcome-shown';
+const WELCOME_DIALOG_KEY = 'giftspark-welcome-shown';
 
 export function WelcomeDialog() {
   const [open, setOpen] = useState(false);
@@ -43,7 +43,7 @@ export function WelcomeDialog() {
           </div>
           
           <DialogTitle className="text-3xl text-center bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Welcome to the Xzalted Experience.
+            Welcome to the Gift Spark Experience.
           </DialogTitle>
           
           <DialogDescription className="space-y-4 pt-2 text-base leading-relaxed">

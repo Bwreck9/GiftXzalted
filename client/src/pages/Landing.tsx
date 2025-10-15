@@ -42,7 +42,7 @@ export default function Landing() {
         <header className="h-16 border-b flex items-center justify-between px-6">
           <div className="flex items-center gap-2">
             <Gift className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">Xzalted</span>
+            <span className="text-xl font-bold">Gift Spark</span>
           </div>
           <ThemeToggle />
         </header>
@@ -101,7 +101,7 @@ export default function Landing() {
       <header className="h-16 border-b flex items-center justify-between px-6">
         <div className="flex items-center gap-2">
           <Gift className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">Xzalted</span>
+          <span className="text-xl font-bold">Gift Spark</span>
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
