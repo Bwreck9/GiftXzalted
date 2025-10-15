@@ -1,6 +1,6 @@
 // Firebase integration - referenced from firebase_barebones_javascript blueprint
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut as firebaseSignOut, onAuthStateChanged, User } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut as firebaseSignOut, onAuthStateChanged, User, browserLocalPersistence, setPersistence } from "firebase/auth";
 
 // Trim environment variables to remove any leading/trailing spaces
 const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID?.trim();
@@ -17,7 +17,17 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+// Set persistence to LOCAL to survive page redirects
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error("Error setting auth persistence:", error);
+});
+
 const googleProvider = new GoogleAuthProvider();
+// Force account selection to ensure fresh auth
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 // Detect if on mobile device
 const isMobile = () => {
@@ -43,10 +53,21 @@ export const signInWithGoogle = async () => {
 // Handle redirect result on page load (for mobile)
 export const handleRedirectResult = async () => {
   try {
+    console.log("Checking for redirect result...");
     const result = await getRedirectResult(auth);
-    return result?.user || null;
-  } catch (error) {
-    console.error("Error handling redirect result:", error);
+    
+    if (result) {
+      console.log("✅ Redirect successful! User:", result.user?.email);
+      return result.user;
+    } else {
+      console.log("No pending redirect result");
+      return null;
+    }
+  } catch (error: any) {
+    console.error("❌ Error handling redirect result:", error);
+    console.error("Error code:", error?.code);
+    console.error("Error message:", error?.message);
+    console.error("Error details:", JSON.stringify(error, null, 2));
     throw error;
   }
 };
