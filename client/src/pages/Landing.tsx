@@ -299,9 +299,10 @@ export default function Landing() {
                         className="text-destructive"
                         onClick={() => {
                           if (confirm(`Delete profile "${profile.name}"?`)) {
-                            // TODO: Delete profile
+                            deleteProfileMutation.mutate(profile.id);
                           }
                         }}
+                        data-testid={`button-delete-${profile.id}`}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete

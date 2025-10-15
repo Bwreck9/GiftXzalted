@@ -208,6 +208,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear profile data (manual ideas and premium results)
+  app.post("/api/profiles/:id/clear", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.userId!;
+
+      const profile = await storage.getProfile(id);
+      
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+
+      if (profile.userId !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      // Clear manual ideas and premium results
+      const updated = await storage.updateProfile(id, {
+        manualIdeas: [],
+        premiumResults: null,
+        aiResponse: null, // Also clear legacy field
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error clearing profile:", error);
+      res.status(500).json({ error: "Failed to clear profile" });
+    }
+  });
+
   // Get messages for a profile
   app.get("/api/messages/:profileId", requireAuth, async (req: AuthRequest, res) => {
     try {
