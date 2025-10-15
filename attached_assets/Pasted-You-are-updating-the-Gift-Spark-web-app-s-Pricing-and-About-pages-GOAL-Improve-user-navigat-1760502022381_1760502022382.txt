@@ -1,0 +1,63 @@
+You are updating the Gift Spark web app’s “Pricing” and “About” pages.
+
+GOAL
+Improve user navigation by adding a clear “Back to Home” button at the top or bottom of both pages, styled consistently with the rest of the site.
+
+--------------------------------------------
+GLOBAL STYLING & NAVIGATION
+--------------------------------------------
+- Add a small top navigation bar or header section with the “Gift Spark” logo on the left and a “Back to Home” button on the right.
+- The button should link to the site’s root (e.g., “/”).
+- Use the same button style across both pages: rounded, soft shadow, blue gradient background, white text.
+- On hover: subtle lift + lighter gradient.
+- Button text: **← Back to Home**
+- Keep the nav fixed at the top or fade in on scroll (developer’s choice, just be consistent).
+
+If a top nav isn’t desired, alternatively add the “Back to Home” button at the **bottom of the page**, centered, with spacing above.
+
+--------------------------------------------
+PRICING PAGE CONTENT
+--------------------------------------------
+Use the previous “Gift Spark” pricing layout:
+- Three pricing cards (Free, Profile Plans, Premium Tokens)
+- Updated button labels:
+  - Create Free Account
+  - Buy Profile Plan – $5/mo
+  - Buy Profile Plan – $20/mo
+  - Buy Premium Tokens
+- Add the “Back to Home” button to the top-right of the page or above the pricing cards for quick access.
+
+--------------------------------------------
+ABOUT PAGE CONTENT
+--------------------------------------------
+- Centered heading: “About Gift Spark”
+- Subhead: “Helping you find thoughtful gift ideas — fast.”
+- Paragraph copy (use or rewrite this):
+  “Gift Spark was built to make gift-giving effortless. Create profiles for the people you care about, save your ideas, or take our premium questionnaire to spark thoughtful suggestions instantly. Whether it’s birthdays, holidays, or just-because moments — we’re here to inspire your next great gift.”
+- Include a secondary sub-section for updates:
+  “We’re always improving! Check back for new features and seasonal updates.”
+- Place the “Back to Home” button at the top-right (matching pricing page) and again at the bottom center for good UX redundancy.
+
+--------------------------------------------
+STYLE NOTES
+--------------------------------------------
+- Maintain the same color scheme and font set as the homepage (blue gradient accents, rounded corners, minimal shadows).
+- On mobile: the “Back to Home” button should stack beneath the logo or appear fixed at the top-right corner with slight padding.
+- Use Tailwind CSS classes or minimal inline styles (no large frameworks).
+
+--------------------------------------------
+FUNCTIONAL BEHAVIOR
+--------------------------------------------
+- “Back to Home” should route to the homepage using standard navigation (e.g., React Router’s `navigate('/')` or anchor link `/`).
+- No page reloads — use client-side routing.
+- Ensure all buttons are keyboard accessible and maintain focus outlines.
+- Add `aria-label="Back to Home"` for screen readers.
+
+--------------------------------------------
+DELIVERABLE
+--------------------------------------------
+- Update both pages (pricing.jsx and about.jsx or equivalent) with:
+  • Top nav containing “Gift Spark” logo text and “Back to Home” button
+  • Consistent responsive design
+  • Centered fallback “Back to Home” button at the bottom
+  • Retain all existing copy and layout improvements
