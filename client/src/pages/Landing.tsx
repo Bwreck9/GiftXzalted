@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -5,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { WelcomeDialog } from '@/components/WelcomeDialog';
 import type { Profile } from '@shared/schema';
-import { Gift, UserPlus, FileText, DollarSign } from 'lucide-react';
+import { Gift, UserPlus, FileText, DollarSign, Sparkles } from 'lucide-react';
 import { SiGoogle } from 'react-icons/si';
 import { Separator } from '@/components/ui/separator';
 
 export default function Landing() {
   const { user, loading: authLoading, signIn } = useAuth();
   const [, setLocation] = useLocation();
+  const [showSplash, setShowSplash] = useState(false);
 
   const { data: profiles, isLoading: profilesLoading } = useQuery<Profile[]>({
     queryKey: ['/api/profiles'],
@@ -37,7 +39,7 @@ export default function Landing() {
   if (!user) {
     return (
       <div className="h-screen flex flex-col">
-        <WelcomeDialog />
+        <WelcomeDialog externalOpen={showSplash} onExternalClose={() => setShowSplash(false)} />
         
         <header className="h-16 border-b flex items-center justify-between px-6">
           <div className="flex items-center gap-2">
@@ -89,6 +91,16 @@ export default function Landing() {
             <DollarSign className="h-4 w-4 mr-2" />
             Pricing
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSplash(true)}
+            data-testid="button-splash"
+            className="hover-elevate"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Splash
+          </Button>
         </footer>
       </div>
     );
@@ -96,7 +108,7 @@ export default function Landing() {
 
   return (
     <div className="h-screen flex flex-col">
-      <WelcomeDialog />
+      <WelcomeDialog externalOpen={showSplash} onExternalClose={() => setShowSplash(false)} />
       
       <header className="h-16 border-b flex items-center justify-between px-6">
         <div className="flex items-center gap-2">
@@ -207,6 +219,16 @@ export default function Landing() {
         >
           <FileText className="h-4 w-4 mr-2" />
           About
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowSplash(true)}
+          data-testid="button-splash"
+          className="hover-elevate"
+        >
+          <Sparkles className="h-4 w-4 mr-2" />
+          Splash
         </Button>
       </footer>
     </div>
