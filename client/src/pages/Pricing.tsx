@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Check, Sparkles, ListPlus, ArrowLeft } from 'lucide-react';
+import { Gift, Check, Sparkles, ListPlus, ArrowLeft, Eye } from 'lucide-react';
+import { PreviewQuestionnaireModal } from '@/components/PreviewQuestionnaireModal';
 
 export default function Pricing() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const [showPreview, setShowPreview] = useState(false);
 
   const handleGetStarted = () => {
     if (user) {
@@ -19,6 +22,7 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <PreviewQuestionnaireModal open={showPreview} onClose={() => setShowPreview(false)} />
       {/* Top Navigation */}
       <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-10 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -94,14 +98,25 @@ export default function Pricing() {
                   </div>
                 </div>
 
-                <Button
-                  onClick={() => setLocation('/')}
-                  variant="outline"
-                  className="w-full hover-elevate active-elevate-2"
-                  data-testid="button-free-account"
-                >
-                  Create Free Account
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => setShowPreview(true)}
+                    variant="outline"
+                    className="w-full hover-elevate active-elevate-2"
+                    data-testid="preview-questionnaire-btn"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Preview Questionnaire
+                  </Button>
+                  <Button
+                    onClick={() => setLocation('/')}
+                    variant="ghost"
+                    className="w-full hover-elevate active-elevate-2"
+                    data-testid="button-free-account"
+                  >
+                    Create Free Account
+                  </Button>
+                </div>
               </div>
             </Card>
 
