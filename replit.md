@@ -17,7 +17,12 @@ Gift Spark helps users discover the perfect gift for anyone in their life. Users
   - Each AI generation costs 500 tokens
 - **Stripe Payments**: Secure checkout with webhook signature verification
 - **UI/UX**: Material Design 3 with gradient styling, responsive design, dark mode
-- **Welcome Dialog**: Closeable splash explaining app features
+- **Welcome Dialog**: Closeable splash explaining app features with X close button and reopenable "Splash" footer button
+- **Legal Pages**: Privacy Policy and Terms & Conditions pages with app store compliance
+  - Third-party services disclosure (Google, OpenAI, payment processors)
+  - Data retention policies
+  - Contact information (support@xzalted.com)
+  - Accessible footer links on all pages
 - **Navigation**: Consistent "Back to Home" buttons across pages
 
 ### 🚧 In Progress
@@ -99,7 +104,11 @@ Before going live:
 - **Elevation**: hover-elevate/active-elevate-2 utilities
 - **Dark mode**: Full support across all pages
 
-## Recent Changes
+## Recent Changes (October 15, 2025)
+- Created Privacy Policy (/privacy) and Terms & Conditions (/terms) pages for app store compliance
+- Added third-party services disclosure and data retention policies
+- Integrated legal page links in footer across all screens
+- Enhanced welcome splash with X close button and "Splash" footer button for reopening
 - Rebranded from "Xzalted" to "Gift Spark"
 - Updated welcome splash with gradient design and simplified messaging
 - Redesigned Pricing and About pages with consistent navigation
