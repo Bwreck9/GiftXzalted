@@ -1,14 +1,13 @@
-import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { ProfileCard } from '@/components/ProfileCard';
-import { NewProfileCard } from '@/components/NewProfileCard';
+import { WelcomeDialog } from '@/components/WelcomeDialog';
 import type { Profile } from '@shared/schema';
-import { Gift, Settings, DollarSign, FileText, ListPlus, Sparkles } from 'lucide-react';
+import { Gift, UserPlus, FileText, DollarSign } from 'lucide-react';
 import { SiGoogle } from 'react-icons/si';
+import { Separator } from '@/components/ui/separator';
 
 export default function Landing() {
   const { user, loading: authLoading, signIn } = useAuth();
@@ -38,10 +37,12 @@ export default function Landing() {
   if (!user) {
     return (
       <div className="h-screen flex flex-col">
+        <WelcomeDialog />
+        
         <header className="h-16 border-b flex items-center justify-between px-6">
           <div className="flex items-center gap-2">
             <Gift className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">Gift Finder</span>
+            <span className="text-xl font-bold">Xzalted</span>
           </div>
           <ThemeToggle />
         </header>
@@ -51,7 +52,7 @@ export default function Landing() {
             <div className="space-y-4">
               <h1 className="text-4xl font-bold text-foreground">Find the Perfect Gift</h1>
               <p className="text-lg text-muted-foreground">
-                AI-powered recommendations based on personality, interests, and occasion
+                Create profiles and get thoughtful gift suggestions that actually fit the person you're shopping for
               </p>
             </div>
 
@@ -95,70 +96,82 @@ export default function Landing() {
 
   return (
     <div className="h-screen flex flex-col">
+      <WelcomeDialog />
+      
       <header className="h-16 border-b flex items-center justify-between px-6">
         <div className="flex items-center gap-2">
           <Gift className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">Gift Finder</span>
+          <span className="text-xl font-bold">Xzalted</span>
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-6">
-        <div className="max-w-6xl mx-auto space-y-12">
+      <main className="flex-1 overflow-auto">
+        <div className="max-w-2xl mx-auto p-6 space-y-6">
           
-          {/* Free Gift Lists Section */}
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
-                  <ListPlus className="h-6 w-6 text-primary" />
-                  My Gift Lists
-                </h2>
-                <p className="text-muted-foreground">
-                  Keep track of gift ideas - completely free!
-                </p>
-              </div>
-              <Button
-                onClick={() => setLocation('/gift-lists')}
-                variant="outline"
-                data-testid="button-view-gift-lists"
-              >
-                View All Lists
-              </Button>
-            </div>
+          {/* New Profile Button */}
+          <div className="flex justify-center">
+            <Button
+              onClick={() => setLocation('/profile/new')}
+              size="lg"
+              className="w-full max-w-sm h-12 hover-elevate active-elevate-2"
+              data-testid="button-new-profile"
+            >
+              <UserPlus className="mr-2 h-5 w-5" />
+              New Profile
+            </Button>
           </div>
 
-          {/* AI Profiles Section */}
-          <div>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-primary" />
-                AI Gift Recommendations
-              </h2>
-              <p className="text-muted-foreground">
-                Get personalized recommendations using AI
-              </p>
-            </div>
+          {/* Separator */}
+          <div className="flex items-center gap-4 py-4">
+            <Separator className="flex-1" />
+          </div>
+
+          {/* Profiles Section */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-foreground">
+              Profiles
+            </h2>
 
             {profilesLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-3">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="h-48 bg-card animate-pulse rounded-xl" />
+                  <div key={i} className="h-16 bg-card animate-pulse rounded-lg" />
+                ))}
+              </div>
+            ) : profiles && profiles.length > 0 ? (
+              <div className="space-y-3">
+                {profiles.map(profile => (
+                  <button
+                    key={profile.id}
+                    onClick={() => setLocation(`/profile/${profile.id}`)}
+                    className="w-full text-left p-4 rounded-lg border bg-card hover-elevate active-elevate-2"
+                    data-testid={`button-profile-${profile.id}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-foreground">{profile.name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {profile.age && `Age ${profile.age}`}
+                          {profile.age && profile.relationship && ' • '}
+                          {profile.relationship}
+                        </p>
+                      </div>
+                      <div className="text-muted-foreground">
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <NewProfileCard onClick={() => setLocation('/profile/new')} />
-                {profiles?.map(profile => (
-                  <ProfileCard
-                    key={profile.id}
-                    profile={profile}
-                    onClick={() => setLocation(`/chat/${profile.id}`)}
-                  />
-                ))}
-              </div>
+              <p className="text-muted-foreground text-center py-8">
+                &lt;No profiles&gt;
+              </p>
             )}
           </div>
         </div>
@@ -168,12 +181,12 @@ export default function Landing() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation('/settings')}
-          data-testid="link-settings"
+          onClick={() => setLocation('/gift-lists')}
+          data-testid="link-gift-lists"
           className="hover-elevate"
         >
-          <Settings className="h-4 w-4 mr-2" />
-          Settings
+          <Gift className="h-4 w-4 mr-2" />
+          Gift Lists
         </Button>
         <Button
           variant="ghost"

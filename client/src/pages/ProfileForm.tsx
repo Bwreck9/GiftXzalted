@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { insertProfileSchema, type InsertProfile, type Profile } from '@shared/schema';
+import { insertProfileSchema, type InsertProfile, type Profile, type User } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -15,12 +15,16 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Gift } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Gift, Sparkles, Coins } from 'lucide-react';
 import { z } from 'zod';
 
 const formSchema = insertProfileSchema.extend({
   userId: z.string().optional(),
 });
+
+const MAX_FREE_PROFILES = 5;
+const TOKENS_PER_GENERATION = 500;
 
 export default function ProfileForm() {
   const { id } = useParams();
@@ -29,10 +33,20 @@ export default function ProfileForm() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const { data: profile } = useQuery<Profile>({
     queryKey: ['/api/profiles', id],
     enabled: isEdit,
+  });
+
+  const { data: profiles } = useQuery<Profile[]>({
+    queryKey: ['/api/profiles'],
+    enabled: !isEdit,
+  });
+
+  const { data: userData } = useQuery<User>({
+    queryKey: ['/api/user'],
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -43,7 +57,7 @@ export default function ProfileForm() {
       age: profile.age,
       event: profile.event as any,
       gender: profile.gender,
-      relationship: profile.relationship || '',
+      relationship: profile.relationship ?? '',
       personality: profile.personality,
       interests: profile.interests,
     } : {
@@ -59,17 +73,21 @@ export default function ProfileForm() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: InsertProfile) => {
-      const res = await apiRequest('POST', '/api/profiles', data);
+    mutationFn: async ({ data, generateResponse }: { data: InsertProfile; generateResponse: boolean }) => {
+      const res = await apiRequest('POST', '/api/profiles', { ...data, generateResponse });
       return res.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
-      toast({ title: 'Profile created!', description: 'Your gift recipient profile has been saved.' });
-      setLocation(`/chat/${data.id}`);
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      toast({ 
+        title: isGenerating ? 'Profile created with AI response!' : 'Profile created!', 
+        description: isGenerating ? 'Your AI-powered gift recommendations are ready.' : 'Your profile has been saved.' 
+      });
+      setLocation(`/profile/${data.id}`);
     },
-    onError: () => {
-      toast({ title: 'Error', description: 'Failed to create profile', variant: 'destructive' });
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to create profile', variant: 'destructive' });
     },
   });
 
@@ -88,21 +106,50 @@ export default function ProfileForm() {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    const profileData: InsertProfile = {
-      ...data,
-      userId: user!.uid,
-    };
-    
-    if (isEdit) {
-      updateMutation.mutate(profileData);
-    } else {
-      createMutation.mutate(profileData);
-    }
+  const handleSubmit = (generateResponse: boolean) => {
+    return form.handleSubmit((data: z.infer<typeof formSchema>) => {
+      const profileData: InsertProfile = {
+        ...data,
+        userId: user!.uid,
+      };
+      
+      if (isEdit) {
+        updateMutation.mutate(profileData);
+      } else {
+        // Check profile limit for free users
+        const profileCount = profiles?.length || 0;
+        if (profileCount >= MAX_FREE_PROFILES) {
+          toast({ 
+            title: 'Profile limit reached', 
+            description: `You've reached the maximum of ${MAX_FREE_PROFILES} free profiles.`, 
+            variant: 'destructive' 
+          });
+          return;
+        }
+
+        // Check token balance for premium generation
+        if (generateResponse && (!userData || userData.tokens < TOKENS_PER_GENERATION)) {
+          toast({ 
+            title: 'Insufficient tokens', 
+            description: `You need ${TOKENS_PER_GENERATION} tokens to generate AI recommendations.`, 
+            variant: 'destructive' 
+          });
+          setLocation('/pricing');
+          return;
+        }
+
+        setIsGenerating(generateResponse);
+        createMutation.mutate({ data: profileData, generateResponse });
+      }
+    });
   };
 
   const shoppingFor = form.watch('shoppingFor');
   const age = form.watch('age');
+
+  const profileCount = profiles?.length || 0;
+  const hasEnoughTokens = userData && userData.tokens >= TOKENS_PER_GENERATION;
+  const canCreateProfile = !isEdit && profileCount < MAX_FREE_PROFILES;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -122,13 +169,32 @@ export default function ProfileForm() {
             {isEdit ? 'Edit Profile' : 'New Profile'}
           </h1>
         </div>
-        <div className="w-10" />
+        {!isEdit && userData && (
+          <Badge variant="secondary" className="gap-1">
+            <Coins className="h-3 w-3" />
+            {userData.tokens}
+          </Badge>
+        )}
+        {isEdit && <div className="w-10" />}
       </header>
 
-      <main className="flex-1 overflow-auto p-4 pb-24">
+      {!isEdit && (
+        <div className="border-b bg-muted/50 px-4 py-3">
+          <div className="max-w-lg mx-auto flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              Free profiles: {profileCount} / {MAX_FREE_PROFILES}
+            </span>
+            {profileCount >= MAX_FREE_PROFILES && (
+              <span className="text-destructive font-medium">Limit reached</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <main className="flex-1 overflow-auto p-4 pb-32">
         <div className="max-w-lg mx-auto">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form className="space-y-6">
               <FormField
                 control={form.control}
                 name="name"
@@ -273,7 +339,7 @@ export default function ProfileForm() {
                   <FormItem>
                     <FormLabel>Personality</FormLabel>
                     <FormDescription className="text-xs">
-                      The more detail you provide, the better the recommendations
+                      The more detail you provide, the better the AI recommendations
                     </FormDescription>
                     <FormControl>
                       <Textarea
@@ -315,22 +381,74 @@ export default function ProfileForm() {
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
-        <div className="max-w-lg mx-auto">
-          <Button
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={createMutation.isPending || updateMutation.isPending}
-            className="w-full h-12 text-base hover-elevate active-elevate-2"
-            data-testid="button-submit-profile"
-          >
-            {createMutation.isPending || updateMutation.isPending ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
-                Saving...
-              </div>
-            ) : (
-              isEdit ? 'Save Changes' : 'Create Profile'
-            )}
-          </Button>
+        <div className="max-w-lg mx-auto space-y-3">
+          {isEdit ? (
+            <Button
+              onClick={handleSubmit(false)}
+              disabled={updateMutation.isPending}
+              className="w-full h-12 text-base hover-elevate active-elevate-2"
+              data-testid="button-save-profile"
+            >
+              {updateMutation.isPending ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
+                  Saving...
+                </div>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          ) : (
+            <>
+              <Button
+                onClick={handleSubmit(false)}
+                disabled={createMutation.isPending || !canCreateProfile}
+                variant="outline"
+                className="w-full h-12 text-base hover-elevate active-elevate-2"
+                data-testid="button-create-profile"
+              >
+                {createMutation.isPending && !isGenerating ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-foreground border-t-transparent rounded-full" />
+                    Creating...
+                  </div>
+                ) : (
+                  'Create Profile (Free)'
+                )}
+              </Button>
+              
+              <Button
+                onClick={handleSubmit(true)}
+                disabled={createMutation.isPending || !canCreateProfile || !hasEnoughTokens}
+                className="w-full h-12 text-base hover-elevate active-elevate-2"
+                data-testid="button-create-with-ai"
+              >
+                {createMutation.isPending && isGenerating ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
+                    Generating AI Response...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Create + Generate Response ({TOKENS_PER_GENERATION} tokens)
+                  </div>
+                )}
+              </Button>
+
+              {!hasEnoughTokens && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Need more tokens?{' '}
+                  <button
+                    onClick={() => setLocation('/pricing')}
+                    className="text-primary underline"
+                  >
+                    View Pricing
+                  </button>
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

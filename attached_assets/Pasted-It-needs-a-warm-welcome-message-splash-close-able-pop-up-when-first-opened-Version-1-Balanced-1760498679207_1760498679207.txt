@@ -1,0 +1,39 @@
+It needs a warm welcome message splash/close-able pop-up when first opened.
+🌟 Version 1 – Balanced & Emotional (Recommended)
+
+Welcome to the Xzalted Experience.
+Finding the perfect gift shouldn’t feel impossible.
+Create a profile to build wishlists (free)— or try our premium questionnaire for instant, thoughtful suggestions that actually fit the person you’re shopping for.
+
+It’s fast, genuine, and surprisingly inspiring.
+✨ Check back often — new updates and features are always on the way.
+
+
+
+
+On the landing page.  I don't want to mention AI-powered.  I want to see a button "New Profile" that will open up the questionnaire.  Below the "Sign in with Google", I want a line across the screen as a separator (maybe not the whole screen).  Have the title say Profiles section.  I want a list of the profiles that the customer has created.  (If they have no profiles then display "<No profiles>" below the section title.
+
+We need to retract a little away from external shopping (but we will be there shortly so just disable the code or comment it out, don't delete it maybe?  Phase 3 will be using external shopping APIs like Amazon.  Phase 1 needs to be only execute against the LLM.  The power of the app is its memory of the customer's profile, and how effective it is in creating and storing a simple "profile based prompt" to give to the llm.  Give the app the ability to remember the customer's questionnaire profile and update it by re-submitting checkboxes, no text box for now - worried about injection attack.
+
+
+
+Phase 1 - MVP.
+Successful questionnaire submission and its response stored as a detailed prompt for LLM.  Response from LLM will be in list format.
+
+So what I'm thinking is the ability to click the profile and to allow the customer to manually add text if they choose without using the AI.  (Login required).  Allow up to 5 profiles for free.  They can save some text basically, for themselves, they do nothing except display.  Notepad functionality.
+
+Create 
+Questionnaire form, there needs to be two submission buttons.
+Create profile + autogen response (premium)
+
+On profile's page add a button that displays "Generate response" (Indicate that its a premium service and disallow it to be clicked unless they have purchased tokens.  5000 tokens for $5.  Subscription will be offered, but the tokens don't stack month to month.  Baseline token offerings.  $5/month for 10,000 tokens   $20/month for 50,000 tokens.
+
+The LLM goal is to interpret the customer profile and return product ideas with a reason why, based on what information found in the profile.
+
+Once the response has been returned, the profile page will have two sections.  The top/manual entry and the bottom "premium response" aka the auto-gen response.  Make both sections expandable/collapseable.  I want to display the premium response in list/description format. The content may be scrollable here.  
+
+So the behavior is that the generate response button will require like 500 tokens to be clicked.  So the profile will need a way to keep up with and subtract tokens with each use.  
+
+
+
+(This is where it will break into Phase 2 concepts that we discussed earlier.  The external shopping API.  I still want to do it, but I want to ship phase 1 without this part, I still need time to think on it.

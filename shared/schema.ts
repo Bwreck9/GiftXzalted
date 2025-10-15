@@ -10,7 +10,12 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   displayName: text("display_name"),
   photoURL: text("photo_url"),
-  credits: integer("credits").notNull().default(0), // Query credits
+  tokens: integer("tokens").notNull().default(0), // AI generation tokens
+  subscriptionTier: text("subscription_tier"), // null (none), 'basic' ($5/month for 10k tokens), 'premium' ($20/month for 50k tokens)
+  subscriptionStatus: text("subscription_status"), // 'active', 'canceled', 'past_due', null
+  tokensResetDate: timestamp("tokens_reset_date"), // When subscription tokens reset
+  stripeCustomerId: text("stripe_customer_id").unique(), // For subscription management
+  stripeSubscriptionId: text("stripe_subscription_id").unique(), // Current subscription ID
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -26,6 +31,8 @@ export const profiles = pgTable("profiles", {
   relationship: text("relationship"), // Only if shoppingFor is 'another'
   personality: text("personality").notNull(),
   interests: text("interests").notNull(),
+  aiResponse: text("ai_response"), // Premium AI-generated gift suggestions (nullable - only if generated)
+  manualNotes: text("manual_notes"), // User's manual notes/text entry
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -44,8 +51,10 @@ export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   amount: integer("amount").notNull(), // In cents
-  credits: integer("credits").notNull(), // Credits purchased
-  stripePaymentIntentId: text("stripe_payment_intent_id").notNull().unique(),
+  tokens: integer("tokens").notNull(), // Tokens purchased
+  type: text("type").notNull(), // 'one-time', 'subscription'
+  stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique(),
   status: text("status").notNull(), // 'pending', 'completed', 'failed'
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -116,12 +125,19 @@ export const giftItemsRelations = relations(giftItems, ({ one }) => ({
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
-  credits: true,
+  tokens: true,
+  subscriptionTier: true,
+  subscriptionStatus: true,
+  tokensResetDate: true,
+  stripeCustomerId: true,
+  stripeSubscriptionId: true,
   createdAt: true,
 });
 
 export const insertProfileSchema = createInsertSchema(profiles).omit({
   id: true,
+  aiResponse: true,
+  manualNotes: true,
   createdAt: true,
   updatedAt: true,
 }).extend({

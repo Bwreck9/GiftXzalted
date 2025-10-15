@@ -32,19 +32,18 @@ export default function About() {
                 <Gift className="h-12 w-12 text-primary" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold">Gift Finder</h1>
+            <h1 className="text-3xl font-bold">Xzalted</h1>
             <p className="text-muted-foreground">
-              AI-powered gift recommendations made simple
+              Personalized gift recommendations made simple
             </p>
           </div>
 
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-3">What is Gift Finder?</h2>
+            <h2 className="text-xl font-semibold mb-3">What is Xzalted?</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Gift Finder helps you discover the perfect gift for anyone in your life. 
+              Xzalted helps you discover the perfect gift for anyone in your life. 
               Create profiles for friends and family, answer a few questions about their 
-              personality and interests, and let our AI suggest thoughtful, personalized 
-              gift ideas.
+              personality and interests, and get thoughtful, personalized gift recommendations.
             </p>
           </Card>
 
@@ -84,7 +83,7 @@ export default function About() {
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">3. Get Recommendations</h3>
                   <p className="text-sm text-muted-foreground">
-                    Receive personalized gift ideas with Amazon links to make purchasing easy.
+                    Receive personalized gift ideas tailored to the recipient's profile.
                   </p>
                 </div>
               </div>

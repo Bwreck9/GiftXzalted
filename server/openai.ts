@@ -14,7 +14,7 @@ export async function getGiftRecommendations(
     age: number;
     event: string;
     gender: string;
-    relationship?: string;
+    relationship?: string | null;
     personality: string;
     interests: string;
     shoppingFor: string;
@@ -38,11 +38,11 @@ ${profileData.relationship ? `- Relationship: ${profileData.relationship}` : ''}
 Instructions:
 1. Provide thoughtful, personalized gift recommendations based on the profile
 2. Consider the person's age, interests, personality, and the occasion
-3. Suggest specific, practical gift ideas
-4. Include Amazon affiliate links when appropriate (the user will add their own affiliate tag)
-5. Format links clearly so they can be easily identified
-6. Be conversational and helpful
-7. Ask follow-up questions to refine recommendations if needed`;
+3. Suggest specific, practical gift ideas with reasoning based on the profile
+4. Be conversational and helpful
+5. Ask follow-up questions to refine recommendations if needed
+
+IMPORTANT: Focus on gift ideas and descriptions. Do NOT include product links or URLs.`;
 
     const messages = [
       { role: 'system' as const, content: systemPrompt },
