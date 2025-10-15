@@ -115,6 +115,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If AI generation requested, check tokens and generate response
       let aiResponse: string | undefined = undefined;
       if (generateResponse === true) {
+        // Verify all required fields for AI generation
+        if (!validated.age || !validated.gender || !validated.interests || !validated.personality || !validated.event || !validated.shoppingFor) {
+          return res.status(400).json({ error: "Missing required questionnaire fields for AI generation" });
+        }
+
         const user = await storage.getUser(userId);
         
         if (!user) {
@@ -131,7 +136,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Generate AI response
         try {
           aiResponse = await getGiftRecommendations(
-            validated,
+            {
+              name: validated.name,
+              age: validated.age,
+              event: validated.event,
+              gender: validated.gender,
+              relationship: validated.relationship || null,
+              personality: validated.personality,
+              interests: validated.interests,
+              shoppingFor: validated.shoppingFor,
+            } as any,
             `Generate thoughtful gift recommendations for ${validated.name} based on their profile.`,
             []
           );
@@ -229,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         manualIdeas: [],
         premiumResults: null,
         aiResponse: null, // Also clear legacy field
-      });
+      } as any);
       
       res.json(updated);
     } catch (error: any) {
@@ -313,6 +327,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           content: m.content,
         }));
 
+      // Verify profile has questionnaire data
+      if (!profile.age || !profile.gender || !profile.interests || !profile.personality || !profile.event || !profile.shoppingFor) {
+        return res.status(400).json({ error: "Profile questionnaire not completed. Please fill out the profile details first." });
+      }
+
       // Get AI response
       const aiResponse = await getGiftRecommendations(
         {
@@ -324,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           personality: profile.personality,
           interests: profile.interests,
           shoppingFor: profile.shoppingFor,
-        },
+        } as any,
         content,
         conversationHistory
       );

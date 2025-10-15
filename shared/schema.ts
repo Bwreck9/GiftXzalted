@@ -19,19 +19,19 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Gift recipient profiles
+// Gift recipient profiles (gift lists)
 export const profiles = pgTable("profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   color: text("color").notNull().default('#3B82F6'), // Profile card color (hex or preset key)
-  shoppingFor: text("shopping_for").notNull(), // 'self' or 'another'
-  age: integer("age").notNull(),
-  event: text("event").notNull(), // Birthday, Anniversary, Christmas, Valentine's Day, Other
-  gender: text("gender").notNull(),
+  shoppingFor: text("shopping_for"), // 'self' or 'another' - optional until questionnaire filled
+  age: integer("age"), // Optional until questionnaire filled
+  event: text("event"), // Birthday, Anniversary, Christmas, Valentine's Day, Other - optional
+  gender: text("gender"), // Optional until questionnaire filled
   relationship: text("relationship"), // Only if shoppingFor is 'another'
-  personality: text("personality").notNull(),
-  interests: text("interests").notNull(),
+  personality: text("personality"), // Optional until questionnaire filled
+  interests: text("interests"), // Optional until questionnaire filled
   manualIdeas: text("manual_ideas").array().notNull().default(sql`ARRAY[]::text[]`), // Free manual notes/ideas as array
   premiumResults: text("premium_results"), // JSON string of premium AI results: Array<{id, title, reason, createdAt}>
   aiResponse: text("ai_response"), // Legacy field - keeping for backward compatibility
@@ -147,11 +147,13 @@ export const insertProfileSchema = createInsertSchema(profiles).omit({
   updatedAt: true,
 }).extend({
   color: z.string().optional(), // Hex color or preset key
-  age: z.number().min(1).max(120),
-  shoppingFor: z.enum(['self', 'another']),
-  event: z.enum(['Birthday', 'Anniversary', 'Christmas', "Valentine's Day", 'Other']),
-  personality: z.string().min(1).max(1000),
-  interests: z.string().min(1).max(1000),
+  age: z.number().min(1).max(120).optional(), // Optional until questionnaire filled
+  shoppingFor: z.enum(['self', 'another']).optional(), // Optional until questionnaire filled
+  event: z.enum(['Birthday', 'Anniversary', 'Christmas', "Valentine's Day", 'Other']).optional(), // Optional until questionnaire filled
+  gender: z.string().optional(), // Optional until questionnaire filled
+  relationship: z.string().optional(), // Optional until questionnaire filled
+  personality: z.string().min(1).max(1000).optional(), // Optional until questionnaire filled
+  interests: z.string().min(1).max(1000).optional(), // Optional until questionnaire filled
 });
 
 // Premium result type for storing in premiumResults JSON
