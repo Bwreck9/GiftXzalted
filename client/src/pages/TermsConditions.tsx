@@ -21,6 +21,7 @@ export default function TermsConditions() {
             onClick={() => setLocation('/')}
             className="flex items-center gap-2 group"
             aria-label="Gift Spark Home"
+            data-testid="button-home-logo"
           >
             <div className="bg-gradient-to-br from-primary via-purple-500 to-pink-500 p-2 rounded-lg">
               <Gift className="h-5 w-5 text-white" />
@@ -89,12 +90,21 @@ export default function TermsConditions() {
                   <li>• Tokens are digital credits used for generating personalized gift suggestions.</li>
                   <li>• Subscription tokens reset monthly and may include bonus tokens.</li>
                   <li>• You can also purchase additional tokens anytime through "Premium Tokens."</li>
-                  <li>• All payments are handled securely through the App Store or Google Play.</li>
+                  <li>• All payments are handled securely through trusted payment processors.</li>
                 </ul>
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold mb-3">4. Refunds</h2>
+                <h2 className="text-xl font-semibold mb-3">4. Third-Party Services</h2>
+                <p className="text-muted-foreground">
+                  Gift Spark integrates with third-party services including Google (for authentication), 
+                  payment processors (for transactions), and OpenAI (for AI-powered recommendations). 
+                  Your use of these services is subject to their respective terms and policies.
+                </p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-3">5. Refunds</h2>
                 <ul className="space-y-2 text-muted-foreground ml-4">
                   <li>• Refunds for in-app purchases follow Apple or Google's refund policies.</li>
                   <li>• Gift Spark does not process refunds directly.</li>
@@ -102,7 +112,7 @@ export default function TermsConditions() {
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold mb-3">5. Acceptable Use</h2>
+                <h2 className="text-xl font-semibold mb-3">6. Acceptable Use</h2>
                 <ul className="space-y-2 text-muted-foreground ml-4">
                   <li>• Please use Gift Spark responsibly.</li>
                   <li>• Do not upload or share inappropriate or offensive content.</li>
@@ -110,7 +120,7 @@ export default function TermsConditions() {
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold mb-3">6. Intellectual Property</h2>
+                <h2 className="text-xl font-semibold mb-3">7. Intellectual Property</h2>
                 <ul className="space-y-2 text-muted-foreground ml-4">
                   <li>• All branding, design, and content in Gift Spark are owned by its creators.</li>
                   <li>• You may not copy or redistribute materials from the app without permission.</li>
@@ -118,7 +128,7 @@ export default function TermsConditions() {
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold mb-3">7. Disclaimer</h2>
+                <h2 className="text-xl font-semibold mb-3">8. Disclaimer</h2>
                 <ul className="space-y-2 text-muted-foreground ml-4">
                   <li>• Gift suggestions are provided for inspiration and convenience only.</li>
                   <li>• We make no guarantees of satisfaction or suitability of any recommended item.</li>
@@ -126,7 +136,7 @@ export default function TermsConditions() {
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold mb-3">8. Support</h2>
+                <h2 className="text-xl font-semibold mb-3">9. Support</h2>
                 <p className="text-muted-foreground">
                   For questions, technical issues, or data requests, contact: <a href="mailto:support@xzalted.com" className="text-primary hover:underline">support@xzalted.com</a>
                 </p>
@@ -147,6 +157,7 @@ export default function TermsConditions() {
               size="lg"
               className="hover-elevate active-elevate-2"
               aria-label="Back to Home"
+              data-testid="button-back-bottom"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
