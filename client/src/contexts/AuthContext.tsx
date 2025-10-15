@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from 'firebase/auth';
-import { onAuthChange, signInWithGoogle as firebaseSignIn, signOut as firebaseSignOut } from '@/lib/firebase';
+import { onAuthChange, signInWithGoogle as firebaseSignIn, signOut as firebaseSignOut, handleRedirectResult } from '@/lib/firebase';
 import { apiRequest } from '@/lib/queryClient';
 
 interface AuthContextType {
@@ -17,6 +17,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for redirect result first (for mobile sign-in)
+    const checkRedirect = async () => {
+      try {
+        await handleRedirectResult();
+      } catch (error) {
+        console.error('Error handling redirect:', error);
+      }
+    };
+    checkRedirect();
+
     const unsubscribe = onAuthChange(async (firebaseUser) => {
       setUser(firebaseUser);
       
