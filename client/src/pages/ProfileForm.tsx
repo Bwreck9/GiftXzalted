@@ -322,6 +322,7 @@ export default function ProfileForm() {
                         <Input
                           placeholder="e.g., Mother, Best Friend, Colleague"
                           {...field}
+                          value={field.value || ''}
                           data-testid="input-relationship"
                           className="h-12"
                         />

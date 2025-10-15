@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Gift, Sparkles, ListPlus } from 'lucide-react';
 
 const WELCOME_DIALOG_KEY = 'xzalted-welcome-shown';
 
@@ -27,31 +28,63 @@ export function WelcomeDialog() {
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent className="sm:max-w-[500px]" data-testid="dialog-welcome">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">
+      <DialogContent className="sm:max-w-[540px] overflow-hidden" data-testid="dialog-welcome">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-purple-500/5 to-pink-500/10 -z-10" />
+        
+        <DialogHeader className="space-y-4">
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-500 to-pink-500 rounded-full blur-xl opacity-30 animate-pulse" />
+              <div className="relative bg-gradient-to-br from-primary via-purple-500 to-pink-500 p-4 rounded-full">
+                <Gift className="h-10 w-10 text-white" />
+              </div>
+            </div>
+          </div>
+          
+          <DialogTitle className="text-3xl text-center bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
             Welcome to the Xzalted Experience.
           </DialogTitle>
-          <DialogDescription className="space-y-4 pt-4 text-base leading-relaxed">
-            <p>
+          
+          <DialogDescription className="space-y-4 pt-2 text-base leading-relaxed">
+            <p className="text-foreground">
               Finding the perfect gift shouldn't feel impossible.
             </p>
-            <p>
-              Create a profile to build wishlists (free)— or try our premium questionnaire for instant, thoughtful suggestions that actually fit the person you're shopping for.
+            
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-purple-500/5 border border-primary/10">
+                <ListPlus className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground">Build giftlists (free)</p>
+                  <p className="text-sm text-muted-foreground">Keep track of gift ideas</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-500/5 to-pink-500/5 border border-purple-500/10">
+                <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground">Try our premium questionnaire</p>
+                  <p className="text-sm text-muted-foreground">Get instant, thoughtful suggestions</p>
+                </div>
+              </div>
+            </div>
+            
+            <p className="font-medium text-center text-foreground pt-2">
+              It's fast, and surprisingly simple.
             </p>
-            <p className="font-medium">
-              It's fast, genuine, and surprisingly inspiring.
-            </p>
-            <p className="text-sm italic">
+            
+            <p className="text-sm italic text-center text-muted-foreground">
               ✨ Check back often — new updates and features are always on the way.
             </p>
           </DialogDescription>
         </DialogHeader>
-        <div className="flex justify-end pt-4">
+        
+        <div className="flex justify-center pt-4">
           <Button 
             onClick={handleClose}
             data-testid="button-welcome-close"
-            className="hover-elevate active-elevate-2"
+            className="bg-gradient-to-r from-primary via-purple-600 to-pink-600 hover:opacity-90 transition-opacity text-white border-0 shadow-lg hover-elevate active-elevate-2"
+            size="lg"
           >
             Get Started
           </Button>
