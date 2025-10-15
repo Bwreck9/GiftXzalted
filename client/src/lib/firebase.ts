@@ -29,23 +29,25 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// Detect if on mobile device
-const isMobile = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-};
-
 export const signInWithGoogle = async () => {
   try {
-    // Use redirect for mobile devices (fixes Safari issues), popup for desktop
-    if (isMobile()) {
+    console.log("🔐 Starting Google sign-in...");
+    
+    // Always try popup first (works better with authorized domains)
+    const result = await signInWithPopup(auth, googleProvider);
+    console.log("✅ Sign-in successful:", result.user?.email);
+    return result.user;
+  } catch (error: any) {
+    console.error("❌ Sign-in error:", error);
+    console.error("Error code:", error?.code);
+    
+    // If popup is blocked or fails, fallback to redirect
+    if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+      console.log("🔄 Popup blocked, trying redirect...");
       await signInWithRedirect(auth, googleProvider);
-      return null; // Redirect will reload the page, so no user returned here
-    } else {
-      const result = await signInWithPopup(auth, googleProvider);
-      return result.user;
+      return null;
     }
-  } catch (error) {
-    console.error("Error signing in with Google:", error);
+    
     throw error;
   }
 };
