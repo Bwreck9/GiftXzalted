@@ -1,0 +1,87 @@
+You are updating the "Gift Spark" Pricing and Free Plan experience.
+
+GOAL
+When a free user clicks **Preview Questionnaire** on the Free plan card,
+show a pop-up modal that looks exactly like the questionnaire form but:
+- None of the fields are selectable or editable.
+- The Submit button is disabled.
+- A semi-transparent overlay and "Tokens Required" banner clearly communicate that this feature is locked.
+
+--------------------------------------------
+USER FLOW
+--------------------------------------------
+1. On the Pricing page:
+   - The Free plan card includes a link or button labeled:
+     **Preview Questionnaire**
+     (data-testid="preview-questionnaire-btn")
+   - Clicking opens a modal overlay centered on the page.
+
+2. The modal shows a *static preview* of the premium questionnaire form:
+   - Fields are displayed exactly as they appear in the real form (labels, placeholders, etc.).
+   - All inputs are disabled (readonly) with CSS and/or HTML attributes.
+   - Buttons (like Submit) are visible but dimmed or greyed out.
+
+3. At the top of the modal:
+   - Banner: 
+     **🔒 Tokens Required**
+     - Style: small capsule or bar across the top, gradient background (purple → blue), white text.
+     - Subtext below: “Premium questionnaire access requires tokens. Subscribe or buy tokens to unlock.”
+
+4. Below the preview:
+   - Call-to-action buttons:
+     - **Buy Tokens** → navigate(`/pricing?highlight=buytokens`)
+     - **Subscribe** → navigate(`/pricing?highlight=subscription`)
+     - **Close** → dismiss the modal
+   - Both CTAs are bright (primary gradient buttons).
+   - “Close” is subtle/ghost style.
+
+--------------------------------------------
+DESIGN DETAILS
+--------------------------------------------
+- Modal backdrop: translucent dark overlay (rgba(0,0,0,0.4))
+- Modal width: 600–700px, max-height: 80vh, scrollable if needed.
+- Rounded corners, soft shadow.
+- Top-right close “×” icon (optional).
+- Inside modal:
+  - Title: “Premium Gift Questionnaire”
+  - Subtitle: “Preview only — unlock full access with tokens.”
+  - Small notice text under disabled fields:
+    *“Fields are disabled in preview mode.”*
+
+- Disabled field styling:
+  - Inputs: cursor: not-allowed; opacity: 0.5
+  - Checkbox/radio: disabled attribute + reduced opacity
+  - Submit button: grey background, `pointer-events: none`
+
+--------------------------------------------
+IMPLEMENTATION NOTES
+--------------------------------------------
+- Add a `PreviewQuestionnaireModal` React component.
+- Props: `open`, `onClose`
+- Import and reuse the actual `QuestionnaireForm` component but pass `readOnly=true`.
+
+Inside `QuestionnaireForm`:
+- Wrap all input fields with conditional `disabled={readOnly}`
+- Hide any “submit handler” logic when `readOnly` is true.
+
+Example snippet:
+```jsx
+<input
+  type="text"
+  value={fieldValue}
+  placeholder="Enter recipient name"
+  disabled={readOnly}
+  className={`w-full p-2 border rounded ${readOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+/>
+Add a top overlay inside the form when readOnly:
+
+jsx
+Copy code
+{readOnly && (
+  <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center">
+    <div className="text-center text-gray-700 font-medium">
+      🔒 Tokens Required<br />
+      <span className="text-sm">Subscribe or buy tokens to unlock full access.</span>
+    </div>
+  </div>
+)}
