@@ -1,30 +1,37 @@
-# Gift Finder - AI-Powered Gift Recommendation App
+# Gift Spark - AI-Powered Gift Recommendation App
 
 ## Overview
-Gift Finder helps users discover the perfect gift for anyone in their life using AI-powered recommendations. Users create detailed profiles for gift recipients, and an AI chatbot provides personalized gift suggestions based on personality, interests, and occasion.
+Gift Spark helps users discover the perfect gift for anyone in their life. Users can create free gift lists, build detailed profiles, and optionally use AI-powered recommendations to get personalized gift suggestions based on personality, interests, and occasion.
 
-## Current State (MVP Complete ✅)
+## Current State (Phase 1 MVP in Progress)
 
-### ✅ All Features Implemented
+### ✅ Completed Features
 - **Authentication**: Firebase Google OAuth with secure token verification
-- **Database**: PostgreSQL with all tables (users, profiles, messages, credits, transactions, gift_lists, gift_items)
-- **FREE Gift Lists**: Notepad-style lists with create/edit/delete/reorder items (no credit cost)
-- **PAID AI Profiles**: OpenAI GPT-5 personalized gift recommendations (1 credit per query)
-- **Credit System**: Pay-as-you-go model ($5 for 10 credits)
+- **Database**: PostgreSQL with token-based system (users, profiles, messages, tokens, transactions, gift_lists, gift_items)
+- **FREE Gift Lists**: Notepad-style lists with create/edit/delete/reorder items (no cost)
+- **Profile System**: Up to 5 free profiles, questionnaire-based with optional AI generation
+- **Token System**: 
+  - One-time purchase: $5 for 5,000 tokens (never expires)
+  - Basic subscription: $5/month for 10,000 tokens
+  - Premium subscription: $20/month for 50,000 tokens
+  - Each AI generation costs 500 tokens
 - **Stripe Payments**: Secure checkout with webhook signature verification
-- **Amazon Links**: Automatic detection and parsing of affiliate links
-- **UI/UX**: Material Design 3 with responsive design and dark mode
-- **Security**: Full authentication/authorization, input validation, fraud prevention
+- **UI/UX**: Material Design 3 with gradient styling, responsive design, dark mode
+- **Welcome Dialog**: Closeable splash explaining app features
+- **Navigation**: Consistent "Back to Home" buttons across pages
 
-### 🔧 Setup Required Before Testing
-**Firebase OAuth Domain Authorization:**
-1. Go to [Firebase Console](https://console.firebase.google.com)
-2. Select project "xzalted-623e9"
-3. Navigate to **Authentication** → **Settings** → **Authorized domains**
-4. Add this domain (no spaces!): `f66d1d8f-fe69-4c4b-93b9-4a7d101503e0-00-1js0togy15cvv.worf.replit.dev`
-5. Save changes
+### 🚧 In Progress
+- **Profile Page Redesign**: Converting from chat interface to notepad-style with:
+  - Manual notes section (top, collapsible)
+  - AI response section (bottom, collapsible)
+  - "Generate Response" button (costs 500 tokens)
+- **Stripe Product Setup**: Creating products for token packages and subscriptions
+- **Route Updates**: Changing /chat/:id to /profile/:id
 
-Once this is done, all authentication flows will work correctly.
+### 📝 Phase 3 Features (Disabled/Commented Out)
+- Amazon affiliate links (parseAmazonLinks, AmazonProductCard)
+- Amazon Product Advertising API integration
+- Link detection in AI responses
 
 ## Tech Stack
 - **Frontend**: React, TypeScript, Tailwind CSS, Shadcn UI
@@ -37,31 +44,31 @@ Once this is done, all authentication flows will work correctly.
 
 ## Key Features
 1. **Google Authentication** - Secure sign-in with Firebase
-2. **Profile Management** - Create detailed recipient profiles (age, event, personality, interests)
-3. **AI Chat** - Get personalized gift recommendations using OpenAI
-4. **Amazon Affiliate Links** - Manual link support (will integrate API later)
-5. **Pay-as-you-go Credits** - $5 for query credits via Stripe
-6. **Character Limits** - 5,000 character max per message with counter
-7. **Chat History** - Persistent conversation storage per profile
+2. **Free Gift Lists** - Manual tracking with drag-and-drop reordering
+3. **Profile Management** - Create detailed recipient profiles (up to 5 free)
+4. **Optional AI Recommendations** - Premium feature using OpenAI (500 tokens per generation)
+5. **Token-Based Pricing** - Pay-as-you-go or subscription model
+6. **Beautiful UI** - Gradient design system with primary → purple → pink colors
 
-## Amazon Integration Notes
-- Currently supports manual Amazon affiliate links (short and long format)
-- User needs 3 qualifying sales before Amazon Product Advertising API access
-- Future: Will integrate Amazon PA API once user qualifies
-- Links display as beautiful product cards in chat
+## Pricing Model
+- **Free Tier**: 5 profiles, unlimited gift lists
+- **One-Time**: $5 for 5,000 tokens (never expires)
+- **Basic Subscription**: $5/month for 10,000 tokens (~20 AI generations)
+- **Premium Subscription**: $20/month for 50,000 tokens (~100 AI generations)
 
 ## Project Structure
 ```
 client/
   src/
-    components/     # Reusable UI components
+    components/     # Reusable UI components (WelcomeDialog, ThemeToggle, etc.)
     contexts/       # React contexts (Auth, Theme)
     lib/            # Utilities (Firebase, API client)
-    pages/          # Route components
+    pages/          # Route components (Landing, About, Pricing, ProfileForm, etc.)
 server/
   routes.ts         # API endpoints
   storage.ts        # Database interface
   db.ts             # Database connection
+  openai.ts         # OpenAI integration
 shared/
   schema.ts         # Drizzle schema & types
 ```
@@ -71,40 +78,38 @@ shared/
 - `VITE_FIREBASE_APP_ID` - Firebase app ID
 - `VITE_FIREBASE_API_KEY` - Firebase API key
 - `OPENAI_API_KEY` - OpenAI API key for GPT-5
-- `STRIPE_SECRET_KEY` - Stripe secret key ⚠️ **CURRENTLY TEST KEY - UPDATE TO PRODUCTION BEFORE LAUNCH**
-- `VITE_STRIPE_PUBLIC_KEY` - Stripe publishable key ⚠️ **CURRENTLY TEST KEY - UPDATE TO PRODUCTION BEFORE LAUNCH**
-- `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret ⚠️ **CURRENTLY TEST KEY - UPDATE TO PRODUCTION BEFORE LAUNCH**
+- `STRIPE_SECRET_KEY` - Stripe secret key ⚠️ **CURRENTLY TEST KEY**
+- `VITE_STRIPE_PUBLIC_KEY` - Stripe publishable key ⚠️ **CURRENTLY TEST KEY**
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret ⚠️ **CURRENTLY TEST KEY**
 - `DATABASE_URL` - PostgreSQL connection string
 
 ## ⚠️ IMPORTANT: Production Deployment Checklist
-Before going live with real customers:
-1. **Replace ALL Stripe test keys with production keys:**
-   - Update `STRIPE_SECRET_KEY` (remove `sk_test_` → use `sk_live_`)
-   - Update `VITE_STRIPE_PUBLIC_KEY` (remove `pk_test_` → use `pk_live_`)
-   - Create NEW webhook endpoint in Stripe for production URL
-   - Update `STRIPE_WEBHOOK_SECRET` with production webhook secret
-2. **Update Firebase authorized domains** to include your production domain
-3. **Test payment flow end-to-end** in Stripe test mode first
-4. **Enable Stripe webhook monitoring** in production dashboard
+Before going live:
+1. **Replace ALL Stripe test keys with production keys**
+2. **Update Firebase authorized domains** to production domain
+3. **Create Stripe products** for token packages and subscriptions
+4. **Test payment flow end-to-end** in test mode first
+5. **Enable Stripe webhook monitoring**
 
 ## Design System
-Following Material Design 3 principles:
-- Primary color: Blue (#0080FF) for trust and reliability
-- Inter font family for clean, modern typography
-- 44px minimum touch targets for mobile
-- Consistent spacing scale (4px, 8px, 12px, 16px, 24px, 32px)
-- Elevation system using hover-elevate/active-elevate-2 utilities
-- Full dark mode support
-
-## Monetization
-Pay-as-you-go model:
-- $5 for query credits (one-time purchase)
-- 1 credit per AI query
-- Credits never expire
-- Future: Subscription tier for unlimited queries
+- **Colors**: Primary blue → Purple → Pink gradient theme
+- **Font**: Inter for clean, modern typography
+- **Touch targets**: 44px minimum for mobile
+- **Spacing**: Consistent scale (4px, 8px, 12px, 16px, 24px, 32px)
+- **Elevation**: hover-elevate/active-elevate-2 utilities
+- **Dark mode**: Full support across all pages
 
 ## Recent Changes
-- Initial project setup with complete frontend
-- Firebase Google OAuth integration
-- Stripe payment checkout flow
-- All page components built with accessibility in mind
+- Rebranded from "Xzalted" to "Gift Spark"
+- Updated welcome splash with gradient design and simplified messaging
+- Redesigned Pricing and About pages with consistent navigation
+- Migrated from credits to tokens system
+- Added subscription support in database schema
+- Commented out Amazon features for Phase 3
+- Updated questionnaire form with dual submission buttons
+
+## User Preferences
+- Material Design 3 aesthetic
+- Gradient color scheme (blue → purple → pink)
+- Clean, minimal interface
+- Fast and simple user experience
