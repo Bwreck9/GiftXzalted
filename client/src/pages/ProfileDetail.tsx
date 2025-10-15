@@ -2,57 +2,96 @@ import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useCopyToClipboard } from '@/lib/clipboard';
 import { queryClient, apiRequest } from '@/lib/queryClient';
-import { ChevronDown, ChevronRight, Copy, Sparkles, Trash2, ArrowLeft, Plus } from 'lucide-react';
+import { Settings, ArrowLeft, Sparkles, Plus, X } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { QuestionnaireDialog } from '@/components/QuestionnaireDialog';
 import type { Profile } from '@shared/schema';
 
 export default function ProfileDetail() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { copy } = useCopyToClipboard();
   
-  const [manualIdeasOpen, setManualIdeasOpen] = useState(true);
-  const [premiumResultsOpen, setPremiumResultsOpen] = useState(true);
-  const [manualIdeasText, setManualIdeasText] = useState('');
-  const [newIdea, setNewIdea] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [questionnaireDialogOpen, setQuestionnaireDialogOpen] = useState(false);
+  const [manualIdeas, setManualIdeas] = useState<string[]>([]);
 
   // Fetch profile data
   const { data: profile, isLoading } = useQuery<Profile>({
     queryKey: ['/api/profiles', id],
+    select: (data) => {
+      // Initialize manual ideas state when profile loads
+      if (data.manualIdeas && manualIdeas.length === 0) {
+        setManualIdeas(data.manualIdeas.length > 0 ? [...data.manualIdeas] : ['', '', '', '', '']);
+      } else if (!data.manualIdeas || data.manualIdeas.length === 0) {
+        setManualIdeas(['', '', '', '', '']);
+      }
+      return data;
+    },
   });
 
-  // Update profile mutation
-  const updateMutation = useMutation({
-    mutationFn: async (updates: Partial<Profile>) => {
-      return apiRequest('PATCH', `/api/profiles/${id}`, updates);
+  // Update manual ideas mutation
+  const updateIdeasMutation = useMutation({
+    mutationFn: async (ideas: string[]) => {
+      return apiRequest('PATCH', `/api/profiles/${id}`, { manualIdeas: ideas });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
-    },
-  });
-
-  // Clear profile data mutation
-  const clearMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest('POST', `/api/profiles/${id}/clear`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
-      toast({ title: 'Profile data cleared successfully' });
+      toast({ title: 'Ideas saved successfully' });
     },
     onError: () => {
-      toast({ 
-        title: 'Failed to clear profile',
-        variant: 'destructive'
-      });
+      toast({ title: 'Failed to save ideas', variant: 'destructive' });
+    },
+  });
+
+  // Update questionnaire data mutation
+  const updateQuestionnaireMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest('PATCH', `/api/profiles/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      setQuestionnaireDialogOpen(false);
+      // After updating questionnaire, trigger AI generation
+      generateMutation.mutate();
+    },
+    onError: () => {
+      toast({ title: 'Failed to save questionnaire', variant: 'destructive' });
+    },
+  });
+
+  // Delete profile mutation
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('DELETE', `/api/profiles/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      toast({ title: 'Gift list deleted successfully' });
+      setLocation('/');
+    },
+    onError: () => {
+      toast({ title: 'Failed to delete gift list', variant: 'destructive' });
     },
   });
 
@@ -78,24 +117,59 @@ export default function ProfileDetail() {
     },
   });
 
-  const handleAddIdea = () => {
-    if (!newIdea.trim() || !profile) return;
-    
-    const updatedIdeas = [...(profile.manualIdeas || []), newIdea.trim()];
-    updateMutation.mutate({ manualIdeas: updatedIdeas });
-    setNewIdea('');
+  const handleUpdateIdea = (index: number, value: string) => {
+    const newIdeas = [...manualIdeas];
+    newIdeas[index] = value;
+    setManualIdeas(newIdeas);
+  };
+
+  const handleAddMoreIdeas = () => {
+    setManualIdeas([...manualIdeas, '', '', '']);
   };
 
   const handleRemoveIdea = (index: number) => {
-    if (!profile) return;
-    const updatedIdeas = profile.manualIdeas?.filter((_, i) => i !== index) || [];
-    updateMutation.mutate({ manualIdeas: updatedIdeas });
+    const newIdeas = manualIdeas.filter((_, i) => i !== index);
+    setManualIdeas(newIdeas);
+    // Save immediately after removing
+    updateIdeasMutation.mutate(newIdeas.filter(idea => idea.trim() !== ''));
   };
+
+  const handleSaveIdeas = () => {
+    // Filter out empty ideas before saving
+    const filteredIdeas = manualIdeas.filter(idea => idea.trim() !== '');
+    updateIdeasMutation.mutate(filteredIdeas);
+  };
+
+  const handleGenerateResponses = () => {
+    // Check if questionnaire is filled
+    if (!profile?.age || !profile?.gender || !profile?.interests || !profile?.personality) {
+      // Show questionnaire dialog
+      setQuestionnaireDialogOpen(true);
+      return;
+    }
+    
+    generateMutation.mutate();
+  };
+
+  const handleQuestionnaireSubmit = (data: any) => {
+    updateQuestionnaireMutation.mutate(data);
+  };
+
+  const handleDeleteProfile = () => {
+    deleteMutation.mutate();
+  };
+
+  // Parse premium results if available
+  const premiumResults = profile?.premiumResults 
+    ? (typeof profile.premiumResults === 'string' 
+        ? JSON.parse(profile.premiumResults) 
+        : profile.premiumResults)
+    : null;
 
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading profile...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -103,255 +177,164 @@ export default function ProfileDetail() {
   if (!profile) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Profile not found</p>
+        <p className="text-muted-foreground">Gift list not found</p>
       </div>
     );
   }
 
-  // Parse premium results
-  const premiumResults = profile.premiumResults 
-    ? (typeof profile.premiumResults === 'string' 
-        ? JSON.parse(profile.premiumResults) 
-        : profile.premiumResults)
-    : null;
-
-  // Color mapping for gradients
-  const colorGradients: Record<string, string> = {
-    blue: 'from-blue-500 to-blue-600',
-    purple: 'from-purple-500 to-purple-600',
-    pink: 'from-pink-500 to-pink-600',
-    green: 'from-green-500 to-green-600',
-    orange: 'from-orange-500 to-orange-600',
-    red: 'from-red-500 to-red-600',
-  };
-
-  const gradientClass = colorGradients[profile.color || 'blue'] || colorGradients.blue;
-
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Colored Header */}
-      <header className={`bg-gradient-to-r ${gradientClass} text-white shadow-lg`}>
-        <div className="container mx-auto px-4 py-6">
+    <div className="h-screen flex flex-col">
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Gift List?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please confirm that you want to delete "{profile.name}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteProfile} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Questionnaire Dialog */}
+      <QuestionnaireDialog
+        open={questionnaireDialogOpen}
+        onOpenChange={setQuestionnaireDialogOpen}
+        onSubmit={handleQuestionnaireSubmit}
+        isSubmitting={updateQuestionnaireMutation.isPending}
+      />
+
+      {/* Header */}
+      <header className="h-16 border-b flex items-center justify-between px-6">
+        <div className="flex items-center gap-4">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => setLocation('/')}
-            className="text-white hover:bg-white/20 mb-4"
             data-testid="button-back"
+            aria-label="Back to home"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
+            <ArrowLeft className="h-5 w-5" />
           </Button>
-          
-          <h1 className="text-3xl font-bold mb-2" data-testid="text-profile-name">{profile.name}</h1>
-          <div className="flex flex-wrap gap-2 text-sm opacity-90">
-            <span data-testid="text-age">{profile.age} years old</span>
-            <span>•</span>
-            <span data-testid="text-gender">{profile.gender}</span>
-            <span>•</span>
-            <span data-testid="text-relationship">{profile.relationship}</span>
-          </div>
+          <h1 className="text-xl font-bold">{profile.name}</h1>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              data-testid="button-settings"
+              aria-label="Settings"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => setDeleteDialogOpen(true)}
+              className="text-destructive"
+              data-testid="button-delete-profile"
+            >
+              Delete Gift List
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-6 max-w-4xl">
-        {/* Profile Info Card */}
-        <Card className="p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-3">Profile Details</h2>
-          <div className="grid gap-3 text-sm">
-            <div>
-              <span className="text-muted-foreground">Event:</span>{' '}
-              <span data-testid="text-event">{profile.event}</span>
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto p-6">
+        <div className="max-w-2xl mx-auto space-y-6">
+          {/* Manual Gift Ideas */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">Gift Ideas</h2>
+            <div className="space-y-3">
+              {manualIdeas.map((idea, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={idea}
+                    onChange={(e) => handleUpdateIdea(index, e.target.value)}
+                    placeholder={`Gift idea #${index + 1}`}
+                    data-testid={`input-gift-idea-${index}`}
+                  />
+                  {manualIdeas.length > 5 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveIdea(index)}
+                      data-testid={`button-remove-idea-${index}`}
+                      aria-label="Remove idea"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
             </div>
-            <div>
-              <span className="text-muted-foreground">Personality:</span>{' '}
-              <span data-testid="text-personality">{profile.personality}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Interests:</span>{' '}
-              <span data-testid="text-interests">{profile.interests}</span>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleAddMoreIdeas}
+                variant="outline"
+                size="sm"
+                data-testid="button-add-more-ideas"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add More Ideas
+              </Button>
+              <Button
+                onClick={handleSaveIdeas}
+                size="sm"
+                disabled={updateIdeasMutation.isPending}
+                data-testid="button-save-ideas"
+              >
+                {updateIdeasMutation.isPending ? 'Saving...' : 'Save Ideas'}
+              </Button>
             </div>
           </div>
-        </Card>
 
-        {/* Manual Ideas Section */}
-        <Collapsible open={manualIdeasOpen} onOpenChange={setManualIdeasOpen}>
-          <Card className="mb-6">
-            <CollapsibleTrigger className="w-full" data-testid="toggle-manual-ideas">
-              <div className="flex items-center justify-between p-6 hover-elevate active-elevate-2">
-                <h2 className="text-lg font-semibold">Manual Gift Ideas</h2>
-                {manualIdeasOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-              </div>
-            </CollapsibleTrigger>
-            
-            <CollapsibleContent>
-              <div className="px-6 pb-6 space-y-4">
-                {/* Add new idea */}
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="Add a gift idea..."
-                    value={newIdea}
-                    onChange={(e) => setNewIdea(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleAddIdea();
-                      }
-                    }}
-                    className="resize-none"
-                    rows={2}
-                    data-testid="input-new-idea"
-                  />
-                  <Button
-                    onClick={handleAddIdea}
-                    disabled={!newIdea.trim() || updateMutation.isPending}
-                    size="icon"
-                    data-testid="button-add-idea"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
+          {/* Generate Responses Button */}
+          <div className="pt-4 border-t">
+            <Button
+              onClick={handleGenerateResponses}
+              className="w-full"
+              size="lg"
+              disabled={generateMutation.isPending}
+              data-testid="button-generate-responses"
+            >
+              <Sparkles className="h-5 w-5 mr-2" />
+              {generateMutation.isPending ? 'Generating...' : 'GENERATE RESPONSES'}
+            </Button>
+          </div>
 
-                {/* List of ideas */}
-                {profile.manualIdeas && profile.manualIdeas.length > 0 ? (
-                  <div className="space-y-2">
-                    {profile.manualIdeas.map((idea, index) => (
-                      <div
-                        key={index}
-                        className="flex items-start gap-2 p-3 rounded-md bg-muted"
-                        data-testid={`idea-item-${index}`}
-                      >
-                        <p className="flex-1 text-sm">{idea}</p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => handleRemoveIdea(index)}
-                          data-testid={`button-remove-idea-${index}`}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
+          {/* AI Recommendations */}
+          {premiumResults && Array.isArray(premiumResults) && premiumResults.length > 0 && (
+            <div className="space-y-4 pt-6 border-t">
+              <h2 className="text-lg font-semibold">AI Recommendations</h2>
+              <div className="space-y-3">
+                {premiumResults.map((result: any, index: number) => (
+                  <div key={result.id || index} className="space-y-2">
+                    <Input
+                      value={result.title}
+                      readOnly
+                      data-testid={`input-ai-gift-${index}`}
+                    />
+                    <Input
+                      value={result.reason}
+                      readOnly
+                      className="text-sm text-muted-foreground"
+                      data-testid={`input-ai-reason-${index}`}
+                    />
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No ideas yet. Add your first gift idea above!
-                  </p>
-                )}
+                ))}
               </div>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Premium AI Results Section */}
-        <Collapsible open={premiumResultsOpen} onOpenChange={setPremiumResultsOpen}>
-          <Card className="mb-6">
-            <CollapsibleTrigger className="w-full" data-testid="toggle-premium-results">
-              <div className="flex items-center justify-between p-6 hover-elevate active-elevate-2">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-semibold">Premium AI Recommendations</h2>
-                </div>
-                {premiumResultsOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-              </div>
-            </CollapsibleTrigger>
-            
-            <CollapsibleContent>
-              <div className="px-6 pb-6 space-y-4">
-                {premiumResults ? (
-                  <div className="space-y-4">
-                    {Array.isArray(premiumResults) ? (
-                      premiumResults.map((result: any, index: number) => (
-                        <Card key={index} className="p-4 bg-muted/50" data-testid={`premium-result-${index}`}>
-                          <div className="flex justify-between items-start gap-2 mb-2">
-                            <h3 className="font-semibold">{result.title || result.name || `Gift ${index + 1}`}</h3>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => copy(JSON.stringify(result, null, 2), 'Gift idea copied!')}
-                              data-testid={`button-copy-result-${index}`}
-                            >
-                              <Copy className="w-4 h-4" />
-                            </Button>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{result.description || result.reason || JSON.stringify(result)}</p>
-                        </Card>
-                      ))
-                    ) : (
-                      <Card className="p-4 bg-muted/50">
-                        <div className="flex justify-between items-start gap-2 mb-2">
-                          <h3 className="font-semibold">AI Recommendation</h3>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => copy(typeof premiumResults === 'string' ? premiumResults : JSON.stringify(premiumResults, null, 2), 'Recommendation copied!')}
-                            data-testid="button-copy-result"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                          {typeof premiumResults === 'string' ? premiumResults : JSON.stringify(premiumResults, null, 2)}
-                        </p>
-                      </Card>
-                    )}
-                  </div>
-                ) : profile.aiResponse ? (
-                  // Fallback to legacy aiResponse field
-                  <Card className="p-4 bg-muted/50">
-                    <div className="flex justify-between items-start gap-2 mb-2">
-                      <h3 className="font-semibold">AI Recommendation</h3>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => copy(profile.aiResponse || '', 'Recommendation copied!')}
-                        data-testid="button-copy-legacy"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{profile.aiResponse}</p>
-                  </Card>
-                ) : (
-                  <div className="text-center py-8">
-                    <Sparkles className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground mb-4">
-                      No AI recommendations yet. Generate personalized gift ideas!
-                    </p>
-                    <Button
-                      onClick={() => generateMutation.mutate()}
-                      disabled={generateMutation.isPending}
-                      data-testid="button-generate-ai"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      {generateMutation.isPending ? 'Generating...' : 'Generate Recommendations (500 tokens)'}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Button
-            variant="destructive"
-            onClick={() => {
-              if (confirm('Clear all manual ideas and AI recommendations? This cannot be undone.')) {
-                clearMutation.mutate();
-              }
-            }}
-            disabled={clearMutation.isPending}
-            data-testid="button-clear-data"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Clear All Data
-          </Button>
+            </div>
+          )}
         </div>
       </main>
     </div>

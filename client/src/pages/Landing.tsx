@@ -14,6 +14,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { SettingsModal } from '@/components/SettingsModal';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -25,6 +35,8 @@ export default function Landing() {
   const [showSplash, setShowSplash] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newGiftListName, setNewGiftListName] = useState('');
   const { toast } = useToast();
 
   const { data: profiles, isLoading: profilesLoading } = useQuery<Profile[]>({
@@ -71,12 +83,39 @@ export default function Landing() {
     },
   });
 
+  const createGiftListMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await apiRequest('POST', '/api/profiles', { name });
+      const newProfile = await response.json() as Profile;
+      return newProfile;
+    },
+    onSuccess: (newProfile) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      toast({ title: 'Gift list created successfully' });
+      setCreateDialogOpen(false);
+      setNewGiftListName('');
+      // Navigate to the new gift list
+      setLocation(`/profile/${newProfile.id}`);
+    },
+    onError: () => {
+      toast({ title: 'Failed to create gift list', variant: 'destructive' });
+    },
+  });
+
   const handleSignIn = async () => {
     try {
       await signIn();
     } catch (error) {
       console.error('Sign in failed:', error);
     }
+  };
+
+  const handleCreateGiftList = () => {
+    if (!newGiftListName.trim()) {
+      toast({ title: 'Please enter a name', variant: 'destructive' });
+      return;
+    }
+    createGiftListMutation.mutate(newGiftListName.trim());
   };
 
   if (authLoading) {
@@ -199,22 +238,13 @@ export default function Landing() {
         </div>
         <div className="flex items-center gap-3">
           <Button
-            onClick={() => setLocation('/questionnaire')}
+            onClick={() => setCreateDialogOpen(true)}
             size="default"
             className="hover-elevate active-elevate-2"
-            data-testid="landing-new-profile"
+            data-testid="button-create-gift-list"
           >
             <Plus className="h-4 w-4 mr-2" />
-            New Profile Questionnaire
-          </Button>
-          <Button
-            onClick={() => setLocation('/profiles')}
-            variant="outline"
-            size="default"
-            className="hover-elevate active-elevate-2"
-            data-testid="landing-view-profiles"
-          >
-            View Profiles
+            Create New Gift List
           </Button>
           <Button
             onClick={() => setSettingsOpen(true)}
@@ -314,14 +344,15 @@ export default function Landing() {
             </div>
           ) : (
             <div className="text-center py-16 space-y-4">
-              <p className="text-muted-foreground text-lg">&lt;No profiles&gt;</p>
+              <p className="text-muted-foreground text-lg">No gift lists yet</p>
               <Button
-                onClick={() => setLocation('/questionnaire')}
+                onClick={() => setCreateDialogOpen(true)}
                 size="lg"
                 className="hover-elevate active-elevate-2"
+                data-testid="button-create-first-gift-list"
               >
                 <Plus className="h-5 w-5 mr-2" />
-                Create Profile from Questionnaire
+                Create Your First Gift List
               </Button>
             </div>
           )}
@@ -389,6 +420,55 @@ export default function Landing() {
           </button>
         </div>
       </footer>
+
+      {/* Create Gift List Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent data-testid="dialog-create-gift-list">
+          <DialogHeader>
+            <DialogTitle>Create New Gift List</DialogTitle>
+            <DialogDescription>
+              Enter a name for your gift list (e.g., "Mom's Birthday" or "John's Gift Ideas")
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="gift-list-name">Gift List Name</Label>
+              <Input
+                id="gift-list-name"
+                placeholder="e.g., Mom's Birthday"
+                value={newGiftListName}
+                onChange={(e) => setNewGiftListName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !createGiftListMutation.isPending) {
+                    handleCreateGiftList();
+                  }
+                }}
+                data-testid="input-gift-list-name"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreateDialogOpen(false);
+                setNewGiftListName('');
+              }}
+              data-testid="button-cancel-create"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateGiftList}
+              disabled={createGiftListMutation.isPending || !newGiftListName.trim()}
+              data-testid="button-confirm-create"
+            >
+              {createGiftListMutation.isPending ? 'Creating...' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
