@@ -84,7 +84,7 @@ export default function Questionnaire() {
   });
 
   const { data: userData } = useQuery<User>({
-    queryKey: ['/api/user'],
+    queryKey: ['/api/auth/user'],
     enabled: !!user,
   });
 
@@ -94,7 +94,7 @@ export default function Questionnaire() {
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       clearDraft(); // Clear draft after successful creation
       toast({ 
         title: isGenerating ? 'Profile created with AI response!' : 'Profile created!', 
