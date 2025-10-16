@@ -1,13 +1,12 @@
-// API routes - integrates Stripe (javascript_stripe blueprint) and OpenAI
+// API routes - integrates Replit Auth, Stripe and OpenAI
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { getGiftRecommendations } from "./openai";
-import { insertProfileSchema, insertMessageSchema, insertGiftListSchema, insertGiftItemSchema, users } from "@shared/schema";
+import { insertProfileSchema, insertMessageSchema, insertGiftListSchema, insertGiftItemSchema } from "@shared/schema";
 import { z } from "zod";
-import { db } from "./db";
-import { requireAuth, type AuthRequest } from "./middleware/auth";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -22,54 +21,25 @@ const ONETIME_PURCHASE_AMOUNT = 5; // $5
 const TOKENS_PER_GENERATION = 500; // Each AI generation costs 500 tokens
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
-  // Auth sync - create or update user from Firebase (public endpoint for initial sync)
-  app.post("/api/auth/sync", requireAuth, async (req: AuthRequest, res) => {
+  // Setup Replit Auth
+  await setupAuth(app);
+
+  // Get current user (Replit Auth route)
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.userId!;
-      const { email, displayName, photoURL } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ error: "Missing required fields" });
-      }
-
-      let user = await storage.getUser(userId);
-      
-      if (!user) {
-        // Create new user with Firebase UID
-        const userWithId = { id: userId, email, displayName: displayName || null, photoURL: photoURL || null };
-        const [createdUser] = await db.insert(users).values(userWithId).returning();
-        user = createdUser;
-      }
-
-      res.json(user);
-    } catch (error: any) {
-      console.error("Error syncing user:", error);
-      res.status(500).json({ error: "Failed to sync user" });
-    }
-  });
-
-  // Get current user data
-  app.get("/api/user", requireAuth, async (req: AuthRequest, res) => {
-    try {
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
-      
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-
       res.json(user);
-    } catch (error: any) {
-      console.error("Error getting user:", error);
-      res.status(500).json({ error: "Failed to get user" });
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
     }
   });
 
   // Get all profiles for current user
-  app.get("/api/profiles", requireAuth, async (req: AuthRequest, res) => {
+  app.get("/api/profiles", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
       const profiles = await storage.getProfilesByUserId(userId);
       res.json(profiles);
     } catch (error: any) {
@@ -79,10 +49,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get single profile
-  app.get("/api/profiles/:id", requireAuth, async (req: AuthRequest, res) => {
+  app.get("/api/profiles/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const profile = await storage.getProfile(id);
       
@@ -102,9 +72,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create profile
-  app.post("/api/profiles", requireAuth, async (req: AuthRequest, res) => {
+  app.post("/api/profiles", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
       const { generateResponse, ...profileData } = req.body;
 
       const validated = insertProfileSchema.parse({
@@ -168,10 +138,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update profile
-  app.patch("/api/profiles/:id", requireAuth, async (req: AuthRequest, res) => {
+  app.patch("/api/profiles/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const profile = await storage.getProfile(id);
       
@@ -199,10 +169,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete profile
-  app.delete("/api/profiles/:id", requireAuth, async (req: AuthRequest, res) => {
+  app.delete("/api/profiles/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const profile = await storage.getProfile(id);
       
@@ -223,10 +193,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Clear profile data (manual ideas and premium results)
-  app.post("/api/profiles/:id/clear", requireAuth, async (req: AuthRequest, res) => {
+  app.post("/api/profiles/:id/clear", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const profile = await storage.getProfile(id);
       
@@ -253,10 +223,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get messages for a profile
-  app.get("/api/messages/:profileId", requireAuth, async (req: AuthRequest, res) => {
+  app.get("/api/messages/:profileId", isAuthenticated, async (req: any, res) => {
     try {
       const { profileId } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const profile = await storage.getProfile(profileId);
       
@@ -277,9 +247,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send message and get AI response
-  app.post("/api/messages", requireAuth, async (req: AuthRequest, res) => {
+  app.post("/api/messages", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
       const { profileId, content } = req.body;
 
       if (!profileId || !content || typeof content !== 'string') {
@@ -369,9 +339,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe payment route for one-time payments (referenced from javascript_stripe blueprint)
-  app.post("/api/create-payment-intent", requireAuth, async (req: AuthRequest, res) => {
+  app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
       const amount = ONETIME_PURCHASE_AMOUNT;
       
       const paymentIntent = await stripe.paymentIntents.create({
@@ -403,9 +373,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Gift Lists (Free Feature)
   
   // Get all gift lists for current user
-  app.get("/api/gift-lists", requireAuth, async (req: AuthRequest, res) => {
+  app.get("/api/gift-lists", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
       const lists = await storage.getGiftListsByUserId(userId);
       res.json(lists);
     } catch (error: any) {
@@ -415,10 +385,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get single gift list
-  app.get("/api/gift-lists/:id", requireAuth, async (req: AuthRequest, res) => {
+  app.get("/api/gift-lists/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const list = await storage.getGiftList(id);
       
@@ -438,9 +408,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create gift list
-  app.post("/api/gift-lists", requireAuth, async (req: AuthRequest, res) => {
+  app.post("/api/gift-lists", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const validated = insertGiftListSchema.parse({
         ...req.body,
@@ -459,10 +429,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update gift list
-  app.patch("/api/gift-lists/:id", requireAuth, async (req: AuthRequest, res) => {
+  app.patch("/api/gift-lists/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const list = await storage.getGiftList(id);
       
@@ -490,10 +460,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete gift list
-  app.delete("/api/gift-lists/:id", requireAuth, async (req: AuthRequest, res) => {
+  app.delete("/api/gift-lists/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const list = await storage.getGiftList(id);
       
@@ -516,10 +486,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Gift Items
   
   // Get items for a gift list
-  app.get("/api/gift-lists/:listId/items", requireAuth, async (req: AuthRequest, res) => {
+  app.get("/api/gift-lists/:listId/items", isAuthenticated, async (req: any, res) => {
     try {
       const { listId } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const list = await storage.getGiftList(listId);
       
@@ -540,10 +510,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create gift item
-  app.post("/api/gift-lists/:listId/items", requireAuth, async (req: AuthRequest, res) => {
+  app.post("/api/gift-lists/:listId/items", isAuthenticated, async (req: any, res) => {
     try {
       const { listId } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const list = await storage.getGiftList(listId);
       
@@ -572,10 +542,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update gift item
-  app.patch("/api/gift-lists/:listId/items/:itemId", requireAuth, async (req: AuthRequest, res) => {
+  app.patch("/api/gift-lists/:listId/items/:itemId", isAuthenticated, async (req: any, res) => {
     try {
       const { listId, itemId } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const list = await storage.getGiftList(listId);
       
@@ -603,10 +573,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete gift item
-  app.delete("/api/gift-lists/:listId/items/:itemId", requireAuth, async (req: AuthRequest, res) => {
+  app.delete("/api/gift-lists/:listId/items/:itemId", isAuthenticated, async (req: any, res) => {
     try {
       const { listId, itemId } = req.params;
-      const userId = req.userId!;
+      const userId = req.user.claims.sub;
 
       const list = await storage.getGiftList(listId);
       

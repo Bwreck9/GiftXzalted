@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { WelcomeDialog } from '@/components/WelcomeDialog';
 import type { Profile } from '@shared/schema';
-import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus } from 'lucide-react';
-import { SiGoogle } from 'react-icons/si';
+import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,18 +29,18 @@ import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Landing() {
-  const { user, loading: authLoading, signIn } = useAuth();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [showSplash, setShowSplash] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newGiftListName, setNewGiftListName] = useState('');
-  const { toast } = useToast();
+  const { toast} = useToast();
 
   const { data: profiles, isLoading: profilesLoading } = useQuery<Profile[]>({
     queryKey: ['/api/profiles'],
-    enabled: !!user,
+    enabled: isAuthenticated,
   });
 
   const updateProfileMutation = useMutation({
@@ -102,12 +101,8 @@ export default function Landing() {
     },
   });
 
-  const handleSignIn = async () => {
-    try {
-      await signIn();
-    } catch (error) {
-      console.error('Sign in failed:', error);
-    }
+  const handleSignIn = () => {
+    window.location.href = '/api/login';
   };
 
   const handleCreateGiftList = () => {
@@ -126,7 +121,7 @@ export default function Landing() {
     );
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return (
       <div className="h-screen flex flex-col">
         <WelcomeDialog externalOpen={showSplash} onExternalClose={() => setShowSplash(false)} />
@@ -152,10 +147,10 @@ export default function Landing() {
               onClick={handleSignIn}
               size="lg"
               className="w-full h-12 text-base hover-elevate active-elevate-2"
-              data-testid="button-signin-google"
+              data-testid="button-signin"
             >
-              <SiGoogle className="mr-2 h-5 w-5" />
-              Sign in with Google
+              <LogIn className="mr-2 h-5 w-5" />
+              Sign In
             </Button>
           </div>
         </main>

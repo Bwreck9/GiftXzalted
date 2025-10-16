@@ -1,15 +1,27 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, jsonb, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table - Firebase authenticated users
+// Session storage table (Replit Auth requirement)
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Users table - Replit authenticated users
 export const users = pgTable("users", {
-  id: text("id").primaryKey(), // Firebase UID (no default, set explicitly)
-  email: text("email").notNull().unique(),
-  displayName: text("display_name"),
-  photoURL: text("photo_url"),
+  id: text("id").primaryKey(), // Replit user ID (from sub claim)
+  email: text("email").unique(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  profileImageUrl: text("profile_image_url"),
   tokens: integer("tokens").notNull().default(0), // AI generation tokens
   subscriptionTier: text("subscription_tier"), // null (none), 'basic' ($5/month for 10k tokens), 'premium' ($20/month for 50k tokens)
   subscriptionStatus: text("subscription_status"), // 'active', 'canceled', 'past_due', null
@@ -17,6 +29,7 @@ export const users = pgTable("users", {
   stripeCustomerId: text("stripe_customer_id").unique(), // For subscription management
   stripeSubscriptionId: text("stripe_subscription_id").unique(), // Current subscription ID
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Gift recipient profiles (gift lists)
@@ -198,6 +211,7 @@ export const insertGiftItemSchema = createInsertSchema(giftItems).omit({
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = typeof users.$inferInsert; // For Replit Auth upsert
 
 export type Profile = typeof profiles.$inferSelect;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;

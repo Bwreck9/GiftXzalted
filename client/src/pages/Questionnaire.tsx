@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -27,8 +27,6 @@ import {
 } from '@/components/ui/dialog';
 import { ArrowLeft, Gift, Sparkles, Coins, Lock } from 'lucide-react';
 import { z } from 'zod';
-import { auth } from '@/lib/firebase';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
 const formSchema = insertProfileSchema.extend({
   userId: z.string().optional(),
@@ -113,26 +111,19 @@ export default function Questionnaire() {
     },
   });
 
-  const handleGoogleSignIn = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      setShowAuthModal(false);
-      
-      // After auth, retry submission with pending generation state
-      if (pendingGenerate) {
-        handleSubmit(true)();
-      } else {
-        handleSubmit(false)();
-      }
-    } catch (error: any) {
-      toast({
-        title: 'Sign-in failed',
-        description: error.message || 'Please try again',
-        variant: 'destructive',
-      });
-    }
+  const handleGoogleSignIn = () => {
+    // Redirect to Replit Auth login
+    window.location.href = '/api/login';
   };
+
+  // Check if user is authenticated after login redirect
+  useEffect(() => {
+    if (user && pendingGenerate) {
+      // After auth, retry submission with pending generation state
+      handleSubmit(pendingGenerate)();
+      setPendingGenerate(false);
+    }
+  }, [user, pendingGenerate]);
 
   const handleSubmit = (generateResponse: boolean) => {
     return form.handleSubmit((data: FormValues) => {
@@ -145,7 +136,7 @@ export default function Questionnaire() {
 
       const profileData: InsertProfile = {
         ...data,
-        userId: user.uid,
+        userId: (user as any).id,
       };
       
       // Check profile limit for free users
