@@ -154,14 +154,21 @@ Before going live:
   - ✅ Added back navigation button (ArrowLeft icon) to return to landing page
   - ✅ Improved header layout with back button on left
 
-### 🔧 Incognito Mode Authentication Fix ✅
-**Focus: Fixed authentication loop in incognito/private browsing mode**
+### 🔧 Authentication Loop Fix ✅
+**Focus: Fixed infinite authentication loop on all browsers and devices**
 
-- **Session Persistence Fix** (`server/replitAuth.ts`):
+- **Root Cause**: Race condition where auth status was checked before auth query completed after OAuth callback
+  
+- **Backend Fixes** (`server/replitAuth.ts`):
+  - ✅ Modified `/api/login` to store and sanitize returnTo path (prevents open redirect vulnerability)
+  - ✅ Validates returnTo is same-origin relative path, rejects absolute URLs
   - ✅ Modified `/api/callback` to explicitly save session before redirecting
-  - ✅ Preserves returnTo functionality for deep link navigation
-  - ✅ Fixes issue where successful authentication in incognito mode redirected back to sign-in
-  - ✅ Session cookies now persist correctly across all browser modes
+  - ✅ Preserves returnTo functionality for deep link navigation after authentication
+  
+- **Frontend Fixes** (`Landing.tsx`, `Onboarding.tsx`):
+  - ✅ Added `authLoading` checks in all authentication-gated handlers
+  - ✅ Prevents redirects while auth query is in progress
+  - ✅ Eliminates race condition where `isAuthenticated` is checked before query completes
 
 ### 🎉 Onboarding Flow Complete ✅
 **Focus: Simplified user journey from welcome to first profile**
