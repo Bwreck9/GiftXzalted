@@ -1,5 +1,5 @@
 import { useLocation } from 'wouter';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -10,20 +10,23 @@ import { ArrowLeft, Coins, LogOut, CreditCard } from 'lucide-react';
 
 export default function Settings() {
   const [, setLocation] = useLocation();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   
   const { data: userData } = useQuery<User>({
     queryKey: ['/api/user'],
   });
 
-  const handleSignOut = async () => {
-    await signOut();
-    setLocation('/');
+  const handleSignOut = () => {
+    window.location.href = '/api/logout';
   };
 
   const handleBuyCredits = () => {
     setLocation('/checkout');
   };
+
+  const userName = userData?.firstName 
+    ? `${userData.firstName}${userData.lastName ? ' ' + userData.lastName : ''}`
+    : userData?.email?.split('@')[0] || 'User';
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -49,34 +52,34 @@ export default function Settings() {
             <h2 className="text-xl font-semibold mb-4">Account</h2>
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
-                {user?.photoURL && <AvatarImage src={user.photoURL} />}
+                {userData?.profileImageUrl && <AvatarImage src={userData.profileImageUrl} />}
                 <AvatarFallback className="bg-primary/20 text-primary text-lg font-semibold">
-                  {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  {userData?.firstName?.charAt(0) || userData?.email?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-medium" data-testid="text-user-name">{user?.displayName || 'User'}</p>
-                <p className="text-sm text-muted-foreground" data-testid="text-user-email">{user?.email}</p>
+                <p className="font-medium" data-testid="text-user-name">{userName}</p>
+                <p className="text-sm text-muted-foreground" data-testid="text-user-email">{userData?.email}</p>
               </div>
             </div>
           </Card>
 
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Credits</h2>
+            <h2 className="text-xl font-semibold mb-4">Tokens</h2>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Coins className="h-5 w-5 text-primary" />
-                <span className="text-2xl font-bold" data-testid="text-credits">{userData?.credits || 0}</span>
-                <span className="text-muted-foreground">queries remaining</span>
+                <span className="text-2xl font-bold" data-testid="text-tokens">{userData?.tokens || 0}</span>
+                <span className="text-muted-foreground">tokens remaining</span>
               </div>
             </div>
             <Button
               onClick={handleBuyCredits}
               className="w-full hover-elevate active-elevate-2"
-              data-testid="button-buy-credits"
+              data-testid="button-buy-tokens"
             >
               <CreditCard className="h-4 w-4 mr-2" />
-              Buy More Credits
+              Buy More Tokens
             </Button>
           </Card>
 
