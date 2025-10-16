@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Landing from "@/pages/Landing";
+import Onboarding from "@/pages/Onboarding";
 import Questionnaire from "@/pages/Questionnaire";
 import ProfileDetail from "@/pages/ProfileDetail";
 import ProfilesList from "@/pages/ProfilesList";
@@ -24,6 +25,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/onboarding" component={Onboarding} />
       <Route path="/questionnaire" component={Questionnaire} />
       <Route path="/profiles" component={ProfilesList} />
       <Route path="/profile/:id" component={ProfileDetail} />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ interface WelcomeDialogProps {
 
 export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClick, onTrainAgentClick, onWebSearchClick }: WelcomeDialogProps) {
   const [open, setOpen] = useState(false);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const hasShown = localStorage.getItem(WELCOME_DIALOG_KEY);
@@ -39,6 +41,11 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
     localStorage.setItem(WELCOME_DIALOG_KEY, 'true');
     setOpen(false);
     onExternalClose?.();
+  };
+
+  const handleGetStarted = () => {
+    handleClose();
+    setLocation('/onboarding');
   };
 
   return (
@@ -115,8 +122,8 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
         
         <div className="flex justify-center pt-4">
           <Button 
-            onClick={handleClose}
-            data-testid="button-welcome-close"
+            onClick={handleGetStarted}
+            data-testid="button-welcome-get-started"
             className="bg-gradient-to-r from-primary via-purple-600 to-pink-600 hover:opacity-90 transition-opacity text-white border-0 shadow-lg hover-elevate active-elevate-2"
             size="lg"
           >
