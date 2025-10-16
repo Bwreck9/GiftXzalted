@@ -136,12 +136,29 @@ Before going live:
 
 ## Recent Changes (October 16, 2025)
 
+### 🎨 UI/UX Polish & Navigation Updates ✅
+**Focus: Improved navigation, token visibility, and welcome experience**
+
+- **Welcome Dialog Updates** (`WelcomeDialog.tsx`):
+  - ✅ Updated "Train AI Agent" subcaption to "Submit a questionnaire to customize the recipient profile"
+  - ✅ Grayed out "Web Search Agent" tile with opacity-50 and cursor-not-allowed (in development)
+  - ✅ Added "(In Development)" text to Web Search Agent description
+
+- **Landing Page Improvements** (`Landing.tsx`):
+  - ✅ Fixed duplicate "Create New Gift List" buttons (removed duplicate in empty state)
+  - ✅ Made Gift Spark logo clickable to navigate back to landing page
+  - ✅ Added token counter button in header (clickable, navigates to pricing page)
+  - ✅ Token counter displays: "X tokens" with Coins icon
+
+- **My Gift Lists Page** (`GiftLists.tsx`):
+  - ✅ Added back navigation button (ArrowLeft icon) to return to landing page
+  - ✅ Improved header layout with back button on left
+
 ### 🎉 Onboarding Flow Complete ✅
 **Focus: Simplified user journey from welcome to first profile**
 
 - **Welcome Dialog** (`WelcomeDialog.tsx`):
   - ✅ Single "Get Started" button navigates to `/onboarding`
-  - ✅ Removed duplicate X close button
   - ✅ Agentic messaging: "The Agentic Gift Experience"
   - ✅ Interactive feature tiles (non-functional in dialog, preserved for visual interest)
   
