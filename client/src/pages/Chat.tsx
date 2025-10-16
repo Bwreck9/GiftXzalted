@@ -52,7 +52,7 @@ export default function Chat() {
   });
 
   const { data: userData } = useQuery<User>({
-    queryKey: ['/api/user'],
+    queryKey: ['/api/auth/user'],
   });
 
   const sendMutation = useMutation({
@@ -65,7 +65,7 @@ export default function Chat() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/messages', id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       setMessage('');
     },
     onError: (error: any) => {

@@ -13,7 +13,7 @@ export default function Settings() {
   const { user } = useAuth();
   
   const { data: userData } = useQuery<User>({
-    queryKey: ['/api/user'],
+    queryKey: ['/api/auth/user'],
   });
 
   const handleSignOut = () => {
