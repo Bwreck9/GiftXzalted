@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Profile } from '@shared/schema';
 
 export default function Onboarding() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -34,6 +34,9 @@ export default function Onboarding() {
   });
 
   const handleGiftTrackerClick = () => {
+    // Wait for auth to finish loading before checking authentication
+    if (authLoading) return;
+    
     if (!isAuthenticated) {
       window.location.href = '/api/login';
       return;
@@ -44,6 +47,9 @@ export default function Onboarding() {
   };
 
   const handleTrainAgentClick = () => {
+    // Wait for auth to finish loading before checking authentication
+    if (authLoading) return;
+    
     if (!isAuthenticated) {
       window.location.href = '/api/login';
       return;

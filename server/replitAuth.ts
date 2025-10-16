@@ -104,6 +104,30 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
+    // Sanitize return path to prevent open redirect vulnerability
+    let returnTo = req.query.returnTo as string || req.get('Referer') || '/';
+    
+    // Only allow relative paths (must start with /) and reject absolute URLs
+    try {
+      const url = new URL(returnTo, `https://${req.hostname}`);
+      // If it's from the same origin, use the pathname; otherwise default to /
+      if (url.hostname === req.hostname) {
+        returnTo = url.pathname + url.search + url.hash;
+      } else {
+        returnTo = '/';
+      }
+    } catch {
+      // If URL parsing fails, default to /
+      returnTo = '/';
+    }
+    
+    // Extra safety: ensure it starts with / and doesn't start with //
+    if (!returnTo.startsWith('/') || returnTo.startsWith('//')) {
+      returnTo = '/';
+    }
+    
+    (req.session as any).returnTo = returnTo;
+    
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],

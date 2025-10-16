@@ -102,6 +102,9 @@ export default function Landing() {
   });
 
   const handleGiftTrackerClick = () => {
+    // Wait for auth to finish loading before checking authentication
+    if (authLoading) return;
+    
     if (!isAuthenticated) {
       handleSignIn();
       return;
@@ -113,6 +116,9 @@ export default function Landing() {
   };
 
   const handleTrainAgentClick = () => {
+    // Wait for auth to finish loading before checking authentication
+    if (authLoading) return;
+    
     if (!isAuthenticated) {
       handleSignIn();
       return;
