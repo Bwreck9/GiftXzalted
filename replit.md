@@ -136,24 +136,30 @@ Before going live:
 
 ## Recent Changes (October 16, 2025)
 
-### 🎨 Mobile-First UX Improvements ✅
-**Focus: Agentic experience with interactive welcome dialog**
+### 🎉 Onboarding Flow Complete ✅
+**Focus: Simplified user journey from welcome to first profile**
 
-- **Welcome Dialog Updates** (`WelcomeDialog.tsx`):
-  - ✅ **Agentic Messaging**: Title changed to "The Agentic Gift Experience"
-  - ✅ **Interactive Feature Tiles**: Converted to clickable buttons with hover effects
-  - ✅ **Updated Copy**:
-    - "Gift Tracker (Free)" - Keep track of gift ideas the old school way
-    - "Train an AI agent" - Train an AI agent to recommend ideas
-    - "Web Search Agent" - Use the agent to search the web for gift ideas (coming soon)
-  - ✅ Removed "Finding the perfect gift" language
-  - ✅ Fixed DOM nesting warnings (span instead of p tags)
+- **Welcome Dialog** (`WelcomeDialog.tsx`):
+  - ✅ Single "Get Started" button navigates to `/onboarding`
+  - ✅ Removed duplicate X close button
+  - ✅ Agentic messaging: "The Agentic Gift Experience"
+  - ✅ Interactive feature tiles (non-functional in dialog, preserved for visual interest)
   
-- **Interactive Flow**:
-  - ✅ Gift Tracker button → Opens name-only profile creation dialog
+- **Onboarding Page** (`/onboarding`):
+  - ✅ **3-Step Visual Guide**: Shows app workflow
+    1. Create Profile → Manual gift tracking
+    2. Train Agent → Fill questionnaire for AI recommendations
+    3. Web Search → Coming soon feature
+  - ✅ **Interactive Buttons**: Each step has action button
+  - ✅ Gift Tracker → Auto-creates profile with unique name, navigates to detail page
+  - ✅ Train Agent → Token check, creates profile + opens questionnaire
+  - ✅ Web Search → Coming soon state
+  
+- **Simplified Flow**:
+  - ✅ Welcome → Get Started → Onboarding → Choose action
   - ✅ Non-authenticated users → Redirected to sign-in
-  - ✅ Authenticated users → Opens create gift list dialog
-  - ✅ Clean mobile-first button interactions
+  - ✅ Token-gated AI: Redirects to pricing if user has 0 tokens
+  - ✅ Profile creation uses auto-generated names (Profile 1, Profile 2, etc.)
 
 ### 🔐 Firebase to Replit Auth Migration ✅
 **Reason**: Firebase auth was failing on mobile browsers (Safari/Chrome iOS) and incurring unnecessary costs

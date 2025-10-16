@@ -171,10 +171,24 @@ export default function Onboarding() {
                   <p className="text-muted-foreground text-lg">
                     Get personalized gift recommendations powered by AI. Your agent knows exactly what they'd love.
                   </p>
+                  <Button
+                    onClick={() => toast({ 
+                      title: 'Coming Soon!', 
+                      description: 'Web search feature will be available soon. For now, use the AI agent to get recommendations.' 
+                    })}
+                    variant="outline"
+                    size="lg"
+                    className="hover-elevate active-elevate-2"
+                    data-testid="button-step3-web-search"
+                  >
+                    <Phone className="mr-2 h-5 w-5" />
+                    Call Your Agent
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-medium">
                       <Sparkles className="h-4 w-4" />
-                      Uses AI tokens
+                      Coming Soon
                     </span>
                   </div>
                 </div>

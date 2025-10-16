@@ -1,6 +1,6 @@
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -37,16 +37,16 @@ export default function ProfileDetail() {
   // Fetch profile data
   const { data: profile, isLoading } = useQuery<Profile>({
     queryKey: ['/api/profiles', id],
-    select: (data) => {
-      // Initialize manual ideas state when profile loads
-      if (data.manualIdeas && manualIdeas.length === 0) {
-        setManualIdeas(data.manualIdeas.length > 0 ? [...data.manualIdeas] : ['', '', '', '', '']);
-      } else if (!data.manualIdeas || data.manualIdeas.length === 0) {
-        setManualIdeas(['', '', '', '', '']);
-      }
-      return data;
-    },
   });
+
+  // Initialize manual ideas when profile loads
+  useEffect(() => {
+    if (profile?.manualIdeas && profile.manualIdeas.length > 0) {
+      setManualIdeas([...profile.manualIdeas]);
+    } else if (profile && (!profile.manualIdeas || profile.manualIdeas.length === 0)) {
+      setManualIdeas(['', '', '', '', '']);
+    }
+  }, [profile?.id]); // Only run when profile ID changes
 
   // Update manual ideas mutation
   const updateIdeasMutation = useMutation({
