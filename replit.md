@@ -6,8 +6,8 @@ Gift Spark helps users discover the perfect gift for anyone in their life. Users
 ## Current State (Phase 1 MVP Complete)
 
 ### ✅ Completed Features
-- **Authentication**: Firebase Google OAuth with secure token verification
-- **Database**: PostgreSQL with token-based system (users, profiles, messages, tokens, transactions, gift_lists, gift_items)
+- **Authentication**: Replit Auth with Google OAuth (session-based, cookie authentication)
+- **Database**: PostgreSQL with token-based system (users, sessions, profiles, messages, tokens, transactions, gift_lists, gift_items)
 - **FREE Gift Lists**: Notepad-style lists with create/edit/delete/reorder items (no cost)
 - **Profile System**: Up to 5 free profiles, questionnaire-based with optional AI generation
 - **Token System**: 
@@ -73,13 +73,13 @@ Gift Spark helps users discover the perfect gift for anyone in their life. Users
 - **Frontend**: React, TypeScript, Tailwind CSS, Shadcn UI
 - **Backend**: Express.js, Node.js
 - **Database**: PostgreSQL (Neon)
-- **Authentication**: Firebase (Google OAuth)
+- **Authentication**: Replit Auth (Google OAuth, session-based)
 - **AI**: OpenAI GPT-5
 - **Payments**: Stripe
 - **ORM**: Drizzle
 
 ## Key Features
-1. **Google Authentication** - Secure sign-in with Firebase
+1. **Google Authentication** - Secure sign-in with Replit Auth (session-based cookies)
 2. **Free Gift Lists** - Manual tracking with drag-and-drop reordering
 3. **Profile Management** - Create detailed recipient profiles (up to 5 free)
 4. **Optional AI Recommendations** - Premium feature using OpenAI (500 tokens per generation)
@@ -97,35 +97,34 @@ Gift Spark helps users discover the perfect gift for anyone in their life. Users
 client/
   src/
     components/     # Reusable UI components (WelcomeDialog, ThemeToggle, etc.)
-    contexts/       # React contexts (Auth, Theme)
-    lib/            # Utilities (Firebase, API client)
+    contexts/       # React contexts (Theme)
+    hooks/          # Custom hooks (useAuth)
+    lib/            # Utilities (authUtils, API client)
     pages/          # Route components (Landing, About, Pricing, ProfileForm, etc.)
 server/
   routes.ts         # API endpoints
   storage.ts        # Database interface
   db.ts             # Database connection
+  replitAuth.ts     # Replit Auth integration
   openai.ts         # OpenAI integration
 shared/
   schema.ts         # Drizzle schema & types
 ```
 
 ## Environment Variables
-- `VITE_FIREBASE_PROJECT_ID` - Firebase project ID
-- `VITE_FIREBASE_APP_ID` - Firebase app ID
-- `VITE_FIREBASE_API_KEY` - Firebase API key
 - `OPENAI_API_KEY` - OpenAI API key for GPT-5
 - `STRIPE_SECRET_KEY` - Stripe secret key ⚠️ **CURRENTLY TEST KEY**
 - `VITE_STRIPE_PUBLIC_KEY` - Stripe publishable key ⚠️ **CURRENTLY TEST KEY**
 - `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret ⚠️ **CURRENTLY TEST KEY**
 - `DATABASE_URL` - PostgreSQL connection string
+- `SESSION_SECRET` - Session encryption secret (auto-generated)
 
 ## ⚠️ IMPORTANT: Production Deployment Checklist
 Before going live:
 1. **Replace ALL Stripe test keys with production keys**
-2. **Update Firebase authorized domains** to production domain
-3. **Create Stripe products** for token packages and subscriptions
-4. **Test payment flow end-to-end** in test mode first
-5. **Enable Stripe webhook monitoring**
+2. **Create Stripe products** for token packages and subscriptions
+3. **Test payment flow end-to-end** in test mode first
+4. **Enable Stripe webhook monitoring**
 
 ## Design System
 - **Colors**: Primary blue → Purple → Pink gradient theme
@@ -134,6 +133,31 @@ Before going live:
 - **Spacing**: Consistent scale (4px, 8px, 12px, 16px, 24px, 32px)
 - **Elevation**: hover-elevate/active-elevate-2 utilities
 - **Dark mode**: Full support across all pages
+
+## Recent Changes (October 16, 2025)
+
+### 🔐 Firebase to Replit Auth Migration ✅
+**Reason**: Firebase auth was failing on mobile browsers (Safari/Chrome iOS) and incurring unnecessary costs
+
+- **Backend Migration**:
+  - Created `server/replitAuth.ts` with OIDC integration
+  - Updated database schema: users table fields renamed (displayName→firstName, photoURL→profileImageUrl, credits→tokens)
+  - Added sessions table for cookie-based authentication
+  - Updated all routes with `isAuthenticated` middleware
+  - Created `upsertUser` in storage.ts for user management
+  
+- **Frontend Migration**:
+  - Removed Firebase completely (AuthContext, firebase.ts, firebase-admin.ts deleted)
+  - Created new `useAuth` hook with Replit Auth integration
+  - Created `authUtils.ts` for authentication utilities
+  - Updated all pages (Landing, Questionnaire, Pricing, Chat, Settings, GiftLists, GiftListDetail)
+  - Switched to cookie-based session authentication (no Authorization headers)
+  
+- **Auth Flow**:
+  - Login: POST `/api/login` (redirects to Replit OAuth)
+  - Logout: POST `/api/logout`
+  - Current user: GET `/api/auth/user`
+  - Session cookies handle authentication automatically
 
 ## Recent Changes (October 15, 2025)
 
