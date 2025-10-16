@@ -65,19 +65,19 @@ export function WelcomeDialog({ externalOpen, onExternalClose }: WelcomeDialogPr
           </div>
           
           <DialogTitle className="text-3xl text-center bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Welcome to the Gift Spark Experience.
+            The Agentic Gift Experience.
           </DialogTitle>
           
           <DialogDescription className="space-y-4 pt-2 text-base leading-relaxed">
             <p className="text-foreground">
-              Finding the perfect gift shouldn't feel impossible.
+              Your AI-powered gift companion awaits.
             </p>
             
             <div className="space-y-3">
               <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-purple-500/5 border border-primary/10">
                 <ListPlus className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-foreground">Build giftlists (free)</p>
+                  <p className="font-medium text-foreground">Gift Tracker (Free)</p>
                   <p className="text-sm text-muted-foreground">Keep track of gift ideas</p>
                 </div>
               </div>
@@ -85,8 +85,8 @@ export function WelcomeDialog({ externalOpen, onExternalClose }: WelcomeDialogPr
               <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-500/5 to-pink-500/5 border border-purple-500/10">
                 <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-foreground">Try our premium questionnaire</p>
-                  <p className="text-sm text-muted-foreground">Get instant, thoughtful suggestions</p>
+                  <p className="font-medium text-foreground">Train an AI agent</p>
+                  <p className="text-sm text-muted-foreground">Submit a questionnaire and you'll be on your way</p>
                 </div>
               </div>
             </div>
