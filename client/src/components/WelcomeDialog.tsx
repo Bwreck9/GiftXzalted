@@ -7,16 +7,19 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Gift, Sparkles, ListPlus, X } from 'lucide-react';
+import { Gift, Sparkles, ListPlus, X, Search } from 'lucide-react';
 
 const WELCOME_DIALOG_KEY = 'giftspark-welcome-shown';
 
 interface WelcomeDialogProps {
   externalOpen?: boolean;
   onExternalClose?: () => void;
+  onGiftTrackerClick?: () => void;
+  onTrainAgentClick?: () => void;
+  onWebSearchClick?: () => void;
 }
 
-export function WelcomeDialog({ externalOpen, onExternalClose }: WelcomeDialogProps) {
+export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClick, onTrainAgentClick, onWebSearchClick }: WelcomeDialogProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -74,30 +77,51 @@ export function WelcomeDialog({ externalOpen, onExternalClose }: WelcomeDialogPr
             </p>
             
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-purple-500/5 border border-primary/10">
+              <button
+                onClick={() => {
+                  onGiftTrackerClick?.();
+                  handleClose();
+                }}
+                className="w-full flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-purple-500/5 border border-primary/10 hover-elevate active-elevate-2 text-left transition-all"
+                data-testid="button-gift-tracker"
+              >
                 <ListPlus className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium text-foreground">Gift Tracker (Free)</p>
-                  <p className="text-sm text-muted-foreground">Keep track of gift ideas</p>
+                  <p className="text-sm text-muted-foreground">Keep track of gift ideas the old school way</p>
                 </div>
-              </div>
+              </button>
               
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-500/5 to-pink-500/5 border border-purple-500/10">
+              <button
+                onClick={() => {
+                  onTrainAgentClick?.();
+                  handleClose();
+                }}
+                className="w-full flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-500/5 to-pink-500/5 border border-purple-500/10 hover-elevate active-elevate-2 text-left transition-all"
+                data-testid="button-train-agent"
+              >
                 <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium text-foreground">Train an AI agent</p>
-                  <p className="text-sm text-muted-foreground">Submit a questionnaire and you'll be on your way</p>
+                  <p className="text-sm text-muted-foreground">Train an AI agent to recommend ideas</p>
                 </div>
-              </div>
+              </button>
+              
+              <button
+                onClick={() => {
+                  onWebSearchClick?.();
+                  handleClose();
+                }}
+                className="w-full flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-pink-500/5 to-primary/5 border border-pink-500/10 hover-elevate active-elevate-2 text-left transition-all"
+                data-testid="button-web-search"
+              >
+                <Search className="h-5 w-5 text-pink-600 dark:text-pink-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground">Web Search Agent</p>
+                  <p className="text-sm text-muted-foreground">Use the agent to search the web for gift ideas</p>
+                </div>
+              </button>
             </div>
-            
-            <p className="font-medium text-center text-foreground pt-2">
-              It's fast, and surprisingly simple.
-            </p>
-            
-            <p className="text-sm italic text-center text-muted-foreground">
-              ✨ Check back often — new updates and features are always on the way.
-            </p>
           </DialogDescription>
         </DialogHeader>
         

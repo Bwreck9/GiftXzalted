@@ -124,7 +124,11 @@ export default function Landing() {
   if (!isAuthenticated) {
     return (
       <div className="h-screen flex flex-col">
-        <WelcomeDialog externalOpen={showSplash} onExternalClose={() => setShowSplash(false)} />
+        <WelcomeDialog 
+          externalOpen={showSplash} 
+          onExternalClose={() => setShowSplash(false)}
+          onGiftTrackerClick={handleSignIn}
+        />
         
         <header className="h-16 border-b flex items-center justify-between px-6">
           <div className="flex items-center gap-2">
@@ -212,7 +216,11 @@ export default function Landing() {
 
   return (
     <div className="h-screen flex flex-col">
-      <WelcomeDialog externalOpen={showSplash} onExternalClose={() => setShowSplash(false)} />
+      <WelcomeDialog 
+        externalOpen={showSplash} 
+        onExternalClose={() => setShowSplash(false)}
+        onGiftTrackerClick={() => setCreateDialogOpen(true)}
+      />
       <SettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
