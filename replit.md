@@ -136,6 +136,25 @@ Before going live:
 
 ## Recent Changes (October 16, 2025)
 
+### 🎨 Mobile-First UX Improvements ✅
+**Focus: Agentic experience with interactive welcome dialog**
+
+- **Welcome Dialog Updates** (`WelcomeDialog.tsx`):
+  - ✅ **Agentic Messaging**: Title changed to "The Agentic Gift Experience"
+  - ✅ **Interactive Feature Tiles**: Converted to clickable buttons with hover effects
+  - ✅ **Updated Copy**:
+    - "Gift Tracker (Free)" - Keep track of gift ideas the old school way
+    - "Train an AI agent" - Train an AI agent to recommend ideas
+    - "Web Search Agent" - Use the agent to search the web for gift ideas (coming soon)
+  - ✅ Removed "Finding the perfect gift" language
+  - ✅ Fixed DOM nesting warnings (span instead of p tags)
+  
+- **Interactive Flow**:
+  - ✅ Gift Tracker button → Opens name-only profile creation dialog
+  - ✅ Non-authenticated users → Redirected to sign-in
+  - ✅ Authenticated users → Opens create gift list dialog
+  - ✅ Clean mobile-first button interactions
+
 ### 🔐 Firebase to Replit Auth Migration ✅
 **Reason**: Firebase auth was failing on mobile browsers (Safari/Chrome iOS) and incurring unnecessary costs
 
@@ -158,6 +177,7 @@ Before going live:
   - Logout: POST `/api/logout`
   - Current user: GET `/api/auth/user`
   - Session cookies handle authentication automatically
+  - Mobile OAuth fix: Added `sameSite: 'lax'` to session cookies for mobile compatibility
 
 ## Recent Changes (October 15, 2025)
 
