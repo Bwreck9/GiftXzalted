@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { WelcomeDialog } from '@/components/WelcomeDialog';
 import type { Profile } from '@shared/schema';
-import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn } from 'lucide-react';
+import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -165,10 +165,14 @@ export default function Landing() {
         />
         
         <header className="h-16 border-b flex items-center justify-between px-6">
-          <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setLocation('/')}
+            className="flex items-center gap-2 hover-elevate active-elevate-2 p-2 rounded-md"
+            data-testid="button-logo-home"
+          >
             <Gift className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">Gift Spark</span>
-          </div>
+          </button>
           <ThemeToggle />
         </header>
 
@@ -270,10 +274,14 @@ export default function Landing() {
       />
       
       <header className="h-16 border-b flex items-center justify-between px-6">
-        <div className="flex items-center gap-2">
+        <button 
+          onClick={() => setLocation('/')}
+          className="flex items-center gap-2 hover-elevate active-elevate-2 p-2 rounded-md"
+          data-testid="button-logo-home"
+        >
           <Gift className="h-6 w-6 text-primary" />
           <span className="text-xl font-bold">Gift Spark</span>
-        </div>
+        </button>
         <div className="flex items-center gap-3">
           <Button
             onClick={() => setCreateDialogOpen(true)}
@@ -283,6 +291,16 @@ export default function Landing() {
           >
             <Plus className="h-4 w-4 mr-2" />
             Create New Gift List
+          </Button>
+          <Button
+            onClick={() => setLocation('/pricing')}
+            variant="outline"
+            size="default"
+            className="hover-elevate active-elevate-2"
+            data-testid="button-token-counter"
+          >
+            <Coins className="h-4 w-4 mr-2" />
+            {user?.tokens ?? 0} tokens
           </Button>
           <Button
             onClick={() => setSettingsOpen(true)}
@@ -383,15 +401,7 @@ export default function Landing() {
           ) : (
             <div className="text-center py-16 space-y-4">
               <p className="text-muted-foreground text-lg">No gift lists yet</p>
-              <Button
-                onClick={() => setCreateDialogOpen(true)}
-                size="lg"
-                className="hover-elevate active-elevate-2"
-                data-testid="button-create-first-gift-list"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Create Your First Gift List
-              </Button>
+              <p className="text-sm text-muted-foreground">Click "Create New Gift List" above to get started</p>
             </div>
           )}
         </div>

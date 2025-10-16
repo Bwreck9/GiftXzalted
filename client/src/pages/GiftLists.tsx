@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
-import { Plus, Trash2, ListPlus } from "lucide-react";
+import { Plus, Trash2, ListPlus, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import type { GiftList } from "@shared/schema";
@@ -91,11 +91,23 @@ export default function GiftLists() {
   return (
     <div className="container max-w-4xl mx-auto py-12 px-4">
       <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">My Gift Lists</h1>
-          <p className="text-muted-foreground">
-            Keep track of gift ideas for anyone in your life - completely free!
-          </p>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setLocation('/')}
+            data-testid="button-back-home"
+            className="hover-elevate active-elevate-2"
+            aria-label="Back to home"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold mb-2">My Gift Lists</h1>
+            <p className="text-muted-foreground">
+              Keep track of gift ideas for anyone in your life - completely free!
+            </p>
+          </div>
         </div>
         <Button
           onClick={() => setIsCreating(true)}
