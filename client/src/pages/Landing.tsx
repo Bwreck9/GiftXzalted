@@ -101,6 +101,39 @@ export default function Landing() {
     },
   });
 
+  const handleGiftTrackerClick = () => {
+    if (!isAuthenticated) {
+      handleSignIn();
+      return;
+    }
+    
+    // Create a new profile with default name
+    const defaultName = `Gift List ${(profiles?.length || 0) + 1}`;
+    createGiftListMutation.mutate(defaultName);
+  };
+
+  const handleTrainAgentClick = () => {
+    if (!isAuthenticated) {
+      handleSignIn();
+      return;
+    }
+
+    // Check if user has tokens
+    if (!user?.tokens || user.tokens <= 0) {
+      toast({ 
+        title: 'No tokens available', 
+        description: 'Purchase tokens to train your AI agent',
+        variant: 'destructive' 
+      });
+      setLocation('/pricing');
+      return;
+    }
+
+    // Create profile and navigate to questionnaire
+    const defaultName = `AI Profile ${(profiles?.length || 0) + 1}`;
+    createGiftListMutation.mutate(defaultName);
+  };
+
   const handleSignIn = () => {
     window.location.href = '/api/login';
   };
@@ -127,7 +160,8 @@ export default function Landing() {
         <WelcomeDialog 
           externalOpen={showSplash} 
           onExternalClose={() => setShowSplash(false)}
-          onGiftTrackerClick={handleSignIn}
+          onGiftTrackerClick={handleGiftTrackerClick}
+          onTrainAgentClick={handleTrainAgentClick}
         />
         
         <header className="h-16 border-b flex items-center justify-between px-6">
@@ -219,7 +253,8 @@ export default function Landing() {
       <WelcomeDialog 
         externalOpen={showSplash} 
         onExternalClose={() => setShowSplash(false)}
-        onGiftTrackerClick={() => setCreateDialogOpen(true)}
+        onGiftTrackerClick={handleGiftTrackerClick}
+        onTrainAgentClick={handleTrainAgentClick}
       />
       <SettingsModal
         open={settingsOpen}
