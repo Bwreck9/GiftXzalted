@@ -100,22 +100,19 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
             <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
             <div className="flex flex-col gap-1">
               <span className="font-medium text-foreground">Train an AI agent</span>
-              <span className="text-sm text-muted-foreground">Train an AI agent to recommend ideas</span>
+              <span className="text-sm text-muted-foreground">Submit a questionnaire to customize the recipient profile</span>
             </div>
           </button>
           
           <button
-            onClick={() => {
-              onWebSearchClick?.();
-              handleClose();
-            }}
-            className="w-full flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-pink-500/5 to-primary/5 border border-pink-500/10 hover-elevate active-elevate-2 text-left transition-all"
+            disabled
+            className="w-full flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-pink-500/5 to-primary/5 border border-pink-500/10 text-left transition-all opacity-50 cursor-not-allowed"
             data-testid="button-web-search"
           >
             <Search className="h-5 w-5 text-pink-600 dark:text-pink-400 mt-0.5 flex-shrink-0" />
             <div className="flex flex-col gap-1">
               <span className="font-medium text-foreground">Web Search Agent</span>
-              <span className="text-sm text-muted-foreground">Use the agent to search the web for gift ideas</span>
+              <span className="text-sm text-muted-foreground">Use the agent to search the web for gift ideas (In Development)</span>
             </div>
           </button>
         </div>
