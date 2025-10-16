@@ -111,9 +111,28 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/callback", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
+    passport.authenticate(`replitauth:${req.hostname}`, (err: any, user: any) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.redirect("/api/login");
+      }
+      req.logIn(user, (err: any) => {
+        if (err) {
+          return next(err);
+        }
+        // Explicitly save session before redirect (fixes incognito mode issue)
+        req.session.save((err: any) => {
+          if (err) {
+            return next(err);
+          }
+          // Preserve returnTo functionality for deep links
+          const returnTo = (req.session as any).returnTo || "/";
+          delete (req.session as any).returnTo;
+          res.redirect(returnTo);
+        });
+      });
     })(req, res, next);
   });
 
