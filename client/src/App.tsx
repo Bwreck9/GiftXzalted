@@ -31,7 +31,7 @@ function Router() {
       <Route path="/profile/:id" component={ProfileDetail} />
       <Route path="/chat/:id" component={Chat} />
       <Route path="/gift-lists" component={GiftLists} />
-      <Route path="/gift-lists/:id" component={GiftListDetail} />
+      <Route path="/gift-list/:id" component={GiftListDetail} />
       <Route path="/settings" component={Settings} />
       <Route path="/about" component={About} />
       <Route path="/pricing" component={Pricing} />

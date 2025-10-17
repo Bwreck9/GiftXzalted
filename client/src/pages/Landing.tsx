@@ -293,10 +293,10 @@ export default function Landing() {
             onClick={() => setCreateDialogOpen(true)}
             size="default"
             className="hover-elevate active-elevate-2"
-            data-testid="button-create-gift-list"
+            data-testid="button-create-profile"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Create New Gift List
+            Create New Profile
           </Button>
           <Button
             onClick={() => setLocation('/pricing')}
@@ -406,8 +406,8 @@ export default function Landing() {
             </div>
           ) : (
             <div className="text-center py-16 space-y-4">
-              <p className="text-muted-foreground text-lg">No gift lists yet</p>
-              <p className="text-sm text-muted-foreground">Click "Create New Gift List" above to get started</p>
+              <p className="text-muted-foreground text-lg">No profiles yet</p>
+              <p className="text-sm text-muted-foreground">Click "Create New Profile" above to get started</p>
             </div>
           )}
         </div>
@@ -415,16 +415,6 @@ export default function Landing() {
 
       <footer className="border-t">
         <div className="flex items-center justify-center gap-8 px-6 py-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation('/gift-lists')}
-            data-testid="link-gift-lists"
-            className="hover-elevate"
-          >
-            <Gift className="h-4 w-4 mr-2" />
-            Gift Lists
-          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -475,21 +465,21 @@ export default function Landing() {
         </div>
       </footer>
 
-      {/* Create Gift List Dialog */}
+      {/* Create Profile Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent data-testid="dialog-create-gift-list">
+        <DialogContent data-testid="dialog-create-profile">
           <DialogHeader>
-            <DialogTitle>Create New Gift List</DialogTitle>
+            <DialogTitle>Create New Profile</DialogTitle>
             <DialogDescription>
-              Enter a name for your gift list (e.g., "Mom's Birthday" or "John's Gift Ideas")
+              Enter a name for the person you're shopping for (e.g., "Mom", "Dad", "Sarah")
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="gift-list-name">Gift List Name</Label>
+              <Label htmlFor="profile-name">Person's Name</Label>
               <Input
-                id="gift-list-name"
-                placeholder="e.g., Mom's Birthday"
+                id="profile-name"
+                placeholder="e.g., Mom"
                 value={newGiftListName}
                 onChange={(e) => setNewGiftListName(e.target.value)}
                 onKeyDown={(e) => {
