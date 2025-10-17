@@ -141,6 +141,7 @@ export default function Landing() {
   };
 
   const handleSignIn = () => {
+    console.log('[Landing] handleSignIn called - redirecting to /api/login');
     window.location.href = '/api/login';
   };
 
