@@ -12,10 +12,10 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 ### System Architecture
 **UI/UX Decisions:**
 - **Design System:** Material Design 3 with a consistent gradient styling (primary blue → purple → pink), Inter font, 44px minimum touch targets, consistent spacing, and dark mode support.
-- **Navigation:** Hierarchical navigation with "Back to profiles" button in ProfileDetail and "Back" button in GiftListDetail. Clickable logo for homepage navigation and accessible footer with legal links.
+- **Navigation:** Hierarchical navigation with "Back to profiles" button in ProfileDetail and "Back" button in GiftListDetail. Clickable logo for homepage navigation and accessible footer with legal links. Landing page includes "Need more profiles? Check out the profile plans" link to pricing.
 - **Character Limits:** Profile names and list names limited to 20 characters (enforced in frontend maxLength and backend schema validation).
-- **Components:** Reusable UI components for consistent design, Settings gear icons for list options.
-- **Welcome Experience:** A closeable splash screen explains app features, with a footer button to reopen.
+- **Components:** Reusable UI components for consistent design, Settings gear icons positioned inside list tiles (right side) for list options.
+- **Welcome Experience:** Closeable splash screen explains app features. Feature buttons and close button navigate to landing page. "Web Search Agent (In development)" displayed. Footer button to reopen.
 - **Profile System:** Questionnaire-based profiles for AI training.
 - **Gift List Management:** 
   - Separated "Gift Ideas" (manual entries) and "Generated Ideas" (AI recommendations) sections
@@ -23,6 +23,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
   - "Add to list" functionality to promote AI suggestions to manual gift list
   - "Generate ideas" button for AI recommendations (500 tokens per generation)
   - Empty state messaging ("No generations yet") when AI recommendations haven't been created
+- **Pricing Page:** Profile plans (Free, Basic, Premium, Enterprise) grouped in a gradient-styled container. One-time token purchase displayed below subscription plans.
 
 **Technical Implementations & Feature Specifications:**
 - **Authentication:** Replit Auth with Google OAuth (session-based, cookie authentication).
