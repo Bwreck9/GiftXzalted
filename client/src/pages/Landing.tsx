@@ -389,7 +389,7 @@ export default function Landing() {
                   className="text-primary hover:underline"
                   data-testid="link-upgrade-profiles"
                 >
-                  They're available for purchase
+                  Check out the profile plans
                 </button>
               </p>
             </div>

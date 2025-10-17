@@ -194,50 +194,49 @@ export default function ProfileDetail() {
           ) : giftLists && giftLists.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {giftLists.map(list => (
-                <div key={list.id} className="relative group">
-                  <button
-                    onClick={() => setLocation(`/gift-list/${list.id}`)}
-                    className="w-full p-4 rounded-lg border bg-card hover-elevate active-elevate-2 text-left"
-                    data-testid={`gift-list-card-${list.id}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Calendar className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground">{list.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {list.manualIdeas?.length || 0} ideas
-                        </p>
-                      </div>
+                <button
+                  key={list.id}
+                  onClick={() => setLocation(`/gift-list/${list.id}`)}
+                  className="w-full p-4 rounded-lg border bg-card hover-elevate active-elevate-2 text-left"
+                  data-testid={`gift-list-card-${list.id}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <Calendar className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-foreground">{list.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {list.manualIdeas?.length || 0} ideas
+                      </p>
                     </div>
-                  </button>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 hover-elevate"
-                        data-testid={`list-menu-${list.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => {
-                          if (confirm(`Delete list "${list.title}"?`)) {
-                            deleteListMutation.mutate(list.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="hover-elevate shrink-0"
+                          data-testid={`list-menu-${list.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => {
+                            if (confirm(`Delete list "${list.title}"?`)) {
+                              deleteListMutation.mutate(list.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </button>
               ))}
             </div>
           ) : (

@@ -41,11 +41,17 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
     localStorage.setItem(WELCOME_DIALOG_KEY, 'true');
     setOpen(false);
     onExternalClose?.();
+    setLocation('/');
   };
 
   const handleGetStarted = () => {
     handleClose();
     setLocation('/onboarding');
+  };
+
+  const handleFeatureClick = () => {
+    handleClose();
+    setLocation('/');
   };
 
   return (
@@ -75,10 +81,7 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
         
         <div className="space-y-3 pt-2">
           <button
-            onClick={() => {
-              onGiftTrackerClick?.();
-              handleClose();
-            }}
+            onClick={handleFeatureClick}
             className="w-full flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-purple-500/5 border border-primary/10 hover-elevate active-elevate-2 text-left transition-all"
             data-testid="button-gift-tracker"
           >
@@ -90,10 +93,7 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
           </button>
           
           <button
-            onClick={() => {
-              onTrainAgentClick?.();
-              handleClose();
-            }}
+            onClick={handleFeatureClick}
             className="w-full flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-500/5 to-pink-500/5 border border-purple-500/10 hover-elevate active-elevate-2 text-left transition-all"
             data-testid="button-train-agent"
           >
@@ -111,8 +111,8 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
           >
             <Search className="h-5 w-5 text-pink-600 dark:text-pink-400 mt-0.5 flex-shrink-0" />
             <div className="flex flex-col gap-1">
-              <span className="font-medium text-foreground">Web Search Agent</span>
-              <span className="text-sm text-muted-foreground">Use the agent to search the web for gift ideas (In Development)</span>
+              <span className="font-medium text-foreground">Web Search Agent (In development)</span>
+              <span className="text-sm text-muted-foreground">Use the agent to search the web for gift ideas</span>
             </div>
           </button>
         </div>
