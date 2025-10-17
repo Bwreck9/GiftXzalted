@@ -63,33 +63,15 @@ export default function Pricing() {
             </p>
           </div>
 
-          {/* One-Time Token Purchase - FIRST */}
-          <Card className="p-6 bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 border-primary/20">
-            <div className="max-w-3xl mx-auto">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-bold mb-2">Buy Tokens Once</h3>
-                  <p className="text-muted-foreground">
-                    Purchase <strong>5,000 tokens</strong> for a one-time payment. Never expires.
-                  </p>
-                </div>
-                <div className="flex flex-col items-start md:items-end gap-2">
-                  <div className="text-3xl font-bold">$5</div>
-                  <Button
-                    onClick={handleGetStarted}
-                    variant="outline"
-                    className="hover-elevate active-elevate-2"
-                    data-testid="button-buy-tokens"
-                  >
-                    Buy Tokens Now
-                  </Button>
-                </div>
+          {/* Subscription Plans Box */}
+          <div className="p-6 rounded-lg border bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 border-primary/20">
+            <div className="space-y-6">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold mb-2">Profile Plans</h2>
+                <p className="text-muted-foreground">Choose the plan that fits your needs</p>
               </div>
-            </div>
-          </Card>
-
-          {/* Pricing Plans - Below */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Free Plan */}
             <Card className="p-6 relative">
               <div className="space-y-4">
@@ -281,7 +263,34 @@ export default function Pricing() {
                 </Button>
               </div>
             </Card>
+              </div>
+            </div>
           </div>
+
+          {/* One-Time Token Purchase */}
+          <Card className="p-6 bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 border-primary/20">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Buy Tokens Once</h3>
+                  <p className="text-muted-foreground">
+                    Purchase <strong>5,000 tokens</strong> for a one-time payment. Never expires.
+                  </p>
+                </div>
+                <div className="flex flex-col items-start md:items-end gap-2">
+                  <div className="text-3xl font-bold">$5</div>
+                  <Button
+                    onClick={handleGetStarted}
+                    variant="outline"
+                    className="hover-elevate active-elevate-2"
+                    data-testid="button-buy-tokens"
+                  >
+                    Buy Tokens Now
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
 
           {/* How Tokens Work */}
           <Card className="p-6 bg-muted/50">
