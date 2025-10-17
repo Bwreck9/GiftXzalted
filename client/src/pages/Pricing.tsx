@@ -29,13 +29,13 @@ export default function Pricing() {
           <button
             onClick={() => setLocation('/')}
             className="flex items-center gap-2 group"
-            aria-label="Gift Spark Home"
+            aria-label="Gift Xzalted Home"
           >
             <div className="bg-gradient-to-br from-primary via-purple-500 to-pink-500 p-2 rounded-lg">
               <Gift className="h-5 w-5 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Gift Spark
+              Gift Xzalted
             </span>
           </button>
           

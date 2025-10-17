@@ -20,14 +20,14 @@ export default function PrivacyPolicy() {
           <button
             onClick={() => setLocation('/')}
             className="flex items-center gap-2 group"
-            aria-label="Gift Spark Home"
+            aria-label="Gift Xzalted Home"
             data-testid="button-home-logo"
           >
             <div className="bg-gradient-to-br from-primary via-purple-500 to-pink-500 p-2 rounded-lg">
               <Gift className="h-5 w-5 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Gift Spark
+              Gift Xzalted
             </span>
           </button>
           
@@ -63,7 +63,7 @@ export default function PrivacyPolicy() {
           {/* Content */}
           <Card className="p-8 space-y-6">
             <p className="text-lg leading-relaxed">
-              Gift Spark values your privacy. This policy explains what information we collect, 
+              Gift Xzalted values your privacy. This policy explains what information we collect, 
               why we collect it, and how we use it.
             </p>
 
@@ -90,7 +90,7 @@ export default function PrivacyPolicy() {
                 <h2 className="text-xl font-semibold mb-3">3. Data Storage & Security</h2>
                 <ul className="space-y-2 text-muted-foreground ml-4">
                   <li>• Your data is stored securely and never sold or shared with third parties.</li>
-                  <li>• Access is limited to Gift Spark systems and authorized service providers.</li>
+                  <li>• Access is limited to Gift Xzalted systems and authorized service providers.</li>
                   <li>• We retain your data for as long as your account is active or as needed to provide services.</li>
                 </ul>
               </div>
@@ -98,7 +98,7 @@ export default function PrivacyPolicy() {
               <div>
                 <h2 className="text-xl font-semibold mb-3">4. Third-Party Services</h2>
                 <p className="text-muted-foreground mb-2">
-                  Gift Spark uses the following third-party services to provide our features:
+                  Gift Xzalted uses the following third-party services to provide our features:
                 </p>
                 <ul className="space-y-2 text-muted-foreground ml-4">
                   <li>• <strong>Google Sign-In</strong>: For secure authentication</li>
@@ -121,7 +121,7 @@ export default function PrivacyPolicy() {
               <div>
                 <h2 className="text-xl font-semibold mb-3">6. Children's Privacy</h2>
                 <p className="text-muted-foreground">
-                  Gift Spark is intended for general audiences and not designed for children under 13.
+                  Gift Xzalted is intended for general audiences and not designed for children under 13.
                 </p>
               </div>
 
@@ -137,7 +137,7 @@ export default function PrivacyPolicy() {
 
           {/* Footer Copyright */}
           <div className="text-center text-sm text-muted-foreground py-4">
-            © {currentYear} Gift Spark. Created & managed by Xzalted. All rights reserved.
+            © {currentYear} Gift Xzalted. Created & managed by Xzalted. All rights reserved.
           </div>
 
           {/* Bottom Back Button */}

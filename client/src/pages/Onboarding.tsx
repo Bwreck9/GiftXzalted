@@ -79,7 +79,7 @@ export default function Onboarding() {
           data-testid="button-back-home"
         >
           <Gift className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">Gift Spark</span>
+          <span className="text-xl font-bold">Gift Xzalted</span>
         </button>
       </header>
 
@@ -89,7 +89,7 @@ export default function Onboarding() {
           {/* Title */}
           <div className="text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              How Gift Spark Works
+              How Gift Xzalted Works
             </h1>
             <p className="text-lg text-muted-foreground">
               Your AI-powered gift companion in 3 simple steps

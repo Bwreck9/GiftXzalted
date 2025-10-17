@@ -286,7 +286,7 @@ export default function Landing() {
           data-testid="button-logo-home"
         >
           <Gift className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">Gift Spark</span>
+          <span className="text-xl font-bold">Gift Xzalted</span>
         </button>
         <div className="flex items-center gap-3">
           <Button

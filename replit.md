@@ -1,7 +1,7 @@
-# Gift Spark - AI-Powered Gift Recommendation App
+# Gift Xzalted - AI-Powered Gift Recommendation App
 
 ## Overview
-Gift Spark helps users discover the perfect gift for anyone in their life. The app uses a hierarchical structure: **Profiles** (people like "Mom" or "Dad") → **Gift Lists** (occasions like "Birthday" or "Christmas") → **Gift Ideas** (manual entries + optional AI recommendations). Users can create profiles and gift lists for free, with optional AI-powered recommendations (token-based).
+Gift Xzalted helps users discover the perfect gift for anyone in their life. The app uses a hierarchical structure: **Profiles** (people like "Mom" or "Dad") → **Gift Lists** (occasions like "Birthday" or "Christmas") → **Gift Ideas** (manual entries + optional AI recommendations). Users can create profiles and gift lists for free, with optional AI-powered recommendations (token-based).
 
 ## Current State (Phase 1 MVP Complete)
 
