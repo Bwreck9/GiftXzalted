@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Plus, Brain, Calendar, MoreVertical, Trash2 } from 'lucide-react';
+import { Plus, Brain, Calendar, Settings, Trash2, ArrowLeft } from 'lucide-react';
 import { AppHeader } from '@/components/AppHeader';
 import type { Profile, GiftList } from '@shared/schema';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -163,7 +163,18 @@ export default function ProfileDetail() {
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Gift Lists</h2>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => setLocation('/')}
+                variant="outline"
+                className="hover-elevate active-elevate-2"
+                data-testid="button-back-to-profiles"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to profiles
+              </Button>
+              <h2 className="text-2xl font-bold">Gift Lists</h2>
+            </div>
             <Button
               onClick={() => setCreateDialogOpen(true)}
               className="hover-elevate active-elevate-2"
@@ -209,7 +220,7 @@ export default function ProfileDetail() {
                         data-testid={`list-menu-${list.id}`}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <MoreVertical className="h-4 w-4" />
+                        <Settings className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -261,6 +272,7 @@ export default function ProfileDetail() {
                     handleCreateList();
                   }
                 }}
+                maxLength={20}
                 data-testid="input-list-name"
               />
             </div>
