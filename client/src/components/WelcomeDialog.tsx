@@ -26,7 +26,9 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
 
   useEffect(() => {
     const hasShown = localStorage.getItem(WELCOME_DIALOG_KEY);
+    console.log('[WelcomeDialog] mount - hasShown:', hasShown);
     if (!hasShown) {
+      console.log('[WelcomeDialog] Opening dialog (first time)');
       setOpen(true);
     }
   }, []);

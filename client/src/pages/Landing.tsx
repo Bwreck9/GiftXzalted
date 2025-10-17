@@ -102,6 +102,7 @@ export default function Landing() {
   });
 
   const handleGiftTrackerClick = () => {
+    console.log('[Landing] handleGiftTrackerClick - authLoading:', authLoading, 'isAuthenticated:', isAuthenticated, 'user:', user);
     // Wait for auth to finish loading before checking authentication
     if (authLoading) return;
     
