@@ -22,13 +22,13 @@ export function AppHeader() {
         {/* Logo */}
         <button 
           onClick={() => setLocation('/')}
-          className="flex items-center gap-2 hover-elevate active-elevate-2 p-2 rounded-md"
+          className="flex items-center gap-1.5 hover-elevate active-elevate-2 p-2 rounded-md shrink-0"
           data-testid="button-logo-home"
         >
-          <div className="bg-gradient-to-br from-primary via-purple-500 to-pink-500 p-2 rounded-lg">
-            <Gift className="h-5 w-5 text-white" />
+          <div className="bg-gradient-to-br from-primary via-purple-500 to-pink-500 p-1.5 rounded-lg">
+            <Gift className="h-4 w-4 text-white" />
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <span className="text-lg font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap">
             Gift Xzalted
           </span>
         </button>

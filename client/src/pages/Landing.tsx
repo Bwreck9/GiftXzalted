@@ -275,21 +275,9 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Profile Counter and Create Button */}
           <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground" data-testid="profile-counter">
-                {profiles?.length || 0}/5 profiles
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Need more profiles?{' '}
-                <button
-                  onClick={() => setLocation('/pricing')}
-                  className="text-primary hover:underline"
-                  data-testid="link-upgrade-profiles"
-                >
-                  They're available for purchase
-                </button>
-              </p>
-            </div>
+            <p className="text-sm text-muted-foreground" data-testid="profile-counter">
+              {profiles?.length || 0}/5 profiles
+            </p>
             <Button
               onClick={() => setCreateDialogOpen(true)}
               size="default"
@@ -388,6 +376,22 @@ export default function Landing() {
             <div className="text-center py-16 space-y-4">
               <p className="text-muted-foreground text-lg">No profiles yet</p>
               <p className="text-sm text-muted-foreground">Click "Create New Profile" above to get started</p>
+            </div>
+          )}
+
+          {/* Need More Profiles - Below Profiles */}
+          {profiles && profiles.length > 0 && (
+            <div className="text-center pt-2">
+              <p className="text-xs text-muted-foreground">
+                Need more profiles?{' '}
+                <button
+                  onClick={() => setLocation('/pricing')}
+                  className="text-primary hover:underline"
+                  data-testid="link-upgrade-profiles"
+                >
+                  They're available for purchase
+                </button>
+              </p>
             </div>
           )}
         </div>

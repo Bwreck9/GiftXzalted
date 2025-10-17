@@ -141,7 +141,7 @@ export default function ProfileDetail() {
               style={{ backgroundColor: profile.color || '#3B82F6' }}
             />
             <div>
-              <h1 className="text-xl font-semibold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <h1 className="text-xl font-semibold text-foreground">
                 {profile.name}
               </h1>
               {profile.relationship && (
