@@ -290,15 +290,6 @@ export default function Landing() {
         </button>
         <div className="flex items-center gap-3">
           <Button
-            onClick={() => setCreateDialogOpen(true)}
-            size="default"
-            className="hover-elevate active-elevate-2"
-            data-testid="button-create-profile"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create New Profile
-          </Button>
-          <Button
             onClick={() => setLocation('/pricing')}
             variant="outline"
             size="default"
@@ -308,22 +299,25 @@ export default function Landing() {
             <Coins className="h-4 w-4 mr-2" />
             {user?.tokens ?? 0} tokens
           </Button>
-          <Button
-            onClick={() => setSettingsOpen(true)}
-            variant="ghost"
-            size="icon"
-            className="hover-elevate active-elevate-2"
-            data-testid="settings-open"
-            aria-label="Settings"
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
           <ThemeToggle />
         </div>
       </header>
 
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto space-y-6">
+          {/* Create Profile Button */}
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setCreateDialogOpen(true)}
+              size="default"
+              className="hover-elevate active-elevate-2"
+              data-testid="button-create-profile"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Profile
+            </Button>
+          </div>
+
           {/* Profile Cards Grid */}
           {profilesLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -336,71 +330,74 @@ export default function Landing() {
               {profiles.map(profile => (
                 <div
                   key={profile.id}
-                  className="relative group"
+                  className="group"
                 >
-                  <button
-                    onClick={() => setLocation(`/profile/${profile.id}`)}
-                    className="w-full p-4 rounded-lg border bg-card hover-elevate active-elevate-2 text-left"
-                    data-testid={`profile-card-${profile.id}`}
-                  >
+                  <div className="p-4 rounded-lg border bg-card">
                     <div className="flex items-start gap-3">
                       {/* Color Swatch */}
-                      <div 
-                        className="w-12 h-12 rounded-md flex-shrink-0"
+                      <button
+                        onClick={() => setLocation(`/profile/${profile.id}`)}
+                        className="w-12 h-12 rounded-md flex-shrink-0 hover-elevate active-elevate-2"
                         style={{ backgroundColor: profile.color || '#3B82F6' }}
+                        data-testid={`profile-card-${profile.id}`}
                       />
-                      <div className="flex-1 min-w-0">
+                      <button
+                        onClick={() => setLocation(`/profile/${profile.id}`)}
+                        className="flex-1 min-w-0 text-left hover-elevate active-elevate-2 p-2 rounded-md -m-2"
+                      >
                         <h3 className="font-medium text-foreground truncate">{profile.name}</h3>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {profile.relationship || `Age ${profile.age}`}
-                        </p>
-                      </div>
+                        {profile.relationship && (
+                          <p className="text-sm text-muted-foreground truncate">
+                            {profile.relationship}
+                          </p>
+                        )}
+                      </button>
+                      
+                      {/* Settings Menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover-elevate flex-shrink-0"
+                            data-testid={`profile-menu-${profile.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Profile menu for ${profile.name}`}
+                          >
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedProfile(profile);
+                            setSettingsOpen(true);
+                          }}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedProfile(profile);
+                            setSettingsOpen(true);
+                          }}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Change Color
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => {
+                              if (confirm(`Delete profile "${profile.name}"?`)) {
+                                deleteProfileMutation.mutate(profile.id);
+                              }
+                            }}
+                            data-testid={`button-delete-${profile.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                  </button>
-                  
-                  {/* Kebab Menu */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 hover-elevate"
-                        data-testid={`profile-menu-${profile.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label={`Profile menu for ${profile.name}`}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => {
-                        setSelectedProfile(profile);
-                        setSettingsOpen(true);
-                      }}>
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        setSelectedProfile(profile);
-                        setSettingsOpen(true);
-                      }}>
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Change Color
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="text-destructive"
-                        onClick={() => {
-                          if (confirm(`Delete profile "${profile.name}"?`)) {
-                            deleteProfileMutation.mutate(profile.id);
-                          }
-                        }}
-                        data-testid={`button-delete-${profile.id}`}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  </div>
                 </div>
               ))}
             </div>
