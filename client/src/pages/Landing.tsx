@@ -3,8 +3,8 @@ import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { WelcomeDialog } from '@/components/WelcomeDialog';
+import { AppHeader } from '@/components/AppHeader';
 import type { Profile } from '@shared/schema';
 import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins } from 'lucide-react';
 import {
@@ -170,17 +170,7 @@ export default function Landing() {
           onTrainAgentClick={handleTrainAgentClick}
         />
         
-        <header className="h-16 border-b flex items-center justify-between px-6">
-          <button 
-            onClick={() => setLocation('/')}
-            className="flex items-center gap-2 hover-elevate active-elevate-2 p-2 rounded-md"
-            data-testid="button-logo-home"
-          >
-            <Gift className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">Gift Spark</span>
-          </button>
-          <ThemeToggle />
-        </header>
+        <AppHeader />
 
         <main className="flex-1 flex items-center justify-center p-6">
           <div className="max-w-md w-full text-center space-y-8">
@@ -279,29 +269,7 @@ export default function Landing() {
         onClear={(id) => clearProfileMutation.mutate(id)}
       />
       
-      <header className="h-16 border-b flex items-center justify-between px-6">
-        <button 
-          onClick={() => setLocation('/')}
-          className="flex items-center gap-2 hover-elevate active-elevate-2 p-2 rounded-md"
-          data-testid="button-logo-home"
-        >
-          <Gift className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">Gift Xzalted</span>
-        </button>
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={() => setLocation('/pricing')}
-            variant="outline"
-            size="default"
-            className="hover-elevate active-elevate-2"
-            data-testid="button-token-counter"
-          >
-            <Coins className="h-4 w-4 mr-2" />
-            {user?.tokens ?? 0} tokens
-          </Button>
-          <ThemeToggle />
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto space-y-6">
