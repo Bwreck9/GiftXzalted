@@ -1,175 +1,99 @@
+import { useState } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, Plus, Brain, Calendar, MoreVertical, Trash2 } from 'lucide-react';
+import type { Profile, GiftList } from '@shared/schema';
 import { queryClient, apiRequest } from '@/lib/queryClient';
-import { Settings, ArrowLeft, Sparkles, Plus, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { QuestionnaireDialog } from '@/components/QuestionnaireDialog';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { QuestionnaireDialog } from '@/components/QuestionnaireDialog';
-import type { Profile } from '@shared/schema';
 
 export default function ProfileDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [questionnaireDialogOpen, setQuestionnaireDialogOpen] = useState(false);
-  const [manualIdeas, setManualIdeas] = useState<string[]>([]);
+  const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newListName, setNewListName] = useState('');
 
-  // Fetch profile data
-  const { data: profile, isLoading } = useQuery<Profile>({
+  const { data: profile, isLoading: profileLoading } = useQuery<Profile>({
     queryKey: ['/api/profiles', id],
+    queryFn: async () => {
+      const res = await fetch(`/api/profiles/${id}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch profile');
+      return res.json();
+    },
   });
 
-  // Initialize manual ideas when profile loads
-  useEffect(() => {
-    if (profile?.manualIdeas && profile.manualIdeas.length > 0) {
-      setManualIdeas([...profile.manualIdeas]);
-    } else if (profile && (!profile.manualIdeas || profile.manualIdeas.length === 0)) {
-      setManualIdeas(['', '', '', '', '']);
-    }
-  }, [profile?.id]); // Only run when profile ID changes
-
-  // Update manual ideas mutation
-  const updateIdeasMutation = useMutation({
-    mutationFn: async (ideas: string[]) => {
-      return apiRequest('PATCH', `/api/profiles/${id}`, { manualIdeas: ideas });
+  const { data: giftLists, isLoading: listsLoading } = useQuery<GiftList[]>({
+    queryKey: ['/api/profiles', id, 'gift-lists'],
+    queryFn: async () => {
+      const res = await fetch(`/api/profiles/${id}/gift-lists`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch gift lists');
+      return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
-      toast({ title: 'Ideas saved successfully' });
+    enabled: !!id,
+  });
+
+  const createListMutation = useMutation({
+    mutationFn: async (title: string) => {
+      return apiRequest('POST', `/api/profiles/${id}/gift-lists`, { title });
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id, 'gift-lists'] });
+      toast({ title: 'Gift list created successfully' });
+      setCreateDialogOpen(false);
+      setNewListName('');
+      response.json().then((list: GiftList) => {
+        setLocation(`/gift-list/${list.id}`);
+      });
     },
     onError: () => {
-      toast({ title: 'Failed to save ideas', variant: 'destructive' });
+      toast({ title: 'Failed to create gift list', variant: 'destructive' });
     },
   });
 
-  // Update questionnaire data mutation
-  const updateQuestionnaireMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest('PATCH', `/api/profiles/${id}`, data);
+  const deleteListMutation = useMutation({
+    mutationFn: async (listId: string) => {
+      return apiRequest('DELETE', `/api/gift-lists/${listId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
-      setQuestionnaireDialogOpen(false);
-      // After updating questionnaire, trigger AI generation
-      generateMutation.mutate();
-    },
-    onError: () => {
-      toast({ title: 'Failed to save questionnaire', variant: 'destructive' });
-    },
-  });
-
-  // Delete profile mutation
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest('DELETE', `/api/profiles/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id, 'gift-lists'] });
       toast({ title: 'Gift list deleted successfully' });
-      setLocation('/');
     },
     onError: () => {
       toast({ title: 'Failed to delete gift list', variant: 'destructive' });
     },
   });
 
-  // Generate AI response mutation
-  const generateMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest('POST', '/api/messages', {
-        profileId: id,
-        content: 'Generate gift recommendations for this profile',
-        isUser: true,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
-      toast({ title: 'AI recommendations generated!' });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Failed to generate recommendations',
-        description: error.message || 'Please try again',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const handleUpdateIdea = (index: number, value: string) => {
-    const newIdeas = [...manualIdeas];
-    newIdeas[index] = value;
-    setManualIdeas(newIdeas);
-  };
-
-  const handleAddMoreIdeas = () => {
-    setManualIdeas([...manualIdeas, '', '', '']);
-  };
-
-  const handleRemoveIdea = (index: number) => {
-    const newIdeas = manualIdeas.filter((_, i) => i !== index);
-    setManualIdeas(newIdeas);
-    // Save immediately after removing
-    updateIdeasMutation.mutate(newIdeas.filter(idea => idea.trim() !== ''));
-  };
-
-  const handleSaveIdeas = () => {
-    // Filter out empty ideas before saving
-    const filteredIdeas = manualIdeas.filter(idea => idea.trim() !== '');
-    updateIdeasMutation.mutate(filteredIdeas);
-  };
-
-  const handleGenerateResponses = () => {
-    // Check if questionnaire is filled
-    if (!profile?.age || !profile?.gender || !profile?.interests || !profile?.personality) {
-      // Show questionnaire dialog
-      setQuestionnaireDialogOpen(true);
+  const handleCreateList = () => {
+    if (!newListName.trim()) {
+      toast({ title: 'Please enter a name', variant: 'destructive' });
       return;
     }
-    
-    generateMutation.mutate();
+    createListMutation.mutate(newListName);
   };
 
-  const handleQuestionnaireSubmit = (data: any) => {
-    updateQuestionnaireMutation.mutate(data);
-  };
-
-  const handleDeleteProfile = () => {
-    deleteMutation.mutate();
-  };
-
-  // Parse premium results if available
-  const premiumResults = profile?.premiumResults 
-    ? (typeof profile.premiumResults === 'string' 
-        ? JSON.parse(profile.premiumResults) 
-        : profile.premiumResults)
-    : null;
-
-  if (isLoading) {
+  if (profileLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
@@ -177,166 +101,169 @@ export default function ProfileDetail() {
   if (!profile) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Gift list not found</p>
+        <div className="text-muted-foreground">Profile not found</div>
       </div>
     );
   }
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Gift List?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Please confirm that you want to delete "{profile.name}". This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteProfile} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Questionnaire Dialog */}
       <QuestionnaireDialog
-        open={questionnaireDialogOpen}
-        onOpenChange={setQuestionnaireDialogOpen}
-        onSubmit={handleQuestionnaireSubmit}
-        isSubmitting={updateQuestionnaireMutation.isPending}
+        open={questionnaireOpen}
+        onOpenChange={setQuestionnaireOpen}
+        profileId={id!}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
+          setQuestionnaireOpen(false);
+        }}
       />
 
-      {/* Header */}
       <header className="h-16 border-b flex items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <Button
+            onClick={() => setLocation('/')}
             variant="ghost"
             size="icon"
-            onClick={() => setLocation('/')}
+            className="hover-elevate"
             data-testid="button-back"
-            aria-label="Back to home"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">{profile.name}</h1>
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-md"
+              style={{ backgroundColor: profile.color || '#3B82F6' }}
+            />
+            <h1 className="text-xl font-semibold">{profile.name}</h1>
+          </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              data-testid="button-settings"
-              aria-label="Settings"
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => setDeleteDialogOpen(true)}
-              className="text-destructive"
-              data-testid="button-delete-profile"
-            >
-              Delete Gift List
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          onClick={() => setQuestionnaireOpen(true)}
+          className="hover-elevate active-elevate-2"
+          data-testid="button-train-agent"
+        >
+          <Brain className="h-4 w-4 mr-2" />
+          Train Agent
+        </Button>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 overflow-auto p-6">
-        <div className="max-w-2xl mx-auto space-y-6">
-          {/* Manual Gift Ideas */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Gift Ideas</h2>
-            <div className="space-y-3">
-              {manualIdeas.map((idea, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    value={idea}
-                    onChange={(e) => handleUpdateIdea(index, e.target.value)}
-                    placeholder={`Gift idea #${index + 1}`}
-                    data-testid={`input-gift-idea-${index}`}
-                  />
-                  {manualIdeas.length > 5 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveIdea(index)}
-                      data-testid={`button-remove-idea-${index}`}
-                      aria-label="Remove idea"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Gift Lists</h2>
+            <Button
+              onClick={() => setCreateDialogOpen(true)}
+              className="hover-elevate active-elevate-2"
+              data-testid="button-create-list"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New List
+            </Button>
+          </div>
+
+          {listsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2].map(i => (
+                <div key={i} className="h-24 bg-card animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : giftLists && giftLists.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {giftLists.map(list => (
+                <div key={list.id} className="relative group">
+                  <button
+                    onClick={() => setLocation(`/gift-list/${list.id}`)}
+                    className="w-full p-4 rounded-lg border bg-card hover-elevate active-elevate-2 text-left"
+                    data-testid={`gift-list-card-${list.id}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Calendar className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-foreground">{list.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {list.manualIdeas?.length || 0} ideas
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 hover-elevate"
+                        data-testid={`list-menu-${list.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => {
+                          if (confirm(`Delete list "${list.title}"?`)) {
+                            deleteListMutation.mutate(list.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ))}
             </div>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={handleAddMoreIdeas}
-                variant="outline"
-                size="sm"
-                data-testid="button-add-more-ideas"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add More Ideas
-              </Button>
-              <Button
-                onClick={handleSaveIdeas}
-                size="sm"
-                disabled={updateIdeasMutation.isPending}
-                data-testid="button-save-ideas"
-              >
-                {updateIdeasMutation.isPending ? 'Saving...' : 'Save Ideas'}
-              </Button>
-            </div>
-          </div>
-
-          {/* Generate Responses Button */}
-          <div className="pt-4 border-t">
-            <Button
-              onClick={handleGenerateResponses}
-              className="w-full"
-              size="lg"
-              disabled={generateMutation.isPending}
-              data-testid="button-generate-responses"
-            >
-              <Sparkles className="h-5 w-5 mr-2" />
-              {generateMutation.isPending ? 'Generating...' : 'GENERATE RESPONSES'}
-            </Button>
-          </div>
-
-          {/* AI Recommendations */}
-          {premiumResults && Array.isArray(premiumResults) && premiumResults.length > 0 && (
-            <div className="space-y-4 pt-6 border-t">
-              <h2 className="text-lg font-semibold">AI Recommendations</h2>
-              <div className="space-y-3">
-                {premiumResults.map((result: any, index: number) => (
-                  <div key={result.id || index} className="space-y-2">
-                    <Input
-                      value={result.title}
-                      readOnly
-                      data-testid={`input-ai-gift-${index}`}
-                    />
-                    <Input
-                      value={result.reason}
-                      readOnly
-                      className="text-sm text-muted-foreground"
-                      data-testid={`input-ai-reason-${index}`}
-                    />
-                  </div>
-                ))}
-              </div>
+          ) : (
+            <div className="text-center py-16 space-y-4">
+              <p className="text-muted-foreground text-lg">No gift lists yet</p>
+              <p className="text-sm text-muted-foreground">
+                Create a list for an occasion like "Birthday" or "Christmas"
+              </p>
             </div>
           )}
         </div>
       </main>
+
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent data-testid="dialog-create-list">
+          <DialogHeader>
+            <DialogTitle>Create Gift List</DialogTitle>
+            <DialogDescription>
+              Enter a name for the occasion (e.g., "Birthday", "Christmas", "Anniversary")
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="list-name">List Name</Label>
+              <Input
+                id="list-name"
+                placeholder="e.g., Birthday"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !createListMutation.isPending) {
+                    handleCreateList();
+                  }
+                }}
+                data-testid="input-list-name"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleCreateList}
+              disabled={createListMutation.isPending}
+              className="hover-elevate active-elevate-2"
+              data-testid="button-create-list-submit"
+            >
+              {createListMutation.isPending ? 'Creating...' : 'Create List'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
