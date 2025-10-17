@@ -2,25 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 
 async function fetchUser(): Promise<User | null> {
-  try {
-    const res = await fetch("/api/auth/user", {
-      credentials: "include",
-    });
-    
-    if (res.status === 401) {
-      return null;
-    }
-    
-    if (!res.ok) {
-      throw new Error(`Failed to fetch user: ${res.status}`);
-    }
-    
-    const user = await res.json();
-    return user;
-  } catch (error) {
-    console.error('[useAuth] Error fetching user:', error);
+  const res = await fetch("/api/auth/user", {
+    credentials: "include",
+  });
+  
+  if (res.status === 401) {
     return null;
   }
+  
+  if (!res.ok) {
+    return null;
+  }
+  
+  const user = await res.json();
+  return user;
 }
 
 export function useAuth() {
