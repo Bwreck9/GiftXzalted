@@ -20,14 +20,14 @@ export default function TermsConditions() {
           <button
             onClick={() => setLocation('/')}
             className="flex items-center gap-2 group"
-            aria-label="Gift Spark Home"
+            aria-label="Gift Xzalted Home"
             data-testid="button-home-logo"
           >
             <div className="bg-gradient-to-br from-primary via-purple-500 to-pink-500 p-2 rounded-lg">
               <Gift className="h-5 w-5 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Gift Spark
+              Gift Xzalted
             </span>
           </button>
           
@@ -63,14 +63,14 @@ export default function TermsConditions() {
           {/* Content */}
           <Card className="p-8 space-y-6">
             <p className="text-lg leading-relaxed">
-              Welcome to Gift Spark! By using this app, you agree to these terms.
+              Welcome to Gift Xzalted! By using this app, you agree to these terms.
             </p>
 
             <div className="space-y-4">
               <div>
                 <h2 className="text-xl font-semibold mb-3">1. Overview</h2>
                 <p className="text-muted-foreground">
-                  Gift Spark helps you organize gift ideas and discover new suggestions. 
+                  Gift Xzalted helps you organize gift ideas and discover new suggestions. 
                   You may use the app freely within the limits of your plan.
                 </p>
               </div>
@@ -97,7 +97,7 @@ export default function TermsConditions() {
               <div>
                 <h2 className="text-xl font-semibold mb-3">4. Third-Party Services</h2>
                 <p className="text-muted-foreground">
-                  Gift Spark integrates with third-party services including Google (for authentication), 
+                  Gift Xzalted integrates with third-party services including Google (for authentication), 
                   payment processors (for transactions), and OpenAI (for AI-powered recommendations). 
                   Your use of these services is subject to their respective terms and policies.
                 </p>
@@ -107,14 +107,14 @@ export default function TermsConditions() {
                 <h2 className="text-xl font-semibold mb-3">5. Refunds</h2>
                 <ul className="space-y-2 text-muted-foreground ml-4">
                   <li>• Refunds for in-app purchases follow Apple or Google's refund policies.</li>
-                  <li>• Gift Spark does not process refunds directly.</li>
+                  <li>• Gift Xzalted does not process refunds directly.</li>
                 </ul>
               </div>
 
               <div>
                 <h2 className="text-xl font-semibold mb-3">6. Acceptable Use</h2>
                 <ul className="space-y-2 text-muted-foreground ml-4">
-                  <li>• Please use Gift Spark responsibly.</li>
+                  <li>• Please use Gift Xzalted responsibly.</li>
                   <li>• Do not upload or share inappropriate or offensive content.</li>
                 </ul>
               </div>
@@ -122,7 +122,7 @@ export default function TermsConditions() {
               <div>
                 <h2 className="text-xl font-semibold mb-3">7. Intellectual Property</h2>
                 <ul className="space-y-2 text-muted-foreground ml-4">
-                  <li>• All branding, design, and content in Gift Spark are owned by its creators.</li>
+                  <li>• All branding, design, and content in Gift Xzalted are owned by its creators.</li>
                   <li>• You may not copy or redistribute materials from the app without permission.</li>
                 </ul>
               </div>
@@ -146,7 +146,7 @@ export default function TermsConditions() {
 
           {/* Footer Copyright */}
           <div className="text-center text-sm text-muted-foreground py-4">
-            © {currentYear} Gift Spark. Created & managed by Xzalted. All rights reserved.
+            © {currentYear} Gift Xzalted. Created & managed by Xzalted. All rights reserved.
           </div>
 
           {/* Bottom Back Button */}

@@ -14,13 +14,13 @@ export default function About() {
           <button
             onClick={() => setLocation('/')}
             className="flex items-center gap-2 group"
-            aria-label="Gift Spark Home"
+            aria-label="Gift Xzalted Home"
           >
             <div className="bg-gradient-to-br from-primary via-purple-500 to-pink-500 p-2 rounded-lg">
               <Gift className="h-5 w-5 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Gift Spark
+              Gift Xzalted
             </span>
           </button>
           
@@ -49,7 +49,7 @@ export default function About() {
               </div>
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              About Gift Spark
+              About Gift Xzalted
             </h1>
             <p className="text-xl text-muted-foreground">
               Helping you find thoughtful gift ideas — fast.
@@ -59,7 +59,7 @@ export default function About() {
           {/* Main Description */}
           <Card className="p-8 border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5">
             <p className="text-lg leading-relaxed text-foreground">
-              Gift Spark was built to make gift-giving effortless. Create profiles for the people you care about, 
+              Gift Xzalted was built to make gift-giving effortless. Create profiles for the people you care about, 
               save your ideas, or try our premium questionnaire to spark thoughtful suggestions instantly. 
               Whether it's birthdays, holidays, or just-because moments — we're here to inspire your next great gift.
             </p>
