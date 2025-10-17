@@ -1,15 +1,16 @@
 # Gift Spark - AI-Powered Gift Recommendation App
 
 ## Overview
-Gift Spark helps users discover the perfect gift for anyone in their life. Users can create free gift lists, build detailed profiles, and optionally use AI-powered recommendations to get personalized gift suggestions based on personality, interests, and occasion.
+Gift Spark helps users discover the perfect gift for anyone in their life. The app uses a hierarchical structure: **Profiles** (people like "Mom" or "Dad") → **Gift Lists** (occasions like "Birthday" or "Christmas") → **Gift Ideas** (manual entries + optional AI recommendations). Users can create profiles and gift lists for free, with optional AI-powered recommendations (token-based).
 
 ## Current State (Phase 1 MVP Complete)
 
 ### ✅ Completed Features
 - **Authentication**: Replit Auth with Google OAuth (session-based, cookie authentication)
-- **Database**: PostgreSQL with token-based system (users, sessions, profiles, messages, tokens, transactions, gift_lists, gift_items)
-- **FREE Gift Lists**: Notepad-style lists with create/edit/delete/reorder items (no cost)
-- **Profile System**: Up to 5 free profiles, questionnaire-based with optional AI generation
+- **Database**: PostgreSQL with hierarchical structure (users, sessions, profiles, gift_lists, messages, tokens, transactions)
+- **Hierarchy System**: Profiles (people) → Gift Lists (occasions) → Gift Ideas (manual + AI)
+- **FREE Creation**: Unlimited profiles and gift lists (no cost for manual tracking)
+- **Profile System**: Questionnaire-based profiles for "training" the AI agent
 - **Token System**: 
   - One-time purchase: $5 for 5,000 tokens (never expires)
   - Basic subscription: $5/month for 10,000 tokens
@@ -25,44 +26,50 @@ Gift Spark helps users discover the perfect gift for anyone in their life. Users
   - Accessible footer links on all pages
 - **Navigation**: Consistent "Back to Home" buttons across pages
 
-### 🎉 Major UX Simplification Complete (October 15, 2025)
-**Focus: "Most simple execution ever for the customer"**
+### 🎉 Hierarchy Restructure Complete (October 17, 2025)
+**New Structure: Profiles → Gift Lists → Gift Ideas**
 
 - **Landing Page** (`/`):
-  - ✅ "Create New Gift List" button opens name-only dialog
-  - ✅ Minimal profile creation with just a name
-  - ✅ Auto-navigation to gift list detail after creation
-  - ✅ Existing gift lists displayed as scrollable tiles
+  - ✅ "Create New Profile" button creates a person profile (e.g., "Mom", "Dad")
+  - ✅ Displays all user's profiles as colorful tiles
+  - ✅ Auto-navigation to profile detail after creation
   
-- **Gift List Detail Page** (`/profile/:id`):
-  - ✅ **5+ Manual Text Boxes**: Editable gift idea inputs (expandable)
-  - ✅ **GEAR Button**: Delete confirmation with "Please confirm that you want to delete your profile"
-  - ✅ **GENERATE RESPONSES Button**: Triggers AI generation
-  - ✅ **Questionnaire Check**: Shows dialog if questionnaire not filled
-  - ✅ **AI Results**: Displayed as read-only text boxes with gift + reason format
-  - ✅ Auto-save manual ideas with debounce
+- **Profile Detail Page** (`/profile/:id`):
+  - ✅ **Train Agent Button**: Opens questionnaire to "train" AI for this person
+  - ✅ **New List Button**: Creates a gift list for an occasion (e.g., "Birthday", "Christmas")
+  - ✅ **Gift List Cards**: Shows all gift lists for this profile with idea counts
+  - ✅ Click on a gift list card to view/edit ideas
+  
+- **Gift List Detail Page** (`/gift-list/:id`):
+  - ✅ **Manual Ideas Section**: 5+ editable text inputs (expandable)
+  - ✅ **Save Button**: Saves manual ideas to database
+  - ✅ **Premium Generate Button**: AI recommendations (500 tokens, requires questionnaire)
+  - ✅ **Premium Results Section**: Displays AI-generated gift ideas with reasons
+  - ✅ Ideas count properly updates in parent profile view (using refetchQueries)
   
 - **Questionnaire Dialog** (`QuestionnaireDialog.tsx`):
-  - ✅ Appears when user clicks GENERATE RESPONSES without questionnaire data
-  - ✅ Embedded form for filling profile details (age, gender, event, etc.)
-  - ✅ Saves profile and immediately triggers AI generation
-  - ✅ Closes automatically after successful submission
+  - ✅ Trains the AI agent for a specific person
+  - ✅ Captures age, gender, interests, event type, budget, etc.
+  - ✅ Required before AI generation can be used
   
-- **Schema Updates** (`shared/schema.ts`):
-  - ✅ Made all profile fields optional except `name`
-  - ✅ Supports minimal profile creation (name only)
-  - ✅ Questionnaire required only for AI generation
+- **Database Schema** (`shared/schema.ts`):
+  - ✅ `profiles` table: Represents people (userId, name, color, questionnaire fields)
+  - ✅ `gift_lists` table: Represents occasions (profileId FK, title, manualIdeas[], premiumResults)
+  - ✅ Removed separate `gift_items` table (consolidated into gift_lists)
   
-- **Backend Validation** (`server/routes.ts`):
-  - ✅ Validates questionnaire fields before AI generation
-  - ✅ Returns proper error if questionnaire incomplete
-  - ✅ Handles optional profile fields correctly
+- **Backend API** (`server/routes.ts`):
+  - ✅ `GET/POST /api/profiles` - List/create profiles
+  - ✅ `POST /api/profiles/:profileId/gift-lists` - Create gift list for profile
+  - ✅ `GET /api/profiles/:profileId/gift-lists` - List gift lists for profile
+  - ✅ `PATCH /api/gift-lists/:id` - Update manual ideas or premium results
+  - ✅ Ownership validated through profile.userId checks
 
 **User Flow:**
-1. Landing → "Create New Gift List" → Enter name → Navigate to gift list
-2. Gift list → Add manual ideas (5+ text boxes) → Auto-saved
-3. Click "GENERATE RESPONSES" → If no questionnaire, show dialog → Fill → AI generates
-4. AI recommendations displayed below manual ideas
+1. Landing → "Create New Profile" → Enter person name (e.g., "Mom") → Navigate to profile
+2. Profile → "Train Agent" (optional) → Fill questionnaire
+3. Profile → "New List" → Enter occasion (e.g., "Birthday") → Navigate to gift list
+4. Gift List → Add manual ideas → Click "Save"
+5. Gift List → Click "Premium Generate" (if tokens available + questionnaire filled) → AI recommendations
 
 ### 📝 Phase 3 Features (Disabled/Commented Out)
 - Amazon affiliate links (parseAmazonLinks, AmazonProductCard)
