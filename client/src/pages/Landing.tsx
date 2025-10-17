@@ -141,7 +141,6 @@ export default function Landing() {
   };
 
   const handleSignIn = () => {
-    console.error('[REDIRECT] handleSignIn triggered! Stack:', new Error().stack);
     window.location.href = '/api/login';
   };
 

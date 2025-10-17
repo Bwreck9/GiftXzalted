@@ -76,7 +76,6 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
         <div className="space-y-3 pt-2">
           <button
             onClick={() => {
-              console.log('[WelcomeDialog] Gift Tracker clicked');
               onGiftTrackerClick?.();
               handleClose();
             }}
