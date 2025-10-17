@@ -138,6 +138,7 @@ export const insertProfileSchema = createInsertSchema(profiles).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
+  name: z.string().min(1).max(20), // 20 character limit for profile names
   color: z.string().optional(), // Hex color or preset key
   age: z.number().min(1).max(120).optional(), // Optional until questionnaire filled
   shoppingFor: z.enum(['self', 'another']).optional(), // Optional until questionnaire filled
@@ -178,7 +179,7 @@ export const insertGiftListSchema = createInsertSchema(giftLists).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  title: z.string().min(1).max(200),
+  title: z.string().min(1).max(20), // 20 character limit for list names
 });
 
 // Types

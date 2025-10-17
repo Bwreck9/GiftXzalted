@@ -3,12 +3,27 @@ import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sparkles, Plus, X, Brain } from 'lucide-react';
+import { Sparkles, Plus, X, Brain, ArrowLeft, Settings, Pencil, Trash2 } from 'lucide-react';
 import type { GiftList, Profile } from '@shared/schema';
 import { AppHeader } from '@/components/AppHeader';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 export default function GiftListDetail() {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +31,8 @@ export default function GiftListDetail() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [manualIdeas, setManualIdeas] = useState<string[]>([]);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [newListName, setNewListName] = useState('');
 
   const { data: giftList, isLoading } = useQuery<GiftList>({
     queryKey: ['/api/gift-lists', id],
@@ -96,6 +113,41 @@ export default function GiftListDetail() {
     },
   });
 
+  const renameListMutation = useMutation({
+    mutationFn: async (title: string) => {
+      return apiRequest('PATCH', `/api/gift-lists/${id}`, { title });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
+      if (giftList?.profileId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/profiles', giftList.profileId, 'gift-lists'] });
+      }
+      toast({ title: 'List renamed successfully' });
+      setRenameDialogOpen(false);
+      setNewListName('');
+    },
+    onError: () => {
+      toast({ title: 'Failed to rename list', variant: 'destructive' });
+    },
+  });
+
+  const deleteListMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('DELETE', `/api/gift-lists/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: 'List deleted successfully' });
+      if (giftList?.profileId) {
+        setLocation(`/profile/${giftList.profileId}`);
+      } else {
+        setLocation('/');
+      }
+    },
+    onError: () => {
+      toast({ title: 'Failed to delete list', variant: 'destructive' });
+    },
+  });
+
   const handleUpdateIdea = (index: number, value: string) => {
     const newIdeas = [...manualIdeas];
     newIdeas[index] = value;
@@ -126,6 +178,26 @@ export default function GiftListDetail() {
       return;
     }
     generateMutation.mutate();
+  };
+
+  const handleRenameList = () => {
+    if (!newListName.trim()) {
+      toast({ title: 'Please enter a name', variant: 'destructive' });
+      return;
+    }
+    renameListMutation.mutate(newListName.trim());
+  };
+
+  const handleDeleteList = () => {
+    if (confirm(`Delete list "${giftList?.title}"?`)) {
+      deleteListMutation.mutate();
+    }
+  };
+
+  const handleAddToList = (title: string) => {
+    const newIdeas = [...manualIdeas, title];
+    setManualIdeas(newIdeas);
+    updateIdeasMutation.mutate(newIdeas.filter(idea => idea.trim() !== ''));
   };
 
   if (isLoading) {
@@ -172,10 +244,10 @@ export default function GiftListDetail() {
               onClick={() => setLocation(`/profile/${profile.id}`)}
               variant="outline"
               className="hover-elevate active-elevate-2"
-              data-testid="button-view-profile"
+              data-testid="button-back-to-profile"
             >
-              <Brain className="h-4 w-4 mr-2" />
-              View Profile
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
             </Button>
           </div>
         </div>
@@ -187,23 +259,46 @@ export default function GiftListDetail() {
           <h2 className="text-lg font-semibold">{giftList.title}</h2>
           <div className="flex items-center gap-2">
             <Button
-              onClick={handleSave}
-              variant="outline"
-              disabled={updateIdeasMutation.isPending}
-              className="hover-elevate active-elevate-2"
-              data-testid="button-save"
-            >
-              {updateIdeasMutation.isPending ? 'Saving...' : 'Save'}
-            </Button>
-            <Button
               onClick={handleGenerate}
               disabled={generateMutation.isPending || !user || user.tokens < 500}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
               data-testid="button-generate"
             >
               <Sparkles className="h-4 w-4 mr-2" />
-              {generateMutation.isPending ? 'Generating...' : 'Premium Generate (500 tokens)'}
+              {generateMutation.isPending ? 'Generating...' : 'Generate ideas'}
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="hover-elevate"
+                  data-testid="button-list-options"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setNewListName(giftList?.title || '');
+                    setRenameDialogOpen(true);
+                  }}
+                  data-testid="menu-item-rename"
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Rename list
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={handleDeleteList}
+                  data-testid="menu-item-delete"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete list
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -212,7 +307,7 @@ export default function GiftListDetail() {
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Manual Gift Ideas</h2>
+              <h2 className="text-xl font-semibold">Gift Ideas</h2>
               <Button
                 onClick={handleAddIdea}
                 variant="outline"
@@ -250,9 +345,9 @@ export default function GiftListDetail() {
             </div>
           </div>
 
-          {premiumResults && premiumResults.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Premium AI Recommendations</h2>
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Generated Ideas</h2>
+            {premiumResults && premiumResults.length > 0 ? (
               <div className="space-y-3">
                 {premiumResults.map((result: any, index: number) => (
                   <div
@@ -260,15 +355,70 @@ export default function GiftListDetail() {
                     className="p-4 rounded-lg border bg-card"
                     data-testid={`premium-result-${index}`}
                   >
-                    <h3 className="font-medium text-foreground mb-2">{result.title}</h3>
-                    <p className="text-sm text-muted-foreground">{result.reason}</p>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-foreground mb-2">{result.title}</h3>
+                        <p className="text-sm text-muted-foreground">{result.reason}</p>
+                      </div>
+                      <Button
+                        onClick={() => handleAddToList(result.title)}
+                        variant="outline"
+                        size="sm"
+                        className="hover-elevate shrink-0"
+                        data-testid={`button-add-to-list-${index}`}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add to list
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-8 rounded-lg border bg-card/50">
+                <p className="text-muted-foreground">No generations yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Click "Generate ideas" to get AI-powered gift recommendations
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </main>
+
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent data-testid="dialog-rename-list">
+          <DialogHeader>
+            <DialogTitle>Rename List</DialogTitle>
+            <DialogDescription>
+              Enter a new name for this gift list
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-list-name">List Name</Label>
+              <Input
+                id="new-list-name"
+                placeholder="e.g., Birthday"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                maxLength={20}
+                data-testid="input-new-list-name"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleRenameList}
+              disabled={renameListMutation.isPending}
+              className="hover-elevate active-elevate-2"
+              data-testid="button-rename-list-submit"
+            >
+              {renameListMutation.isPending ? 'Renaming...' : 'Rename'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
