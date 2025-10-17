@@ -55,12 +55,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    // First check if user exists by email (in case Replit ID changed)
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, userData.email));
+
+    if (existingUser && existingUser.id !== userData.id) {
+      // User exists with different ID - need to update profiles first, then update user
+      // Update all profiles to point to the new user ID
+      await db
+        .update(profiles)
+        .set({ userId: userData.id })
+        .where(eq(profiles.userId, existingUser.id));
+
+      // Now update the user's ID and other fields
+      const [user] = await db
+        .update(users)
+        .set({
+          id: userData.id,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.email, userData.email))
+        .returning();
+      return user;
+    }
+
+    // Normal upsert by ID
     const [user] = await db
       .insert(users)
       .values(userData)
       .onConflictDoUpdate({
-        target: users.email,
+        target: users.id,
         set: {
+          email: userData.email,
           firstName: userData.firstName,
           lastName: userData.lastName,
           profileImageUrl: userData.profileImageUrl,
