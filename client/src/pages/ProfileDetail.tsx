@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, Brain, Calendar, MoreVertical, Trash2 } from 'lucide-react';
+import { Plus, Brain, Calendar, MoreVertical, Trash2 } from 'lucide-react';
+import { AppHeader } from '@/components/AppHeader';
 import type { Profile, GiftList } from '@shared/schema';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +32,20 @@ export default function ProfileDetail() {
   const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
+  
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest('PATCH', `/api/profiles/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
+      toast({ title: 'Profile updated successfully' });
+      setQuestionnaireOpen(false);
+    },
+    onError: () => {
+      toast({ title: 'Failed to update profile', variant: 'destructive' });
+    },
+  });
 
   const { data: profile, isLoading: profileLoading } = useQuery<Profile>({
     queryKey: ['/api/profiles', id],
@@ -111,41 +126,39 @@ export default function ProfileDetail() {
       <QuestionnaireDialog
         open={questionnaireOpen}
         onOpenChange={setQuestionnaireOpen}
-        profileId={id!}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
-          setQuestionnaireOpen(false);
-        }}
+        onSubmit={(data) => updateProfileMutation.mutate(data)}
+        isSubmitting={updateProfileMutation.isPending}
       />
 
-      <header className="h-16 border-b flex items-center justify-between px-6">
-        <div className="flex items-center gap-4">
-          <Button
-            onClick={() => setLocation('/')}
-            variant="ghost"
-            size="icon"
-            className="hover-elevate"
-            data-testid="button-back"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+      <AppHeader />
+      
+      {/* Profile Info Bar */}
+      <div className="border-b bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 px-6 py-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-md"
+              className="w-12 h-12 rounded-lg shadow-md"
               style={{ backgroundColor: profile.color || '#3B82F6' }}
             />
-            <h1 className="text-xl font-semibold">{profile.name}</h1>
+            <div>
+              <h1 className="text-xl font-semibold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                {profile.name}
+              </h1>
+              {profile.relationship && (
+                <p className="text-sm text-muted-foreground">{profile.relationship}</p>
+              )}
+            </div>
           </div>
+          <Button
+            onClick={() => setQuestionnaireOpen(true)}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
+            data-testid="button-train-agent"
+          >
+            <Brain className="h-4 w-4 mr-2" />
+            Train Agent
+          </Button>
         </div>
-        <Button
-          onClick={() => setQuestionnaireOpen(true)}
-          className="hover-elevate active-elevate-2"
-          data-testid="button-train-agent"
-        >
-          <Brain className="h-4 w-4 mr-2" />
-          Train Agent
-        </Button>
-      </header>
+      </div>
 
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-4xl mx-auto space-y-6">

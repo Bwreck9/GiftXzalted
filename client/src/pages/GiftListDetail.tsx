@@ -3,8 +3,9 @@ import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, Plus, X } from 'lucide-react';
-import type { GiftList } from '@shared/schema';
+import { Sparkles, Plus, X, Brain } from 'lucide-react';
+import type { GiftList, Profile } from '@shared/schema';
+import { AppHeader } from '@/components/AppHeader';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +19,16 @@ export default function GiftListDetail() {
 
   const { data: giftList, isLoading } = useQuery<GiftList>({
     queryKey: ['/api/gift-lists', id],
+  });
+
+  const { data: profile } = useQuery<Profile>({
+    queryKey: ['/api/profiles', giftList?.profileId],
+    queryFn: async () => {
+      const res = await fetch(`/api/profiles/${giftList?.profileId}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch profile');
+      return res.json();
+    },
+    enabled: !!giftList?.profileId,
   });
 
   useEffect(() => {
@@ -137,40 +148,65 @@ export default function GiftListDetail() {
 
   return (
     <div className="h-screen flex flex-col">
-      <header className="h-16 border-b flex items-center justify-between px-6">
-        <div className="flex items-center gap-4">
-          <Button
-            onClick={() => history.back()}
-            variant="ghost"
-            size="icon"
-            className="hover-elevate"
-            data-testid="button-back"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-semibold">{giftList.title}</h1>
+      <AppHeader />
+      
+      {/* Profile Info Bar */}
+      {profile && (
+        <div className="border-b bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 px-6 py-4">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-lg shadow-md"
+                style={{ backgroundColor: profile.color || '#3B82F6' }}
+              />
+              <div>
+                <h1 className="text-xl font-semibold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  {profile.name}
+                </h1>
+                {profile.relationship && (
+                  <p className="text-sm text-muted-foreground">{profile.relationship}</p>
+                )}
+              </div>
+            </div>
+            <Button
+              onClick={() => setLocation(`/profile/${profile.id}`)}
+              variant="outline"
+              className="hover-elevate active-elevate-2"
+              data-testid="button-view-profile"
+            >
+              <Brain className="h-4 w-4 mr-2" />
+              View Profile
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleSave}
-            variant="outline"
-            disabled={updateIdeasMutation.isPending}
-            className="hover-elevate active-elevate-2"
-            data-testid="button-save"
-          >
-            {updateIdeasMutation.isPending ? 'Saving...' : 'Save'}
-          </Button>
-          <Button
-            onClick={handleGenerate}
-            disabled={generateMutation.isPending || !user || user.tokens < 500}
-            className="hover-elevate active-elevate-2"
-            data-testid="button-generate"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            {generateMutation.isPending ? 'Generating...' : 'Premium Generate (500 tokens)'}
-          </Button>
+      )}
+
+      {/* Gift List Actions Bar */}
+      <div className="border-b px-6 py-3 bg-card">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <h2 className="text-lg font-semibold">{giftList.title}</h2>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleSave}
+              variant="outline"
+              disabled={updateIdeasMutation.isPending}
+              className="hover-elevate active-elevate-2"
+              data-testid="button-save"
+            >
+              {updateIdeasMutation.isPending ? 'Saving...' : 'Save'}
+            </Button>
+            <Button
+              onClick={handleGenerate}
+              disabled={generateMutation.isPending || !user || user.tokens < 500}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
+              data-testid="button-generate"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              {generateMutation.isPending ? 'Generating...' : 'Premium Generate (500 tokens)'}
+            </Button>
+          </div>
         </div>
-      </header>
+      </div>
 
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-4xl mx-auto space-y-8">
