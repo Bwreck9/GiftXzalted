@@ -32,23 +32,20 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Gift recipient profiles (gift lists)
+// Gift recipient profiles - represents a PERSON (Mom, Dad, Sarah, etc.)
 export const profiles = pgTable("profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
+  name: text("name").notNull(), // Person's name (e.g., "Mom", "Dad", "Sarah")
   color: text("color").notNull().default('#3B82F6'), // Profile card color (hex or preset key)
-  shoppingFor: text("shopping_for"), // 'self' or 'another' - optional until questionnaire filled
-  age: integer("age"), // Optional until questionnaire filled
-  event: text("event"), // Birthday, Anniversary, Christmas, Valentine's Day, Other - optional
-  gender: text("gender"), // Optional until questionnaire filled
+  // Questionnaire fields - optional until "Train Agent" is used
+  shoppingFor: text("shopping_for"), // 'self' or 'another'
+  age: integer("age"),
+  event: text("event"), // Birthday, Anniversary, Christmas, Valentine's Day, Other
+  gender: text("gender"),
   relationship: text("relationship"), // Only if shoppingFor is 'another'
-  personality: text("personality"), // Optional until questionnaire filled
-  interests: text("interests"), // Optional until questionnaire filled
-  manualIdeas: text("manual_ideas").array().notNull().default(sql`ARRAY[]::text[]`), // Free manual notes/ideas as array
-  premiumResults: text("premium_results"), // JSON string of premium AI results: Array<{id, title, reason, createdAt}>
-  aiResponse: text("ai_response"), // Legacy field - keeping for backward compatibility
-  manualNotes: text("manual_notes"), // Legacy field - keeping for backward compatibility
+  personality: text("personality"),
+  interests: text("interests"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -75,31 +72,24 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Gift lists (free feature - user's custom gift idea lists)
+// Gift lists - represents an OCCASION for a person (Birthday, Christmas, General, etc.)
 export const giftLists = pgTable("gift_lists", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  title: text("title").notNull(),
+  profileId: varchar("profile_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  title: text("title").notNull(), // Occasion name (e.g., "Birthday", "Christmas", "General")
+  // Manual gift ideas (free feature)
+  manualIdeas: text("manual_ideas").array().notNull().default(sql`ARRAY[]::text[]`),
+  // AI-generated gift ideas (premium feature)
+  premiumResults: text("premium_results"), // JSON string of premium AI results: Array<{id, title, reason, createdAt}>
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Gift items (individual items within a gift list)
-export const giftItems = pgTable("gift_items", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  listId: varchar("list_id").notNull().references(() => giftLists.id, { onDelete: "cascade" }),
-  text: text("text").notNull(),
-  completed: boolean("completed").notNull().default(false),
-  order: integer("order").notNull().default(0),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   profiles: many(profiles),
   transactions: many(transactions),
-  giftLists: many(giftLists),
 }));
 
 export const profilesRelations = relations(profiles, ({ one, many }) => ({
@@ -108,6 +98,7 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
     references: [users.id],
   }),
   messages: many(messages),
+  giftLists: many(giftLists),
 }));
 
 export const messagesRelations = relations(messages, ({ one }) => ({
@@ -124,18 +115,10 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   }),
 }));
 
-export const giftListsRelations = relations(giftLists, ({ one, many }) => ({
-  user: one(users, {
-    fields: [giftLists.userId],
-    references: [users.id],
-  }),
-  items: many(giftItems),
-}));
-
-export const giftItemsRelations = relations(giftItems, ({ one }) => ({
-  list: one(giftLists, {
-    fields: [giftItems.listId],
-    references: [giftLists.id],
+export const giftListsRelations = relations(giftLists, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [giftLists.profileId],
+    references: [profiles.id],
   }),
 }));
 
@@ -152,10 +135,6 @@ export const insertUserSchema = createInsertSchema(users).omit({
 
 export const insertProfileSchema = createInsertSchema(profiles).omit({
   id: true,
-  manualIdeas: true,
-  premiumResults: true,
-  aiResponse: true,
-  manualNotes: true,
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -194,18 +173,12 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
 
 export const insertGiftListSchema = createInsertSchema(giftLists).omit({
   id: true,
+  manualIdeas: true,
+  premiumResults: true,
   createdAt: true,
   updatedAt: true,
 }).extend({
   title: z.string().min(1).max(200),
-});
-
-export const insertGiftItemSchema = createInsertSchema(giftItems).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  text: z.string().min(1).max(500),
 });
 
 // Types
@@ -224,6 +197,3 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
 export type GiftList = typeof giftLists.$inferSelect;
 export type InsertGiftList = z.infer<typeof insertGiftListSchema>;
-
-export type GiftItem = typeof giftItems.$inferSelect;
-export type InsertGiftItem = z.infer<typeof insertGiftItemSchema>;

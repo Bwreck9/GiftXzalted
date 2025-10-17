@@ -1,5 +1,5 @@
 // Database storage implementation - referenced from javascript_database blueprint
-import { users, profiles, messages, transactions, giftLists, giftItems, type User, type InsertUser, type UpsertUser, type Profile, type InsertProfile, type Message, type InsertMessage, type Transaction, type InsertTransaction, type GiftList, type InsertGiftList, type GiftItem, type InsertGiftItem } from "@shared/schema";
+import { users, profiles, messages, transactions, giftLists, type User, type InsertUser, type UpsertUser, type Profile, type InsertProfile, type Message, type InsertMessage, type Transaction, type InsertTransaction, type GiftList, type InsertGiftList } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -14,7 +14,7 @@ export interface IStorage {
   // Profiles
   getProfilesByUserId(userId: string): Promise<Profile[]>;
   getProfile(id: string): Promise<Profile | undefined>;
-  createProfile(profile: InsertProfile, aiResponse?: string): Promise<Profile>;
+  createProfile(profile: InsertProfile): Promise<Profile>;
   updateProfile(id: string, profile: Partial<InsertProfile>): Promise<Profile>;
   deleteProfile(id: string): Promise<void>;
 
@@ -27,17 +27,11 @@ export interface IStorage {
   updateTransactionStatus(id: string, status: string): Promise<Transaction>;
 
   // Gift Lists
-  getGiftListsByUserId(userId: string): Promise<GiftList[]>;
+  getGiftListsByProfileId(profileId: string): Promise<GiftList[]>;
   getGiftList(id: string): Promise<GiftList | undefined>;
   createGiftList(list: InsertGiftList): Promise<GiftList>;
-  updateGiftList(id: string, updates: Partial<InsertGiftList>): Promise<GiftList>;
+  updateGiftList(id: string, updates: Partial<GiftList>): Promise<GiftList>;
   deleteGiftList(id: string): Promise<void>;
-
-  // Gift Items
-  getGiftItemsByListId(listId: string): Promise<GiftItem[]>;
-  createGiftItem(item: InsertGiftItem): Promise<GiftItem>;
-  updateGiftItem(id: string, updates: Partial<InsertGiftItem>): Promise<GiftItem>;
-  deleteGiftItem(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -96,12 +90,11 @@ export class DatabaseStorage implements IStorage {
     return profile || undefined;
   }
 
-  async createProfile(insertProfile: InsertProfile, aiResponse?: string): Promise<Profile> {
+  async createProfile(insertProfile: InsertProfile): Promise<Profile> {
     const [profile] = await db
       .insert(profiles)
       .values({
         ...insertProfile,
-        aiResponse: aiResponse || null,
         updatedAt: new Date(),
       })
       .returning();
@@ -160,11 +153,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Gift Lists
-  async getGiftListsByUserId(userId: string): Promise<GiftList[]> {
+  async getGiftListsByProfileId(profileId: string): Promise<GiftList[]> {
     return await db
       .select()
       .from(giftLists)
-      .where(eq(giftLists.userId, userId))
+      .where(eq(giftLists.profileId, profileId))
       .orderBy(desc(giftLists.updatedAt));
   }
 
@@ -184,7 +177,7 @@ export class DatabaseStorage implements IStorage {
     return list;
   }
 
-  async updateGiftList(id: string, updates: Partial<InsertGiftList>): Promise<GiftList> {
+  async updateGiftList(id: string, updates: Partial<GiftList>): Promise<GiftList> {
     const [list] = await db
       .update(giftLists)
       .set({
@@ -198,42 +191,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteGiftList(id: string): Promise<void> {
     await db.delete(giftLists).where(eq(giftLists.id, id));
-  }
-
-  // Gift Items
-  async getGiftItemsByListId(listId: string): Promise<GiftItem[]> {
-    return await db
-      .select()
-      .from(giftItems)
-      .where(eq(giftItems.listId, listId))
-      .orderBy(giftItems.order, giftItems.createdAt);
-  }
-
-  async createGiftItem(insertItem: InsertGiftItem): Promise<GiftItem> {
-    const [item] = await db
-      .insert(giftItems)
-      .values({
-        ...insertItem,
-        updatedAt: new Date(),
-      })
-      .returning();
-    return item;
-  }
-
-  async updateGiftItem(id: string, updates: Partial<InsertGiftItem>): Promise<GiftItem> {
-    const [item] = await db
-      .update(giftItems)
-      .set({
-        ...updates,
-        updatedAt: new Date(),
-      })
-      .where(eq(giftItems.id, id))
-      .returning();
-    return item;
-  }
-
-  async deleteGiftItem(id: string): Promise<void> {
-    await db.delete(giftItems).where(eq(giftItems.id, id));
   }
 }
 
