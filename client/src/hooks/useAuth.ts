@@ -19,14 +19,15 @@ async function fetchUser(): Promise<User | null> {
 }
 
 export function useAuth() {
-  const { data: user = null, isLoading } = useQuery<User | null>({
+  const { data: user = null, isLoading, error } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
     queryFn: fetchUser,
-    retry: false,
+    retry: 1,
+    retryDelay: 500,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: true,
     refetchOnReconnect: false,
-    staleTime: Infinity,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const isAuthenticated = user !== null;
