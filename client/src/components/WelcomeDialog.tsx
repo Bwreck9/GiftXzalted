@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Gift, Sparkles, ListPlus, Search } from 'lucide-react';
+import { Gift, Sparkles, ListPlus, Search, X } from 'lucide-react';
 
 const WELCOME_DIALOG_KEY = 'giftspark-welcome-shown';
 
@@ -50,7 +50,7 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent className="sm:max-w-[540px] overflow-hidden" data-testid="dialog-welcome">
+      <DialogContent className="sm:max-w-[540px] overflow-hidden" hideCloseButton data-testid="dialog-welcome">
         {/* Gradient Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-purple-500/5 to-pink-500/10 -z-10" />
         
@@ -117,7 +117,7 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
           </button>
         </div>
         
-        <div className="flex justify-center pt-4">
+        <div className="flex justify-center items-center gap-3 pt-4">
           <Button 
             onClick={handleGetStarted}
             data-testid="button-welcome-get-started"
@@ -125,6 +125,16 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
             size="lg"
           >
             Get Started
+          </Button>
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            size="icon"
+            className="hover-elevate active-elevate-2"
+            data-testid="button-welcome-close"
+          >
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close</span>
           </Button>
         </div>
       </DialogContent>
