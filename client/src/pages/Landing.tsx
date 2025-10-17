@@ -305,8 +305,23 @@ export default function Landing() {
 
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* Create Profile Button */}
-          <div className="flex justify-end">
+          {/* Profile Counter and Create Button */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground" data-testid="profile-counter">
+                {profiles?.length || 0}/5 profiles
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Need more profiles?{' '}
+                <button
+                  onClick={() => setLocation('/pricing')}
+                  className="text-primary hover:underline"
+                  data-testid="link-upgrade-profiles"
+                >
+                  They're available for purchase
+                </button>
+              </p>
+            </div>
             <Button
               onClick={() => setCreateDialogOpen(true)}
               size="default"
