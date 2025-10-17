@@ -102,7 +102,6 @@ export default function Landing() {
   });
 
   const handleGiftTrackerClick = () => {
-    console.log('[Landing] handleGiftTrackerClick - authLoading:', authLoading, 'isAuthenticated:', isAuthenticated, 'user:', user);
     // Wait for auth to finish loading before checking authentication
     if (authLoading) return;
     
@@ -142,7 +141,6 @@ export default function Landing() {
   };
 
   const handleSignIn = () => {
-    console.log('[Landing] handleSignIn called - redirecting to /api/login');
     window.location.href = '/api/login';
   };
 
