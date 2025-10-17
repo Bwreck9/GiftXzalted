@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { getGiftRecommendations } from "./openai";
-import { insertProfileSchema, insertMessageSchema, insertGiftListSchema, insertGiftItemSchema } from "@shared/schema";
+import { insertProfileSchema, insertMessageSchema, insertGiftListSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const profile = await storage.createProfile(validated, aiResponse);
+      const profile = await storage.createProfile(validated);
       res.json(profile);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -383,13 +383,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Gift Lists (Free Feature)
+  // Gift Lists - occasions within a profile
   
-  // Get all gift lists for current user
-  app.get("/api/gift-lists", isAuthenticated, async (req: any, res) => {
+  // Get all gift lists for a profile
+  app.get("/api/profiles/:profileId/gift-lists", isAuthenticated, async (req: any, res) => {
     try {
+      const { profileId } = req.params;
       const userId = req.user.claims.sub;
-      const lists = await storage.getGiftListsByUserId(userId);
+
+      // Verify profile ownership
+      const profile = await storage.getProfile(profileId);
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+      if (profile.userId !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const lists = await storage.getGiftListsByProfileId(profileId);
       res.json(lists);
     } catch (error: any) {
       console.error("Error getting gift lists:", error);
@@ -409,7 +420,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Gift list not found" });
       }
 
-      if (list.userId !== userId) {
+      // Verify ownership through profile
+      const profile = await storage.getProfile(list.profileId);
+      if (!profile || profile.userId !== userId) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
@@ -420,14 +433,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create gift list
-  app.post("/api/gift-lists", isAuthenticated, async (req: any, res) => {
+  // Create gift list for a profile
+  app.post("/api/profiles/:profileId/gift-lists", isAuthenticated, async (req: any, res) => {
     try {
+      const { profileId } = req.params;
       const userId = req.user.claims.sub;
+
+      // Verify profile ownership
+      const profile = await storage.getProfile(profileId);
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+      if (profile.userId !== userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
 
       const validated = insertGiftListSchema.parse({
         ...req.body,
-        userId,
+        profileId,
       });
 
       const list = await storage.createGiftList(validated);
@@ -453,15 +476,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Gift list not found" });
       }
 
-      if (list.userId !== userId) {
+      // Verify ownership through profile
+      const profile = await storage.getProfile(list.profileId);
+      if (!profile || profile.userId !== userId) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      // Don't allow changing userId
-      const { userId: _, ...updates } = req.body;
-      const validated = insertGiftListSchema.partial().parse(updates);
-
-      const updatedList = await storage.updateGiftList(id, validated);
+      // Don't allow changing profileId
+      const { profileId: _, ...updates } = req.body;
+      const updatedList = await storage.updateGiftList(id, updates);
       res.json(updatedList);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -484,7 +507,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Gift list not found" });
       }
 
-      if (list.userId !== userId) {
+      // Verify ownership through profile
+      const profile = await storage.getProfile(list.profileId);
+      if (!profile || profile.userId !== userId) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
@@ -493,119 +518,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error deleting gift list:", error);
       res.status(500).json({ error: "Failed to delete gift list" });
-    }
-  });
-
-  // Gift Items
-  
-  // Get items for a gift list
-  app.get("/api/gift-lists/:listId/items", isAuthenticated, async (req: any, res) => {
-    try {
-      const { listId } = req.params;
-      const userId = req.user.claims.sub;
-
-      const list = await storage.getGiftList(listId);
-      
-      if (!list) {
-        return res.status(404).json({ error: "Gift list not found" });
-      }
-
-      if (list.userId !== userId) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-
-      const items = await storage.getGiftItemsByListId(listId);
-      res.json(items);
-    } catch (error: any) {
-      console.error("Error getting gift items:", error);
-      res.status(500).json({ error: "Failed to get gift items" });
-    }
-  });
-
-  // Create gift item
-  app.post("/api/gift-lists/:listId/items", isAuthenticated, async (req: any, res) => {
-    try {
-      const { listId } = req.params;
-      const userId = req.user.claims.sub;
-
-      const list = await storage.getGiftList(listId);
-      
-      if (!list) {
-        return res.status(404).json({ error: "Gift list not found" });
-      }
-
-      if (list.userId !== userId) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-
-      const validated = insertGiftItemSchema.parse({
-        ...req.body,
-        listId,
-      });
-
-      const item = await storage.createGiftItem(validated);
-      res.json(item);
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid gift item data", details: error.errors });
-      }
-      console.error("Error creating gift item:", error);
-      res.status(500).json({ error: "Failed to create gift item" });
-    }
-  });
-
-  // Update gift item
-  app.patch("/api/gift-lists/:listId/items/:itemId", isAuthenticated, async (req: any, res) => {
-    try {
-      const { listId, itemId } = req.params;
-      const userId = req.user.claims.sub;
-
-      const list = await storage.getGiftList(listId);
-      
-      if (!list) {
-        return res.status(404).json({ error: "Gift list not found" });
-      }
-
-      if (list.userId !== userId) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-
-      // Don't allow changing listId
-      const { listId: _, ...updates } = req.body;
-      const validated = insertGiftItemSchema.partial().parse(updates);
-
-      const updatedItem = await storage.updateGiftItem(itemId, validated);
-      res.json(updatedItem);
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid gift item data", details: error.errors });
-      }
-      console.error("Error updating gift item:", error);
-      res.status(500).json({ error: "Failed to update gift item" });
-    }
-  });
-
-  // Delete gift item
-  app.delete("/api/gift-lists/:listId/items/:itemId", isAuthenticated, async (req: any, res) => {
-    try {
-      const { listId, itemId } = req.params;
-      const userId = req.user.claims.sub;
-
-      const list = await storage.getGiftList(listId);
-      
-      if (!list) {
-        return res.status(404).json({ error: "Gift list not found" });
-      }
-
-      if (list.userId !== userId) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-
-      await storage.deleteGiftItem(itemId);
-      res.json({ success: true });
-    } catch (error: any) {
-      console.error("Error deleting gift item:", error);
-      res.status(500).json({ error: "Failed to delete gift item" });
     }
   });
 
