@@ -32,8 +32,13 @@ export default function GiftListDetail() {
     mutationFn: async (ideas: string[]) => {
       return apiRequest('PATCH', `/api/gift-lists/${id}`, { manualIdeas: ideas });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
+      if (giftList?.profileId) {
+        await queryClient.refetchQueries({ 
+          queryKey: ['/api/profiles', giftList.profileId, 'gift-lists']
+        });
+      }
       toast({ title: 'Ideas saved successfully' });
     },
     onError: () => {
@@ -51,6 +56,9 @@ export default function GiftListDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
+      if (giftList?.profileId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/profiles', giftList.profileId, 'gift-lists'] });
+      }
       toast({ title: 'Premium recommendations generated!' });
     },
     onError: (error: any) => {
