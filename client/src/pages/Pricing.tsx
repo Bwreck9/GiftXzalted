@@ -89,7 +89,7 @@ export default function Pricing() {
           </Card>
 
           {/* Pricing Plans - Below */}
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Free Plan */}
             <Card className="p-6 relative">
               <div className="space-y-4">
@@ -174,7 +174,7 @@ export default function Pricing() {
                   </div>
                   <div className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
-                    <p className="text-sm">~20 AI generations</p>
+                    <p className="text-sm">Up to 10 profiles</p>
                   </div>
                   <div className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
@@ -217,7 +217,7 @@ export default function Pricing() {
                   </div>
                   <div className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
-                    <p className="text-sm">~100 AI generations</p>
+                    <p className="text-sm">Up to 20 profiles</p>
                   </div>
                   <div className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
@@ -231,6 +231,53 @@ export default function Pricing() {
                   data-testid="button-premium-plan"
                 >
                   Buy Profile Plan – $20/mo
+                </Button>
+              </div>
+            </Card>
+
+            {/* Enterprise Plan */}
+            <Card className="p-6 relative border-2 border-purple-600">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 border-0">
+                Best Value
+              </Badge>
+              
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="h-5 w-5 text-pink-600" />
+                    <h3 className="text-xl font-bold">Enterprise</h3>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold">$100</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 min-h-[180px]">
+                  <div className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                    <p className="text-sm">Everything in Premium</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                    <p className="text-sm"><strong>200,000 tokens/month</strong></p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                    <p className="text-sm"><strong>Unlimited profiles</strong></p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                    <p className="text-sm">For serious gift planners</p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleGetStarted}
+                  className="w-full bg-gradient-to-r from-pink-600 to-primary hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
+                  data-testid="button-enterprise-plan"
+                >
+                  Buy Profile Plan – $100/mo
                 </Button>
               </div>
             </Card>

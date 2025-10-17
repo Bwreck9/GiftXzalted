@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
-import { Gift, User, Settings, Coins, Moon, Sun } from 'lucide-react';
+import { Gift, User, Settings, Coins, Moon, Sun, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -85,6 +85,13 @@ export function AppHeader() {
               >
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => window.location.href = '/api/logout'}
+                data-testid="menu-item-sign-out"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
