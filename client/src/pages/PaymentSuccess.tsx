@@ -27,7 +27,7 @@ export default function PaymentSuccess() {
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">Payment Successful!</h1>
           <p className="text-muted-foreground">
-            Your credits have been added to your account.
+            Your tokens have been added to your account.
           </p>
         </div>
 
