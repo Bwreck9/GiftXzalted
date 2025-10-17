@@ -59,13 +59,14 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
-  await storage.upsertUser({
+  const user = await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
   });
+  return user;
 }
 
 export async function setupAuth(app: Express) {
@@ -82,7 +83,10 @@ export async function setupAuth(app: Express) {
   ) => {
     const user = {};
     updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
+    const dbUser = await upsertUser(tokens.claims());
+    // Override the session user ID with the database user ID
+    // This handles cases where Replit changes the user ID but we want to maintain the same user
+    (user as any).claims.sub = dbUser.id;
     verified(null, user);
   };
 
