@@ -20,6 +20,21 @@ const TOKENS_PER_ONETIME_PURCHASE = 5000; // $5 gets you 5,000 tokens
 const ONETIME_PURCHASE_AMOUNT = 5; // $5
 const TOKENS_PER_GENERATION = 500; // Each AI generation costs 500 tokens
 
+// Profile limits based on subscription tier
+const PROFILE_LIMITS = {
+  free: 5,
+  basic: 10,
+  premium: 20,
+  enterprise: Infinity
+};
+
+// Helper function to get profile limit for a user
+function getProfileLimit(subscriptionTier: string | null): number {
+  if (!subscriptionTier) return PROFILE_LIMITS.free;
+  const tier = subscriptionTier.toLowerCase();
+  return PROFILE_LIMITS[tier as keyof typeof PROFILE_LIMITS] || PROFILE_LIMITS.free;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Replit Auth
   await setupAuth(app);
@@ -90,6 +105,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const { generateResponse, ...profileData } = req.body;
 
+      // Get user to check subscription tier and profile limit
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Check profile limit based on subscription tier
+      const existingProfiles = await storage.getProfilesByUserId(userId);
+      const profileLimit = getProfileLimit(user.subscriptionTier);
+      
+      if (existingProfiles.length >= profileLimit) {
+        return res.status(400).json({ 
+          error: "Profile limit reached", 
+          limit: profileLimit,
+          current: existingProfiles.length
+        });
+      }
+
       const validated = insertProfileSchema.parse({
         ...profileData,
         userId,
@@ -101,12 +134,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Verify all required fields for AI generation
         if (!validated.age || !validated.gender || !validated.interests || !validated.personality || !validated.event || !validated.shoppingFor) {
           return res.status(400).json({ error: "Missing required questionnaire fields for AI generation" });
-        }
-
-        const user = await storage.getUser(userId);
-        
-        if (!user) {
-          return res.status(404).json({ error: "User not found" });
         }
 
         if (user.tokens < TOKENS_PER_GENERATION) {

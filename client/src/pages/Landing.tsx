@@ -35,6 +35,8 @@ export default function Landing() {
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [profileSelectDialogOpen, setProfileSelectDialogOpen] = useState(false);
+  const [loginPromptDialogOpen, setLoginPromptDialogOpen] = useState(false);
   const [newGiftListName, setNewGiftListName] = useState('');
   const { toast} = useToast();
 
@@ -120,24 +122,22 @@ export default function Landing() {
     if (authLoading) return;
     
     if (!isAuthenticated) {
-      handleSignIn();
+      setLoginPromptDialogOpen(true);
       return;
     }
 
-    // Check if user has tokens
-    if (!user?.tokens || user.tokens <= 0) {
+    // If no profiles, navigate to create a profile first
+    if (!profiles || profiles.length === 0) {
       toast({ 
-        title: 'No tokens available', 
-        description: 'Purchase tokens to train your AI agent',
-        variant: 'destructive' 
+        title: 'Create a profile first', 
+        description: 'You need to create a profile before training an AI agent'
       });
-      setLocation('/pricing');
+      setLocation('/onboarding');
       return;
     }
 
-    // Create profile and navigate to questionnaire
-    const defaultName = `AI Profile ${(profiles?.length || 0) + 1}`;
-    createGiftListMutation.mutate(defaultName);
+    // Show profile selection dialog
+    setProfileSelectDialogOpen(true);
   };
 
   const handleSignIn = () => {
@@ -471,9 +471,13 @@ export default function Landing() {
                     handleCreateGiftList();
                   }
                 }}
+                maxLength={20}
                 data-testid="input-gift-list-name"
                 autoFocus
               />
+              <p className="text-xs text-muted-foreground text-right">
+                {newGiftListName.length}/20 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -493,6 +497,80 @@ export default function Landing() {
               data-testid="button-confirm-create"
             >
               {createGiftListMutation.isPending ? 'Creating...' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Login Prompt Dialog */}
+      <Dialog open={loginPromptDialogOpen} onOpenChange={setLoginPromptDialogOpen}>
+        <DialogContent data-testid="dialog-login-prompt">
+          <DialogHeader>
+            <DialogTitle>Sign in to train your AI agent</DialogTitle>
+            <DialogDescription>
+              You need to be signed in to train an AI agent and get personalized gift recommendations.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setLoginPromptDialogOpen(false)}
+              data-testid="button-cancel-login"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSignIn}
+              data-testid="button-signin-prompt"
+            >
+              Sign In
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Profile Selection Dialog */}
+      <Dialog open={profileSelectDialogOpen} onOpenChange={setProfileSelectDialogOpen}>
+        <DialogContent data-testid="dialog-profile-select">
+          <DialogHeader>
+            <DialogTitle>Select a profile to train</DialogTitle>
+            <DialogDescription>
+              Choose which profile you'd like to train your AI agent with
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4 max-h-96 overflow-y-auto">
+            {profiles?.map(profile => (
+              <button
+                key={profile.id}
+                onClick={() => {
+                  setProfileSelectDialogOpen(false);
+                  setLocation(`/questionnaire?profile=${profile.id}`);
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate active-elevate-2 text-left"
+                data-testid={`button-select-profile-${profile.id}`}
+              >
+                <div
+                  className="w-10 h-10 rounded-md flex-shrink-0"
+                  style={{ backgroundColor: profile.color || '#3B82F6' }}
+                />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-foreground truncate">{profile.name}</h3>
+                  {profile.relationship && (
+                    <p className="text-sm text-muted-foreground truncate">
+                      {profile.relationship}
+                    </p>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setProfileSelectDialogOpen(false)}
+              data-testid="button-cancel-profile-select"
+            >
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>

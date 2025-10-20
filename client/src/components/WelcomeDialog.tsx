@@ -10,8 +10,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Gift, Sparkles, ListPlus, Search, X } from 'lucide-react';
 
-const WELCOME_DIALOG_KEY = 'giftspark-welcome-shown';
-
 interface WelcomeDialogProps {
   externalOpen?: boolean;
   onExternalClose?: () => void;
@@ -25,10 +23,8 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    const hasShown = localStorage.getItem(WELCOME_DIALOG_KEY);
-    if (!hasShown) {
-      setOpen(true);
-    }
+    // Always show splash screen when component mounts
+    setOpen(true);
   }, []);
 
   useEffect(() => {
@@ -38,7 +34,6 @@ export function WelcomeDialog({ externalOpen, onExternalClose, onGiftTrackerClic
   }, [externalOpen]);
 
   const handleClose = () => {
-    localStorage.setItem(WELCOME_DIALOG_KEY, 'true');
     setOpen(false);
     onExternalClose?.();
     setLocation('/');

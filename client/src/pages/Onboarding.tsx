@@ -172,7 +172,7 @@ export default function Onboarding() {
                 <div className="flex-1 space-y-4">
                   <div className="flex items-center gap-3">
                     <Phone className="h-6 w-6 text-pink-600 dark:text-pink-400" />
-                    <h3 className="text-2xl font-semibold">Call Your Agent</h3>
+                    <h3 className="text-2xl font-semibold">Search using your agent</h3>
                   </div>
                   <p className="text-muted-foreground text-lg">
                     Get personalized gift recommendations powered by AI. Your agent knows exactly what they'd love.
@@ -188,7 +188,7 @@ export default function Onboarding() {
                     data-testid="button-step3-web-search"
                   >
                     <Phone className="mr-2 h-5 w-5" />
-                    Call Your Agent
+                    Search using your agent
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">

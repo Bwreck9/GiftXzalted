@@ -33,8 +33,21 @@ const formSchema = insertProfileSchema.extend({
   color: z.string().default('blue'),
 });
 
-const MAX_FREE_PROFILES = 5;
+const PROFILE_LIMITS = {
+  free: 5,
+  basic: 10,
+  premium: 20,
+  enterprise: Infinity
+};
+
 const TOKENS_PER_GENERATION = 500;
+
+// Helper function to get profile limit for a user
+function getProfileLimit(subscriptionTier: string | null): number {
+  if (!subscriptionTier) return PROFILE_LIMITS.free;
+  const tier = subscriptionTier.toLowerCase();
+  return PROFILE_LIMITS[tier as keyof typeof PROFILE_LIMITS] || PROFILE_LIMITS.free;
+}
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -58,6 +71,10 @@ export default function Questionnaire() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [pendingGenerate, setPendingGenerate] = useState(false);
+  
+  // Get profile ID from URL parameter if training an existing profile
+  const urlParams = new URLSearchParams(window.location.search);
+  const profileId = urlParams.get('profile');
 
   // Draft persistence for unauthenticated users
   const { draft, setDraft, clearDraft } = usePersistedDraft<FormValues>(
@@ -78,6 +95,23 @@ export default function Questionnaire() {
     return () => subscription.unsubscribe();
   }, [form, setDraft]);
 
+  // Populate form with existing profile data when it loads
+  useEffect(() => {
+    if (existingProfile) {
+      form.reset({
+        name: existingProfile.name || '',
+        shoppingFor: existingProfile.shoppingFor || 'another',
+        age: existingProfile.age || 25,
+        event: existingProfile.event || 'Birthday',
+        gender: existingProfile.gender || '',
+        relationship: existingProfile.relationship || '',
+        personality: existingProfile.personality || '',
+        interests: existingProfile.interests || '',
+        color: existingProfile.color || 'blue',
+      });
+    }
+  }, [existingProfile, form]);
+
   const { data: profiles } = useQuery<Profile[]>({
     queryKey: ['/api/profiles'],
     enabled: !!user,
@@ -86,6 +120,17 @@ export default function Questionnaire() {
   const { data: userData } = useQuery<User>({
     queryKey: ['/api/auth/user'],
     enabled: !!user,
+  });
+
+  // Load existing profile if profileId is provided
+  const { data: existingProfile } = useQuery<Profile>({
+    queryKey: ['/api/profiles', profileId],
+    queryFn: async () => {
+      const response = await fetch(`/api/profiles/${profileId}`);
+      if (!response.ok) throw new Error('Failed to load profile');
+      return response.json();
+    },
+    enabled: !!profileId && !!user,
   });
 
   const createMutation = useMutation({
@@ -106,6 +151,29 @@ export default function Questionnaire() {
       toast({ 
         title: 'Error', 
         description: error.message || 'Failed to create profile', 
+        variant: 'destructive' 
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data, generateResponse }: { id: string; data: Partial<InsertProfile>; generateResponse: boolean }) => {
+      return apiRequest('PATCH', `/api/profiles/${id}`, { ...data, generateResponse });
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles', profileId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      toast({ 
+        title: isGenerating ? 'Profile updated with AI response!' : 'Profile updated!', 
+        description: isGenerating ? 'Your AI-powered gift recommendations are ready.' : 'Your profile has been saved.' 
+      });
+      setLocation(`/profile/${data.id}`);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Failed to update profile', 
         variant: 'destructive' 
       });
     },
@@ -134,22 +202,6 @@ export default function Questionnaire() {
         return;
       }
 
-      const profileData: InsertProfile = {
-        ...data,
-        userId: (user as any).id,
-      };
-      
-      // Check profile limit for free users
-      const profileCount = profiles?.length || 0;
-      if (profileCount >= MAX_FREE_PROFILES) {
-        toast({ 
-          title: 'Profile limit reached', 
-          description: `You've reached the maximum of ${MAX_FREE_PROFILES} free profiles.`, 
-          variant: 'destructive' 
-        });
-        return;
-      }
-
       // Check token balance for premium generation
       if (generateResponse && (!userData || userData.tokens < TOKENS_PER_GENERATION)) {
         setShowTokenModal(true);
@@ -157,7 +209,35 @@ export default function Questionnaire() {
       }
 
       setIsGenerating(generateResponse);
-      createMutation.mutate({ data: profileData, generateResponse });
+
+      // If updating an existing profile
+      if (profileId && existingProfile) {
+        const profileData: Partial<InsertProfile> = {
+          ...data,
+        };
+        updateMutation.mutate({ id: profileId, data: profileData, generateResponse });
+      } else {
+        // Creating a new profile
+        const profileData: InsertProfile = {
+          ...data,
+          userId: (user as any).id,
+        };
+        
+        // Check profile limit based on subscription tier
+        const profileCount = profiles?.length || 0;
+        const profileLimit = getProfileLimit(userData?.subscriptionTier || null);
+        if (profileCount >= profileLimit) {
+          const tierName = userData?.subscriptionTier || 'free';
+          toast({ 
+            title: 'Profile limit reached', 
+            description: `You've reached the maximum of ${profileLimit} ${tierName} profiles. Upgrade to create more.`, 
+            variant: 'destructive' 
+          });
+          return;
+        }
+
+        createMutation.mutate({ data: profileData, generateResponse });
+      }
     });
   };
 
@@ -166,7 +246,8 @@ export default function Questionnaire() {
 
   const profileCount = profiles?.length || 0;
   const hasEnoughTokens = userData && userData.tokens >= TOKENS_PER_GENERATION;
-  const canCreateProfile = profileCount < MAX_FREE_PROFILES;
+  const profileLimit = getProfileLimit(userData?.subscriptionTier || null);
+  const canCreateProfile = profileCount < profileLimit;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -182,7 +263,7 @@ export default function Questionnaire() {
         </Button>
         <div className="flex-1 flex items-center justify-center gap-2">
           <Gift className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">New Profile</h1>
+          <h1 className="text-lg font-semibold">{profileId ? 'Train Agent' : 'New Profile'}</h1>
         </div>
         {user && userData && (
           <Badge variant="secondary" className="gap-1" data-testid="badge-tokens">
@@ -197,9 +278,9 @@ export default function Questionnaire() {
         <div className="border-b bg-muted/50 px-4 py-3">
           <div className="max-w-lg mx-auto flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              Free profiles: {profileCount} / {MAX_FREE_PROFILES}
+              Profiles: {profileCount} / {profileLimit === Infinity ? '∞' : profileLimit} ({userData?.subscriptionTier || 'free'})
             </span>
-            {profileCount >= MAX_FREE_PROFILES && (
+            {profileCount >= profileLimit && (
               <span className="text-destructive font-medium">Limit reached</span>
             )}
           </div>

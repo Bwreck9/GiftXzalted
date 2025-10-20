@@ -32,6 +32,7 @@ export default function GiftListDetail() {
   const { user } = useAuth();
   const [manualIdeas, setManualIdeas] = useState<string[]>([]);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [questionnaireDialogOpen, setQuestionnaireDialogOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
 
   const { data: giftList, isLoading } = useQuery<GiftList>({
@@ -98,11 +99,8 @@ export default function GiftListDetail() {
           variant: 'destructive',
         });
       } else if (errorMessage.includes('questionnaire')) {
-        toast({
-          title: 'Complete questionnaire first',
-          description: 'Train the agent by completing the profile questionnaire',
-          variant: 'destructive',
-        });
+        // Show persistent dialog with link to questionnaire
+        setQuestionnaireDialogOpen(true);
       } else {
         toast({
           title: 'Failed to generate recommendations',
@@ -415,6 +413,36 @@ export default function GiftListDetail() {
               data-testid="button-rename-list-submit"
             >
               {renameListMutation.isPending ? 'Renaming...' : 'Rename'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={questionnaireDialogOpen} onOpenChange={setQuestionnaireDialogOpen}>
+        <DialogContent data-testid="dialog-questionnaire-required">
+          <DialogHeader>
+            <DialogTitle>Complete Questionnaire First</DialogTitle>
+            <DialogDescription>
+              To generate AI-powered gift recommendations, you need to complete the profile questionnaire first. This helps the AI understand the recipient's preferences and personality.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setQuestionnaireDialogOpen(false)}
+              data-testid="button-cancel-questionnaire"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setQuestionnaireDialogOpen(false);
+                setLocation(`/questionnaire?profile=${giftList?.profileId}`);
+              }}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
+              data-testid="button-go-to-questionnaire"
+            >
+              Complete Questionnaire
             </Button>
           </DialogFooter>
         </DialogContent>
