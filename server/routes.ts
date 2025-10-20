@@ -131,9 +131,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If AI generation requested, check tokens and generate response
       let aiResponse: string | undefined = undefined;
       if (generateResponse === true) {
-        // Verify all required fields for AI generation
-        if (!validated.age || !validated.gender || !validated.interests || !validated.personality || !validated.event || !validated.shoppingFor) {
-          return res.status(400).json({ error: "Missing required questionnaire fields for AI generation" });
+        // Verify minimum required fields for AI generation
+        if (!validated.interests || !validated.personalityTraits || validated.personalityTraits.length === 0) {
+          return res.status(400).json({ error: "Missing required questionnaire fields for AI generation. Please complete personality traits and interests." });
         }
 
         if (user.tokens < TOKENS_PER_GENERATION) {
@@ -148,13 +148,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           aiResponse = await getGiftRecommendations(
             {
               name: validated.name,
-              age: validated.age,
-              event: validated.event,
-              gender: validated.gender,
+              ageRange: validated.ageRange || null,
+              gender: validated.gender || null,
               relationship: validated.relationship || null,
-              personality: validated.personality,
-              interests: validated.interests,
-              shoppingFor: validated.shoppingFor,
+              personalityTraits: validated.personalityTraits || [],
+              interests: validated.interests || '',
+              closeness: validated.closeness || null,
+              budget: validated.budget || null,
+              giftPreferences: validated.giftPreferences || [],
+              dislikes: validated.dislikes || null,
+              giftStyle: validated.giftStyle || null,
+              location: validated.location || null,
+              additionalNotes: validated.additionalNotes || null,
             } as any,
             `Generate thoughtful gift recommendations for ${validated.name} based on their profile.`,
             []
@@ -338,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }));
 
       // Verify profile has questionnaire data
-      if (!profile.age || !profile.gender || !profile.interests || !profile.personality || !profile.event || !profile.shoppingFor) {
+      if (!profile.interests || !profile.personalityTraits || profile.personalityTraits.length === 0) {
         return res.status(400).json({ error: "Profile questionnaire not completed. Please fill out the profile details first." });
       }
 
@@ -346,13 +351,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const aiResponse = await getGiftRecommendations(
         {
           name: profile.name,
-          age: profile.age,
-          event: profile.event,
-          gender: profile.gender,
-          relationship: profile.relationship || undefined,
-          personality: profile.personality,
-          interests: profile.interests,
-          shoppingFor: profile.shoppingFor,
+          ageRange: profile.ageRange || null,
+          gender: profile.gender || null,
+          relationship: profile.relationship || null,
+          personalityTraits: profile.personalityTraits || [],
+          interests: profile.interests || '',
+          closeness: profile.closeness || null,
+          budget: profile.budget || null,
+          giftPreferences: profile.giftPreferences || [],
+          dislikes: profile.dislikes || null,
+          giftStyle: profile.giftStyle || null,
+          location: profile.location || null,
+          additionalNotes: profile.additionalNotes || null,
         } as any,
         content,
         conversationHistory

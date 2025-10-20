@@ -38,14 +38,21 @@ export const profiles = pgTable("profiles", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(), // Person's name (e.g., "Mom", "Dad", "Sarah")
   color: text("color").notNull().default('#3B82F6'), // Profile card color (hex or preset key)
-  // Questionnaire fields - optional until "Train Agent" is used
-  shoppingFor: text("shopping_for"), // 'self' or 'another'
-  age: integer("age"),
-  event: text("event"), // Birthday, Anniversary, Christmas, Valentine's Day, Other
-  gender: text("gender"),
-  relationship: text("relationship"), // Only if shoppingFor is 'another'
-  personality: text("personality"),
-  interests: text("interests"),
+  
+  // Questionnaire fields - all optional until questionnaire is completed
+  ageRange: text("age_range"), // 'Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult (31-50)', 'Senior (50+)'
+  gender: text("gender"), // 'Male', 'Female', or custom text if 'Other'
+  personalityTraits: text("personality_traits").array().default(sql`ARRAY[]::text[]`), // Multi-select: Adventurous, Thoughtful, etc.
+  interests: text("interests"), // Hobbies and interests (text field)
+  relationship: text("relationship"), // Partner, Family, Friend, Coworker, Acquaintance
+  closeness: text("closeness"), // Very close, Somewhat close, Casual
+  budget: text("budget"), // Under $25, $25-$50, $50-$100, $100+
+  giftPreferences: text("gift_preferences").array().default(sql`ARRAY[]::text[]`), // Multi-select: Practical, Sentimental, Experiences, Funny/novelty
+  dislikes: text("dislikes"), // No-go areas (text field)
+  giftStyle: text("gift_style"), // 'unique-thoughtful' or 'safe-popular'
+  location: text("location"), // City/country
+  additionalNotes: text("additional_notes"), // Extra context (2000 char limit)
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -137,16 +144,25 @@ export const insertProfileSchema = createInsertSchema(profiles).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  personalityTraits: true,
+  giftPreferences: true,
 }).extend({
   name: z.string().min(1).max(20), // 20 character limit for profile names
   color: z.string().optional(), // Hex color or preset key
-  age: z.number().min(1).max(120).optional(), // Optional until questionnaire filled
-  shoppingFor: z.enum(['self', 'another']).optional(), // Optional until questionnaire filled
-  event: z.enum(['Birthday', 'Anniversary', 'Christmas', "Valentine's Day", 'Other']).optional(), // Optional until questionnaire filled
-  gender: z.string().optional(), // Optional until questionnaire filled
-  relationship: z.string().optional(), // Optional until questionnaire filled
-  personality: z.string().min(1).max(1000).optional(), // Optional until questionnaire filled
-  interests: z.string().min(1).max(1000).optional(), // Optional until questionnaire filled
+  
+  // Questionnaire fields - all optional
+  ageRange: z.enum(['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult (31-50)', 'Senior (50+)']).optional(),
+  gender: z.string().max(500).optional(), // Male, Female, or custom text (500 char limit for custom)
+  personalityTraits: z.array(z.enum(['Adventurous', 'Thoughtful', 'Funny/Lighthearted', 'Introverted', 'Outgoing', 'Artistic', 'Tech-savvy', 'Sentimental'])).optional(),
+  interests: z.string().max(2000).optional(), // Text field for interests
+  relationship: z.enum(['Partner', 'Family', 'Friend', 'Coworker', 'Acquaintance']).optional(),
+  closeness: z.enum(['Very close', 'Somewhat close', 'Casual']).optional(),
+  budget: z.enum(['Under $25', '$25-$50', '$50-$100', '$100+']).optional(),
+  giftPreferences: z.array(z.enum(['Practical gifts', 'Sentimental/personalized gifts', 'Experiences', 'Funny/novelty items'])).optional(),
+  dislikes: z.string().max(2000).optional(), // No-go areas
+  giftStyle: z.enum(['unique-thoughtful', 'safe-popular']).optional(),
+  location: z.string().max(500).optional(), // City/country
+  additionalNotes: z.string().max(2000).optional(), // Extra context
 });
 
 // Premium result type for storing in premiumResults JSON

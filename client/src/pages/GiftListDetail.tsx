@@ -167,7 +167,7 @@ export default function GiftListDetail() {
 
   const handleGenerate = () => {
     // Check if profile questionnaire is completed
-    if (!profile?.personality || !profile?.interests) {
+    if (!profile?.interests || !profile?.personalityTraits || profile.personalityTraits.length === 0) {
       setQuestionnaireDialogOpen(true);
       return;
     }
