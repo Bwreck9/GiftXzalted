@@ -29,7 +29,8 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
   - Gift Style: 2 radio options (Unique & Thoughtful, Safe & Popular)
   - Location: Text input (100 char limit)
   - Additional Notes: Textarea (2000 char limit with live character counter)
-  - **Context-aware buttons:** Shows "Create Profile" / "Create + Generate" in normal flow; shows "Save" / "Save & Generate" when editing from gift list context (URL params: `from=giftlist&listId=xyz`)
+  - **Context-aware buttons:** Shows "Create Profile" / "Create + Generate Response" in normal flow; shows "Save" / "Save & Generate Ideas" when editing from gift list context (URL params: `from=giftlist&listId=xyz`)
+  - **AI Generation Flow:** Questionnaire saves profile data and redirects to gift list with `?trigger=generate` parameter. Gift list auto-triggers generation once using state flag guard to prevent infinite loops. Generation validates questionnaire completion and token balance before proceeding.
 - **Gift List Management:** 
   - Separated "Gift Ideas" (manual entries) and "Generated Ideas" (AI recommendations) sections
   - Settings dropdown menu for list operations (rename, delete)

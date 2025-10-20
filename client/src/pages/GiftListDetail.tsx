@@ -185,7 +185,8 @@ export default function GiftListDetail() {
       return;
     }
 
-    if (!user || user.tokens < 500) {
+    const totalTokens = (user?.tokens ?? 0) + (user?.purchasedTokens ?? 0);
+    if (!user || totalTokens < 500) {
       toast({
         title: 'Insufficient tokens',
         description: 'You need at least 500 tokens to generate recommendations',
@@ -289,7 +290,7 @@ export default function GiftListDetail() {
           <div className="flex items-center gap-2">
             <Button
               onClick={handleGenerate}
-              disabled={generateMutation.isPending || !user || user.tokens < 500}
+              disabled={generateMutation.isPending || !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < 500}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
               data-testid="button-generate-ideas"
             >

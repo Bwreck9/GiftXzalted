@@ -229,7 +229,8 @@ export default function Questionnaire() {
       }
 
       // Check token balance for premium generation
-      if (generateResponse && (!userData || userData.tokens < TOKENS_PER_GENERATION)) {
+      const totalTokens = (userData?.tokens ?? 0) + (userData?.purchasedTokens ?? 0);
+      if (generateResponse && (!userData || totalTokens < TOKENS_PER_GENERATION)) {
         setShowTokenModal(true);
         return;
       }
@@ -272,7 +273,8 @@ export default function Questionnaire() {
   const gender = form.watch('gender');
 
   const profileCount = profiles?.length || 0;
-  const hasEnoughTokens = userData && userData.tokens >= TOKENS_PER_GENERATION;
+  const totalUserTokens = (userData?.tokens ?? 0) + (userData?.purchasedTokens ?? 0);
+  const hasEnoughTokens = userData && totalUserTokens >= TOKENS_PER_GENERATION;
   const profileLimit = getProfileLimit(userData?.subscriptionTier || null);
   const canCreateProfile = profileCount < profileLimit;
 
@@ -295,7 +297,7 @@ export default function Questionnaire() {
         {user && userData && (
           <Badge variant="secondary" className="gap-1" data-testid="badge-tokens">
             <Coins className="h-3 w-3" />
-            {userData.tokens}
+            {(userData.tokens ?? 0) + (userData.purchasedTokens ?? 0)}
           </Badge>
         )}
         {!user && <div className="w-10" />}
@@ -909,7 +911,7 @@ export default function Questionnaire() {
           
           <div className="py-2">
             <p className="text-sm text-muted-foreground mb-4">
-              Your current balance: <strong>{userData?.tokens || 0} tokens</strong>
+              Your current balance: <strong>{(userData?.tokens ?? 0) + (userData?.purchasedTokens ?? 0)} tokens</strong>
             </p>
           </div>
 

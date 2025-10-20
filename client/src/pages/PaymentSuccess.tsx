@@ -3,11 +3,15 @@ import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
+import { queryClient } from '@/lib/queryClient';
 
 export default function PaymentSuccess() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
+    // Invalidate user data to refetch updated token balance
+    queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+    
     const timer = setTimeout(() => {
       setLocation('/settings');
     }, 3000);

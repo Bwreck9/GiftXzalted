@@ -45,7 +45,7 @@ export function AppHeader() {
               data-testid="button-token-counter"
             >
               <Coins className="h-4 w-4 mr-2" />
-              {user.tokens ?? 0} tokens
+              {(user.tokens ?? 0) + (user.purchasedTokens ?? 0)} tokens
             </Button>
           )}
 
