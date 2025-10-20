@@ -552,9 +552,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           content: m.content,
         }));
 
-      // Verify profile has questionnaire data
-      if (!profile.interests || !profile.personalityTraits || profile.personalityTraits.length === 0) {
-        return res.status(400).json({ error: "Profile questionnaire not completed. Please fill out the profile details first." });
+      // Verify profile has at least ONE questionnaire field filled (one-question minimum)
+      const hasQuestionnaireData = 
+        profile.ageRange ||
+        profile.gender ||
+        (profile.personalityTraits && profile.personalityTraits.length > 0) ||
+        profile.interests ||
+        profile.relationship ||
+        profile.closeness ||
+        profile.budget ||
+        (profile.giftPreferences && profile.giftPreferences.length > 0) ||
+        profile.dislikes ||
+        profile.giftStyle ||
+        profile.location ||
+        profile.additionalNotes;
+      
+      if (!hasQuestionnaireData) {
+        return res.status(400).json({ error: "Profile questionnaire not completed. Please fill out at least one question from the profile details." });
       }
 
       // Get AI response
