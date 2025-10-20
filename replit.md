@@ -41,9 +41,16 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 - **Authentication:** Replit Auth with Google OAuth (session-based, cookie authentication).
 - **Database:** PostgreSQL with Drizzle ORM, storing users, sessions, profiles, gift_lists, messages, tokens, and transactions.
 - **Core Hierarchy:** Profiles (`profiles` table) represent individuals (e.g., "Mom"), Gift Lists (`gift_lists` table) represent occasions (e.g., "Birthday") and contain both manual and AI-generated gift ideas.
-- **Token System:** Implemented for AI recommendations (500 tokens per generation), with various purchase and subscription models.
+- **Token System:** Dual-column token accounting with separate tracking for subscription and purchased tokens:
+  - `tokens` column: Subscription tokens (reset monthly to tier amount, don't stack)
+  - `purchasedTokens` column: One-time purchased tokens (never expire)
+  - Deduction order: Purchased tokens used first, then subscription tokens
+  - Monthly reset: Only subscription tokens reset on 1st of each month
+  - Cost: 500 tokens per AI generation
+  - Refund protection: Tokens refunded if AI generation, message storage, or profile creation fails
+  - **Known Limitation:** Current implementation lacks database transaction-level concurrency control. For production use, `deductTokens` should use row-level locking (SELECT FOR UPDATE) or optimistic concurrency control to prevent race conditions during concurrent requests.
 - **Payment Processing:** Secure Stripe integration with webhook signature verification for token and subscription purchases.
-- **AI Integration:** Utilizes OpenAI GPT-5 for generating personalized gift recommendations based on user-provided profile data.
+- **AI Integration:** Utilizes OpenAI gpt-4o-mini for generating personalized gift recommendations based on user-provided profile data.
 - **API Endpoints:**
     - `GET/POST /api/profiles`: List/create profiles.
     - `POST /api/profiles/:profileId/gift-lists`: Create gift list for a profile.
@@ -64,6 +71,6 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 - **Backend:** Express.js, Node.js
 - **Database:** PostgreSQL (Neon)
 - **Authentication:** Replit Auth (Google OAuth)
-- **AI:** OpenAI GPT-5
+- **AI:** OpenAI gpt-4o-mini
 - **Payments:** Stripe
 - **ORM:** Drizzle

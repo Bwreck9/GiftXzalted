@@ -22,7 +22,8 @@ export const users = pgTable("users", {
   firstName: text("first_name"),
   lastName: text("last_name"),
   profileImageUrl: text("profile_image_url"),
-  tokens: integer("tokens").notNull().default(0), // AI generation tokens
+  tokens: integer("tokens").notNull().default(0), // Subscription tokens (reset monthly)
+  purchasedTokens: integer("purchased_tokens").notNull().default(0), // One-time purchased tokens (never expire)
   subscriptionTier: text("subscription_tier"), // null (none), 'basic' ($5/month for 10k tokens), 'premium' ($20/month for 50k tokens)
   subscriptionStatus: text("subscription_status"), // 'active', 'canceled', 'past_due', null
   tokensResetDate: timestamp("tokens_reset_date"), // When subscription tokens reset

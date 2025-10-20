@@ -5,58 +5,101 @@ if (!process.env.OPENAI_API_KEY) {
   throw new Error('Missing required OpenAI secret: OPENAI_API_KEY');
 }
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function getGiftRecommendations(
   profileData: {
     name: string;
-    age: number;
-    event: string;
-    gender: string;
+    ageRange?: string | null;
+    gender?: string | null;
     relationship?: string | null;
-    personality: string;
-    interests: string;
-    shoppingFor: string;
+    personalityTraits?: string[];
+    interests?: string;
+    closeness?: string | null;
+    budget?: string | null;
+    giftPreferences?: string[];
+    dislikes?: string | null;
+    giftStyle?: string | null;
+    location?: string | null;
+    additionalNotes?: string | null;
   },
-  userMessage: string,
-  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>
+  userMessage?: string,
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
 ): Promise<string> {
   try {
-    const systemPrompt = `You are a helpful gift recommendation assistant. You help people find the perfect gifts based on detailed profiles.
+    // Build profile context from available data
+    let profileContext = `You are a helpful gift recommendation assistant. You help people find the perfect gifts based on detailed profiles.
 
-Current profile:
-- Name: ${profileData.name}
-- Shopping for: ${profileData.shoppingFor === 'self' ? 'themselves' : 'someone else'}
-${profileData.relationship ? `- Relationship: ${profileData.relationship}` : ''}
-- Age: ${profileData.age} years old
-- Event: ${profileData.event}
-- Gender: ${profileData.gender}
-- Personality: ${profileData.personality}
-- Interests: ${profileData.interests}
+Current profile for ${profileData.name}:`;
 
-Instructions:
-1. Provide thoughtful, personalized gift recommendations based on the profile
-2. Consider the person's age, interests, personality, and the occasion
-3. Suggest specific, practical gift ideas with reasoning based on the profile
-4. Be conversational and helpful
-5. Ask follow-up questions to refine recommendations if needed
+    if (profileData.ageRange) {
+      profileContext += `\n- Age Range: ${profileData.ageRange}`;
+    }
+    if (profileData.gender) {
+      profileContext += `\n- Gender: ${profileData.gender}`;
+    }
+    if (profileData.relationship) {
+      profileContext += `\n- Relationship: ${profileData.relationship}`;
+    }
+    if (profileData.closeness) {
+      profileContext += `\n- Closeness: ${profileData.closeness}`;
+    }
+    if (profileData.personalityTraits && profileData.personalityTraits.length > 0) {
+      profileContext += `\n- Personality Traits: ${profileData.personalityTraits.join(', ')}`;
+    }
+    if (profileData.interests) {
+      profileContext += `\n- Interests: ${profileData.interests}`;
+    }
+    if (profileData.budget) {
+      profileContext += `\n- Budget: ${profileData.budget}`;
+    }
+    if (profileData.giftPreferences && profileData.giftPreferences.length > 0) {
+      profileContext += `\n- Gift Preferences: ${profileData.giftPreferences.join(', ')}`;
+    }
+    if (profileData.dislikes) {
+      profileContext += `\n- Dislikes/Avoid: ${profileData.dislikes}`;
+    }
+    if (profileData.giftStyle) {
+      profileContext += `\n- Gift Style: ${profileData.giftStyle === 'unique-thoughtful' ? 'Unique & Thoughtful' : 'Safe & Popular'}`;
+    }
+    if (profileData.location) {
+      profileContext += `\n- Location: ${profileData.location}`;
+    }
+    if (profileData.additionalNotes) {
+      profileContext += `\n- Additional Notes: ${profileData.additionalNotes}`;
+    }
+
+    profileContext += `\n\nInstructions:
+1. Provide thoughtful, personalized gift recommendations based on the profile above
+2. Consider their personality traits, interests, budget, and preferences
+3. Suggest 3-5 specific, practical gift ideas with clear reasoning based on the profile
+4. Format each recommendation clearly with the gift name and why it's a good match
+5. Be conversational and helpful
 
 IMPORTANT: Focus on gift ideas and descriptions. Do NOT include product links or URLs.`;
 
-    const messages = [
-      { role: 'system' as const, content: systemPrompt },
-      ...conversationHistory.map(msg => ({
-        role: msg.role,
-        content: msg.content,
-      })),
-      { role: 'user' as const, content: userMessage },
+    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: profileContext },
     ];
 
+    // Add conversation history if provided
+    if (conversationHistory && conversationHistory.length > 0) {
+      messages.push(...conversationHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      })));
+    }
+
+    // Add user message if provided, otherwise use default prompt
+    messages.push({ 
+      role: 'user', 
+      content: userMessage || 'Based on this profile, please suggest some thoughtful gift ideas.' 
+    });
+
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o-mini",
       messages,
-      max_completion_tokens: 8192,
+      max_completion_tokens: 2048,
     });
 
     return response.choices[0].message.content || 'I apologize, but I was unable to generate a recommendation. Please try again.';

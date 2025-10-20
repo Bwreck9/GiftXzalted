@@ -28,11 +28,140 @@ const PROFILE_LIMITS = {
   enterprise: 100
 };
 
+// Monthly subscription tokens (reset monthly, don't stack)
+const SUBSCRIPTION_TOKENS = {
+  basic: 10000,      // $5/month gets 10,000 tokens/month
+  premium: 50000,    // $20/month gets 50,000 tokens/month
+  enterprise: 200000 // $100/month gets 200,000 tokens/month
+};
+
 // Helper function to get profile limit for a user
 function getProfileLimit(subscriptionTier: string | null): number {
   if (!subscriptionTier) return PROFILE_LIMITS.free;
   const tier = subscriptionTier.toLowerCase();
   return PROFILE_LIMITS[tier as keyof typeof PROFILE_LIMITS] || PROFILE_LIMITS.free;
+}
+
+// Helper function to get total available tokens (subscription + purchased)
+function getTotalTokens(user: { tokens: number; purchasedTokens: number }): number {
+  return (user.tokens || 0) + (user.purchasedTokens || 0);
+}
+
+// Helper function to deduct tokens (uses purchased tokens first, then subscription tokens)
+// Returns details about what was deducted from where for proper refunds
+async function deductTokens(userId: string, amount: number) {
+  const user = await storage.getUser(userId);
+  if (!user) throw new Error("User not found");
+  
+  const { db } = await import('./db');
+  const { users } = await import('@shared/schema');
+  const { eq } = await import('drizzle-orm');
+  
+  let remainingToDeduct = amount;
+  const originalPurchasedTokens = user.purchasedTokens || 0;
+  const originalSubscriptionTokens = user.tokens || 0;
+  let newPurchasedTokens = originalPurchasedTokens;
+  let newSubscriptionTokens = originalSubscriptionTokens;
+  
+  // First, use purchased tokens (one-time tokens that never expire)
+  let deductedFromPurchased = 0;
+  if (newPurchasedTokens > 0) {
+    deductedFromPurchased = Math.min(newPurchasedTokens, remainingToDeduct);
+    newPurchasedTokens -= deductedFromPurchased;
+    remainingToDeduct -= deductedFromPurchased;
+  }
+  
+  // Then, use subscription tokens if needed
+  let deductedFromSubscription = 0;
+  if (remainingToDeduct > 0 && newSubscriptionTokens > 0) {
+    deductedFromSubscription = Math.min(newSubscriptionTokens, remainingToDeduct);
+    newSubscriptionTokens -= deductedFromSubscription;
+    remainingToDeduct -= deductedFromSubscription;
+  }
+  
+  // Verify we had enough tokens for the full deduction
+  if (remainingToDeduct > 0) {
+    throw new Error(`Insufficient tokens: requested ${amount}, available ${originalPurchasedTokens + originalSubscriptionTokens}`);
+  }
+  
+  // Update both token columns
+  await db
+    .update(users)
+    .set({
+      tokens: newSubscriptionTokens,
+      purchasedTokens: newPurchasedTokens,
+    })
+    .where(eq(users.id, userId));
+    
+  return { 
+    deductedFromPurchased,
+    deductedFromSubscription,
+    totalDeducted: deductedFromPurchased + deductedFromSubscription,
+    remainingTotal: newSubscriptionTokens + newPurchasedTokens 
+  };
+}
+
+// Helper function to refund tokens to their original sources
+async function refundTokens(userId: string, purchasedAmount: number, subscriptionAmount: number) {
+  const user = await storage.getUser(userId);
+  if (!user) return;
+  
+  const { db } = await import('./db');
+  const { users } = await import('@shared/schema');
+  const { eq } = await import('drizzle-orm');
+  
+  await db
+    .update(users)
+    .set({
+      purchasedTokens: (user.purchasedTokens || 0) + purchasedAmount,
+      tokens: (user.tokens || 0) + subscriptionAmount,
+    })
+    .where(eq(users.id, userId));
+}
+
+// Helper function to check and reset subscription tokens if needed
+// Subscription tokens reset monthly without stacking, one-time tokens persist
+async function checkAndResetSubscriptionTokens(userId: string) {
+  const user = await storage.getUser(userId);
+  if (!user) return;
+
+  // Only process if user has an active subscription
+  if (!user.subscriptionTier || user.subscriptionStatus !== 'active') {
+    return;
+  }
+
+  const tier = user.subscriptionTier.toLowerCase() as keyof typeof SUBSCRIPTION_TOKENS;
+  const monthlyTokens = SUBSCRIPTION_TOKENS[tier];
+  
+  if (!monthlyTokens) {
+    return; // Free tier or invalid tier
+  }
+
+  const now = new Date();
+  const resetDate = user.tokensResetDate ? new Date(user.tokensResetDate) : null;
+
+  // Check if we need to reset (either no reset date set, or it's past the reset date)
+  const needsReset = !resetDate || now >= resetDate;
+
+  if (needsReset) {
+    // Calculate next reset date (first day of next month)
+    const nextReset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    
+    // Reset ONLY subscription tokens (tokens column), purchased tokens are preserved
+    const { db } = await import('./db');
+    const { users } = await import('@shared/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    await db
+      .update(users)
+      .set({ 
+        tokens: monthlyTokens,  // Reset subscription tokens to tier amount
+        tokensResetDate: nextReset 
+      })
+      .where(eq(users.id, userId));
+    
+    console.log(`Reset subscription tokens for user ${userId}: set to ${monthlyTokens} (purchased tokens: ${user.purchasedTokens || 0} preserved), next reset: ${nextReset.toISOString()}`);
+  }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -130,18 +259,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If AI generation requested, check tokens and generate response
       let aiResponse: string | undefined = undefined;
+      let tokensDeducted = false;
+      let deductionResult: any = null;
+      
       if (generateResponse === true) {
         // Verify minimum required fields for AI generation
         if (!validated.interests || !validated.personalityTraits || validated.personalityTraits.length === 0) {
           return res.status(400).json({ error: "Missing required questionnaire fields for AI generation. Please complete personality traits and interests." });
         }
 
-        if (user.tokens < TOKENS_PER_GENERATION) {
+        // Check and reset subscription tokens if needed
+        await checkAndResetSubscriptionTokens(userId);
+        
+        // Refresh user data to get updated token count
+        const refreshedUser = await storage.getUser(userId);
+        if (!refreshedUser || getTotalTokens(refreshedUser) < TOKENS_PER_GENERATION) {
           return res.status(400).json({ error: "Insufficient tokens", required: TOKENS_PER_GENERATION });
         }
 
-        // Deduct tokens
-        await storage.updateUserTokens(userId, user.tokens - TOKENS_PER_GENERATION);
+        // Deduct tokens (uses purchased tokens first, then subscription tokens)
+        deductionResult = await deductTokens(userId, TOKENS_PER_GENERATION);
+        tokensDeducted = true;
 
         // Generate AI response
         try {
@@ -165,13 +303,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             []
           );
         } catch (error) {
-          // Refund tokens if AI generation fails
-          await storage.updateUserTokens(userId, user.tokens);
+          // Refund tokens to their original sources if AI generation fails
+          await refundTokens(userId, deductionResult.deductedFromPurchased, deductionResult.deductedFromSubscription);
           throw error;
         }
       }
 
-      const profile = await storage.createProfile(validated);
+      // Create profile - refund tokens if this fails after AI generation
+      let profile;
+      try {
+        profile = await storage.createProfile(validated);
+      } catch (error) {
+        // Refund tokens if profile creation fails after AI generation consumed tokens
+        if (tokensDeducted && deductionResult) {
+          await refundTokens(userId, deductionResult.deductedFromPurchased, deductionResult.deductedFromSubscription);
+        }
+        throw error;
+      }
+      
       res.json(profile);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -323,10 +472,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Forbidden" });
       }
 
+      // Check and reset subscription tokens if needed
+      await checkAndResetSubscriptionTokens(userId);
+      
       // Check tokens
       const user = await storage.getUser(userId);
       
-      if (!user || user.tokens <= 0) {
+      if (!user || getTotalTokens(user) < TOKENS_PER_GENERATION) {
         return res.status(402).json({ error: "Insufficient tokens" });
       }
 
@@ -368,15 +520,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         conversationHistory
       );
 
-      // Save AI response
-      const assistantMessage = await storage.createMessage({
-        profileId,
-        role: 'assistant',
-        content: aiResponse,
-      });
+      // Deduct tokens FIRST (uses purchased tokens first, then subscription tokens)
+      // This prevents saving the AI response if token deduction fails
+      let deductionResult;
+      try {
+        deductionResult = await deductTokens(userId, TOKENS_PER_GENERATION);
+      } catch (error: any) {
+        // If insufficient tokens, return 402 Payment Required
+        if (error.message?.includes('Insufficient tokens')) {
+          return res.status(402).json({ error: "Insufficient tokens", required: TOKENS_PER_GENERATION });
+        }
+        throw error;
+      }
 
-      // Deduct token (500 tokens per chat message)
-      await storage.updateUserTokens(userId, user.tokens - TOKENS_PER_GENERATION);
+      // Save AI response only after successful token deduction
+      // If this fails, refund the tokens
+      let assistantMessage;
+      try {
+        assistantMessage = await storage.createMessage({
+          profileId,
+          role: 'assistant',
+          content: aiResponse,
+        });
+      } catch (error: any) {
+        // Refund tokens if message persistence fails
+        await refundTokens(userId, deductionResult.deductedFromPurchased, deductionResult.deductedFromSubscription);
+        throw error;
+      }
 
       res.json(assistantMessage);
     } catch (error: any) {
@@ -596,12 +766,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = await storage.getUser(userId);
           
           if (user) {
-            // Add tokens to user account
-            await storage.updateUserTokens(userId, user.tokens + tokens);
+            // Add one-time purchased tokens (never expire)
+            const { db } = await import('./db');
+            const { users } = await import('@shared/schema');
+            const { eq } = await import('drizzle-orm');
+            
+            await db
+              .update(users)
+              .set({
+                purchasedTokens: (user.purchasedTokens || 0) + tokens,
+              })
+              .where(eq(users.id, userId));
             
             // Note: Transaction record was already created in create-payment-intent endpoint
             // No need to create duplicate transaction here
           }
+        }
+      }
+      
+      // Handle subscription creation
+      else if (event.type === 'customer.subscription.created') {
+        const subscription = event.data.object;
+        const customerId = subscription.customer as string;
+        
+        // Find user by Stripe customer ID
+        const { db } = await import('./db');
+        const { users } = await import('@shared/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.stripeCustomerId, customerId));
+        
+        if (user) {
+          // Extract tier from subscription metadata or price ID
+          const tier = (subscription.metadata?.tier || 'basic').toLowerCase();
+          const monthlyTokens = SUBSCRIPTION_TOKENS[tier as keyof typeof SUBSCRIPTION_TOKENS];
+          
+          // Calculate next reset date (first day of next month)
+          const now = new Date();
+          const nextReset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          
+          // Update user's subscription info and grant initial tokens
+          await db
+            .update(users)
+            .set({
+              subscriptionTier: tier,
+              subscriptionStatus: subscription.status,
+              stripeSubscriptionId: subscription.id,
+              tokens: monthlyTokens || 0,
+              tokensResetDate: nextReset,
+            })
+            .where(eq(users.id, user.id));
+          
+          console.log(`Subscription created for user ${user.id}: ${tier} tier, ${monthlyTokens} tokens`);
+        }
+      }
+      
+      // Handle subscription updates (tier changes, upgrades, downgrades)
+      else if (event.type === 'customer.subscription.updated') {
+        const subscription = event.data.object;
+        const customerId = subscription.customer as string;
+        
+        const { db } = await import('./db');
+        const { users, profiles } = await import('@shared/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.stripeCustomerId, customerId));
+        
+        if (user) {
+          const oldTier = user.subscriptionTier;
+          const newTier = (subscription.metadata?.tier || 'basic').toLowerCase();
+          const newMonthlyTokens = SUBSCRIPTION_TOKENS[newTier as keyof typeof SUBSCRIPTION_TOKENS];
+          
+          // Update subscription status and tier
+          await db
+            .update(users)
+            .set({
+              subscriptionTier: newTier,
+              subscriptionStatus: subscription.status,
+              stripeSubscriptionId: subscription.id,
+            })
+            .where(eq(users.id, user.id));
+          
+          // If downgrading, check if user has too many profiles
+          const oldLimit = getProfileLimit(oldTier);
+          const newLimit = getProfileLimit(newTier);
+          
+          if (newLimit < oldLimit) {
+            // User is downgrading - check profile count
+            const userProfiles = await db
+              .select()
+              .from(profiles)
+              .where(eq(profiles.userId, user.id));
+            
+            if (userProfiles.length > newLimit) {
+              // Auto-delete excess profiles (oldest first)
+              const profilesToDelete = userProfiles
+                .sort((a, b) => {
+                  const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                  const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                  return dateA - dateB;
+                })
+                .slice(0, userProfiles.length - newLimit);
+              
+              for (const profile of profilesToDelete) {
+                await storage.deleteProfile(profile.id);
+              }
+              
+              console.log(`Deleted ${profilesToDelete.length} profiles for user ${user.id} due to downgrade from ${oldTier} to ${newTier}`);
+            }
+          }
+          
+          console.log(`Subscription updated for user ${user.id}: ${oldTier} -> ${newTier}`);
+        }
+      }
+      
+      // Handle subscription cancellation
+      else if (event.type === 'customer.subscription.deleted') {
+        const subscription = event.data.object;
+        const customerId = subscription.customer as string;
+        
+        const { db } = await import('./db');
+        const { users, profiles } = await import('@shared/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.stripeCustomerId, customerId));
+        
+        if (user) {
+          const oldTier = user.subscriptionTier;
+          
+          // Reset to free tier
+          await db
+            .update(users)
+            .set({
+              subscriptionTier: null,
+              subscriptionStatus: null,
+              stripeSubscriptionId: null,
+              tokensResetDate: null,
+            })
+            .where(eq(users.id, user.id));
+          
+          // Check if user has too many profiles for free tier
+          const userProfiles = await db
+            .select()
+            .from(profiles)
+            .where(eq(profiles.userId, user.id));
+          
+          const freeLimit = PROFILE_LIMITS.free;
+          
+          if (userProfiles.length > freeLimit) {
+            // Auto-delete excess profiles (oldest first)
+            const profilesToDelete = userProfiles
+              .sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateA - dateB;
+              })
+              .slice(0, userProfiles.length - freeLimit);
+            
+            for (const profile of profilesToDelete) {
+              await storage.deleteProfile(profile.id);
+            }
+            
+            console.log(`Deleted ${profilesToDelete.length} profiles for user ${user.id} due to subscription cancellation`);
+          }
+          
+          console.log(`Subscription canceled for user ${user.id}: ${oldTier} -> free`);
         }
       }
 
