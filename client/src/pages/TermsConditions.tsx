@@ -86,12 +86,38 @@ export default function TermsConditions() {
 
               <div>
                 <h2 className="text-xl font-semibold mb-3">3. Tokens & Subscriptions</h2>
-                <ul className="space-y-2 text-muted-foreground ml-4">
-                  <li>• Tokens are digital credits used for generating personalized gift suggestions.</li>
-                  <li>• Subscription tokens reset monthly and may include bonus tokens.</li>
-                  <li>• You can also purchase additional tokens anytime through "Premium Tokens."</li>
-                  <li>• All payments are handled securely through trusted payment processors.</li>
-                </ul>
+                <p className="text-muted-foreground mb-3">
+                  Tokens are digital credits used for generating AI-powered gift recommendations. 
+                  Each AI generation costs 500 tokens.
+                </p>
+                <div className="space-y-3 text-muted-foreground ml-4">
+                  <div>
+                    <p className="font-medium text-foreground">Subscription Tokens:</p>
+                    <ul className="space-y-1 ml-4">
+                      <li>• Included with Basic, Premium, and Enterprise plans</li>
+                      <li>• Reset to your plan's monthly allowance on the 1st of each month</li>
+                      <li>• Unused subscription tokens do not carry over to the next month</li>
+                      <li>• Used second, after purchased tokens are depleted</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Purchased Tokens:</p>
+                    <ul className="space-y-1 ml-4">
+                      <li>• Available as one-time purchases ($5 for 5,000 tokens)</li>
+                      <li>• Never expire and never reset</li>
+                      <li>• Used first when generating AI recommendations</li>
+                      <li>• Remain in your account until you use them</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Payment & Security:</p>
+                    <ul className="space-y-1 ml-4">
+                      <li>• All payments are processed securely through Stripe</li>
+                      <li>• Subscriptions renew automatically unless cancelled</li>
+                      <li>• You can manage your subscription at any time</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -104,11 +130,49 @@ export default function TermsConditions() {
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold mb-3">5. Refunds</h2>
-                <ul className="space-y-2 text-muted-foreground ml-4">
-                  <li>• Refunds for in-app purchases follow Apple or Google's refund policies.</li>
-                  <li>• Gift Xzalted does not process refunds directly.</li>
-                </ul>
+                <h2 className="text-xl font-semibold mb-3">5. Token Restoration & Refund Policy</h2>
+                
+                <div className="space-y-3 text-muted-foreground">
+                  <div>
+                    <p className="font-medium text-foreground">Automatic Token Restoration:</p>
+                    <ul className="space-y-1 ml-4">
+                      <li>• If an AI generation fails due to a technical error (server outage, API failure, database error), 
+                          your tokens will be automatically restored to your account</li>
+                      <li>• This restoration happens immediately and protects you from losing tokens to system failures</li>
+                      <li>• Token restoration is automatic and does not require you to contact support</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <p className="font-medium text-foreground">AI Generations Are Final:</p>
+                    <ul className="space-y-1 ml-4">
+                      <li>• Once an AI recommendation is successfully generated and delivered to you, the transaction is complete and final</li>
+                      <li>• We cannot refund tokens for completed AI generations, even if you are not satisfied with the results</li>
+                      <li>• AI-powered recommendations incur real costs from our service providers (OpenAI) and are one-time transactions</li>
+                      <li>• By using tokens to generate recommendations, you acknowledge these are final purchases</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <p className="font-medium text-foreground">Monetary Refunds:</p>
+                    <ul className="space-y-1 ml-4">
+                      <li>• Refund requests for token purchases or subscriptions are evaluated on a case-by-case basis</li>
+                      <li>• All monetary refunds are processed through Stripe according to our refund policy</li>
+                      <li>• To request a refund, contact us at <a href="mailto:support@xzalted.com" className="text-primary hover:underline">support@xzalted.com</a></li>
+                      <li>• Refund requests must be made within 30 days of purchase</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <p className="font-medium text-foreground">Subscription Cancellations:</p>
+                    <ul className="space-y-1 ml-4">
+                      <li>• You may cancel your subscription at any time through your account settings</li>
+                      <li>• Upon cancellation, you will retain access to your subscription benefits until the end of your current billing period</li>
+                      <li>• Unused subscription tokens will be forfeited when your subscription period ends</li>
+                      <li>• Purchased tokens remain in your account permanently, even after subscription cancellation</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               <div>
