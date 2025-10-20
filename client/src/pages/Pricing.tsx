@@ -68,9 +68,9 @@ export default function Pricing() {
             <div className="max-w-3xl mx-auto">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h3 className="text-xl font-bold mb-2">Buy Tokens Once</h3>
+                  <h3 className="text-xl font-bold mb-2">Buy Tokens</h3>
                   <p className="text-muted-foreground">
-                    Purchase <strong>5,000 tokens</strong> for a one-time payment. Never expires.
+                    Purchase <strong>5,000 tokens</strong> for $5 – no subscription required.
                   </p>
                 </div>
                 <div className="flex flex-col items-start md:items-end gap-2">
@@ -271,7 +271,7 @@ export default function Pricing() {
                   </div>
                   <div className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
-                    <p className="text-sm"><strong>Unlimited profiles</strong></p>
+                    <p className="text-sm"><strong>Up to 100 profiles</strong></p>
                   </div>
                   <div className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />

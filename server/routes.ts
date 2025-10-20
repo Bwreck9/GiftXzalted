@@ -25,7 +25,7 @@ const PROFILE_LIMITS = {
   free: 5,
   basic: 10,
   premium: 20,
-  enterprise: Infinity
+  enterprise: 100
 };
 
 // Helper function to get profile limit for a user
