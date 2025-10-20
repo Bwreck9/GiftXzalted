@@ -87,6 +87,27 @@ export default function Questionnaire() {
     defaultValues: draft,
   });
 
+  // Load existing profile if profileId is provided (must be before useEffect that uses it)
+  const { data: existingProfile } = useQuery<Profile>({
+    queryKey: ['/api/profiles', profileId],
+    queryFn: async () => {
+      const response = await fetch(`/api/profiles/${profileId}`);
+      if (!response.ok) throw new Error('Failed to load profile');
+      return response.json();
+    },
+    enabled: !!profileId && !!user,
+  });
+
+  const { data: profiles } = useQuery<Profile[]>({
+    queryKey: ['/api/profiles'],
+    enabled: !!user,
+  });
+
+  const { data: userData } = useQuery<User>({
+    queryKey: ['/api/auth/user'],
+    enabled: !!user,
+  });
+
   // Watch form values and persist to draft
   useEffect(() => {
     const subscription = form.watch((values) => {
@@ -111,27 +132,6 @@ export default function Questionnaire() {
       });
     }
   }, [existingProfile, form]);
-
-  const { data: profiles } = useQuery<Profile[]>({
-    queryKey: ['/api/profiles'],
-    enabled: !!user,
-  });
-
-  const { data: userData } = useQuery<User>({
-    queryKey: ['/api/auth/user'],
-    enabled: !!user,
-  });
-
-  // Load existing profile if profileId is provided
-  const { data: existingProfile } = useQuery<Profile>({
-    queryKey: ['/api/profiles', profileId],
-    queryFn: async () => {
-      const response = await fetch(`/api/profiles/${profileId}`);
-      if (!response.ok) throw new Error('Failed to load profile');
-      return response.json();
-    },
-    enabled: !!profileId && !!user,
-  });
 
   const createMutation = useMutation({
     mutationFn: async ({ data, generateResponse }: { data: InsertProfile; generateResponse: boolean }) => {

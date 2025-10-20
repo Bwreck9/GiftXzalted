@@ -166,6 +166,12 @@ export default function GiftListDetail() {
   };
 
   const handleGenerate = () => {
+    // Check if profile questionnaire is completed
+    if (!profile?.personality || !profile?.interests) {
+      setQuestionnaireDialogOpen(true);
+      return;
+    }
+
     if (!user || user.tokens < 500) {
       toast({
         title: 'Insufficient tokens',
@@ -260,7 +266,7 @@ export default function GiftListDetail() {
               onClick={handleGenerate}
               disabled={generateMutation.isPending || !user || user.tokens < 500}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
-              data-testid="button-generate"
+              data-testid="button-generate-ideas"
             >
               <Sparkles className="h-4 w-4 mr-2" />
               {generateMutation.isPending ? 'Generating...' : 'Generate ideas'}
