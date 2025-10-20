@@ -180,8 +180,22 @@ export default function GiftListDetail() {
       return;
     }
 
-    // Check if profile questionnaire is completed
-    if (!profile?.personalityTraits || profile.personalityTraits.length === 0) {
+    // Check if profile has at least ONE questionnaire field filled (one-question minimum)
+    const hasQuestionnaireData = 
+      profile?.ageRange ||
+      profile?.gender ||
+      (profile?.personalityTraits && profile.personalityTraits.length > 0) ||
+      profile?.interests ||
+      profile?.relationship ||
+      profile?.closeness ||
+      profile?.budget ||
+      (profile?.giftPreferences && profile.giftPreferences.length > 0) ||
+      profile?.dislikes ||
+      profile?.giftStyle ||
+      profile?.location ||
+      profile?.additionalNotes;
+    
+    if (!hasQuestionnaireData) {
       setQuestionnaireDialogOpen(true);
       return;
     }
