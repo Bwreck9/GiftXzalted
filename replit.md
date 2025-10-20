@@ -30,7 +30,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
   - Location: Text input (100 char limit)
   - Additional Notes: Textarea (2000 char limit with live character counter)
   - **Context-aware buttons:** Shows "Create Profile" / "Create + Generate Response" in normal flow; shows "Save" / "Save & Generate Ideas" when editing from gift list context (URL params: `from=giftlist&listId=xyz`)
-  - **AI Generation Flow:** Questionnaire saves profile data and redirects to gift list with `?trigger=generate` parameter. Gift list auto-triggers generation once using state flag guard to prevent infinite loops. Generation validates questionnaire completion and token balance before proceeding.
+  - **AI Generation Flow:** Questionnaire saves profile data and redirects to gift list with `?trigger=generate` parameter. Gift list auto-triggers generation once using state flag guard to prevent infinite loops. Generation validates questionnaire completion and token balance before proceeding. Backend saves AI recommendations to both `messages` table (for history) and `gift_lists.premiumResults` (for display).
 - **Gift List Management:** 
   - Separated "Gift Ideas" (manual entries) and "Generated Ideas" (AI recommendations) sections
   - Settings dropdown menu for list operations (rename, delete)
@@ -52,7 +52,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
   - Refund protection: Tokens refunded if AI generation, message storage, or profile creation fails
   - **Known Limitation:** Current implementation lacks database transaction-level concurrency control. For production use, `deductTokens` should use row-level locking (SELECT FOR UPDATE) or optimistic concurrency control to prevent race conditions during concurrent requests.
 - **Payment Processing:** Secure Stripe integration with webhook signature verification for token and subscription purchases.
-- **AI Integration:** Utilizes OpenAI gpt-4o-mini for generating personalized gift recommendations based on user-provided profile data.
+- **AI Integration:** Utilizes OpenAI gpt-4o-mini for generating personalized gift recommendations based on user-provided profile data. Returns structured JSON array with gift recommendations (id, title, reason format).
 - **API Endpoints:**
     - `GET/POST /api/profiles`: List/create profiles with optional AI generation.
     - `PATCH /api/profiles/:id`: Update profile with optional AI generation (supports `generateResponse` parameter).

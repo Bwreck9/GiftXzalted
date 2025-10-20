@@ -72,11 +72,21 @@ Current profile for ${profileData.name}:`;
     profileContext += `\n\nInstructions:
 1. Provide thoughtful, personalized gift recommendations based on the profile above
 2. Consider their personality traits, interests, budget, and preferences
-3. Suggest 3-5 specific, practical gift ideas with clear reasoning based on the profile
-4. Format each recommendation clearly with the gift name and why it's a good match
-5. Be conversational and helpful
+3. Suggest exactly 5 specific, practical gift ideas with clear reasoning based on the profile
+4. Return ONLY a valid JSON array (no markdown, no extra text) with this exact format:
+[
+  {
+    "id": 1,
+    "title": "Gift Name",
+    "reason": "Why this gift is perfect for them based on their profile"
+  }
+]
 
-IMPORTANT: Focus on gift ideas and descriptions. Do NOT include product links or URLs.`;
+IMPORTANT: 
+- Return ONLY the JSON array, nothing else
+- No markdown code blocks, no explanations
+- Each reason should be 1-2 sentences explaining why it matches their profile
+- Focus on gift ideas and descriptions. Do NOT include product links or URLs.`;
 
     const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
       { role: 'system', content: profileContext },

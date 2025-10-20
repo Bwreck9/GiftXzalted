@@ -502,7 +502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/messages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { profileId, content } = req.body;
+      const { profileId, content, giftListId } = req.body;
 
       if (!profileId || !content || typeof content !== 'string') {
         return res.status(400).json({ error: "Missing required fields" });
@@ -600,6 +600,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role: 'assistant',
           content: aiResponse,
         });
+        
+        // If this is a gift list generation, also save to gift list premiumResults
+        if (giftListId) {
+          const giftList = await storage.getGiftList(giftListId);
+          
+          if (giftList && giftList.profileId === profileId) {
+            // Parse the AI response to extract gift recommendations
+            // Expected format: JSON array of {id, title, reason}
+            try {
+              // Remove markdown code blocks if present (```json ... ```)
+              let cleanedResponse = aiResponse.trim();
+              if (cleanedResponse.startsWith('```')) {
+                cleanedResponse = cleanedResponse.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+              }
+              
+              const recommendations = JSON.parse(cleanedResponse);
+              
+              // Validate it's an array
+              if (Array.isArray(recommendations)) {
+                await storage.updateGiftList(giftListId, {
+                  premiumResults: JSON.stringify(recommendations),
+                });
+                console.log(`Saved ${recommendations.length} gift recommendations to list ${giftListId}`);
+              } else {
+                console.error("AI response is not an array:", recommendations);
+              }
+            } catch (parseError) {
+              console.error("Failed to parse AI response as JSON:", parseError);
+              console.log("AI Response:", aiResponse);
+              // Continue anyway - the message was saved
+            }
+          }
+        }
       } catch (error: any) {
         // Refund tokens if message persistence fails
         await refundTokens(userId, deductionResult.deductedFromPurchased, deductionResult.deductedFromSubscription);

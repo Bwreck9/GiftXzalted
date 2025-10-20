@@ -83,6 +83,7 @@ export default function GiftListDetail() {
     mutationFn: async () => {
       return apiRequest('POST', '/api/messages', {
         profileId: giftList?.profileId,
+        giftListId: id,
         content: 'Generate gift recommendations',
         isUser: true,
       });
