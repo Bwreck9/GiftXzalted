@@ -154,12 +154,12 @@ export const insertProfileSchema = createInsertSchema(profiles).omit({
   ageRange: z.enum(['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult (31-50)', 'Senior (50+)']).optional(),
   gender: z.string().max(500).optional(), // Male, Female, or custom text (500 char limit for custom)
   personalityTraits: z.array(z.enum(['Adventurous', 'Thoughtful', 'Funny/Lighthearted', 'Introverted', 'Outgoing', 'Artistic', 'Tech-savvy', 'Sentimental'])).optional(),
-  interests: z.string().max(2000).optional(), // Text field for interests
+  interests: z.string().max(500).optional(), // Text field for interests
   relationship: z.enum(['Partner', 'Family', 'Friend', 'Coworker', 'Acquaintance']).optional(),
   closeness: z.enum(['Very close', 'Somewhat close', 'Casual']).optional(),
   budget: z.enum(['Under $25', '$25-$50', '$50-$100', '$100+']).optional(),
   giftPreferences: z.array(z.enum(['Practical gifts', 'Sentimental/personalized gifts', 'Experiences', 'Funny/novelty items'])).optional(),
-  dislikes: z.string().max(2000).optional(), // No-go areas
+  dislikes: z.string().max(500).optional(), // No-go areas
   giftStyle: z.enum(['unique-thoughtful', 'safe-popular']).optional(),
   location: z.string().max(500).optional(), // City/country
   additionalNotes: z.string().max(2000).optional(), // Extra context

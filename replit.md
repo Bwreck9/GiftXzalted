@@ -16,7 +16,19 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 - **Character Limits:** Profile names and list names limited to 20 characters (enforced in frontend maxLength and backend schema validation).
 - **Components:** Reusable UI components for consistent design, Settings gear icons positioned inside list tiles (right side) for list options.
 - **Welcome Experience:** Closeable splash screen explains app features. Feature buttons and close button navigate to landing page. "Web Search Agent (In development)" displayed. Footer button to reopen.
-- **Profile System:** Questionnaire-based profiles for AI training.
+- **Profile System:** Questionnaire-based profiles for AI training with comprehensive checkbox/dropdown interface to minimize user typing:
+  - Age Range: 5 radio options (Child 0-12, Teen 13-19, Young Adult 20-30, Adult 31-50, Senior 50+)
+  - Gender: Radio options (Male, Female, Non-binary, Other with custom text input)
+  - Personality Traits: 8 multi-select checkboxes (Adventurous, Thoughtful, Funny/Lighthearted, Introverted, Outgoing, Artistic, Tech-savvy, Sentimental)
+  - Interests: Text input (500 char limit)
+  - Relationship: 5 radio options (Partner, Family, Friend, Coworker, Acquaintance)
+  - Closeness: 3 radio options (Very close, Somewhat close, Casual)
+  - Budget: 4 radio options (Under $25, $25-$50, $50-$100, $100+)
+  - Gift Preferences: 4 multi-select checkboxes (Practical gifts, Sentimental/personalized gifts, Experiences, Funny/novelty items)
+  - Dislikes: Text input (500 char limit)
+  - Gift Style: 2 radio options (Unique & Thoughtful, Safe & Popular)
+  - Location: Text input (100 char limit)
+  - Additional Notes: Textarea (2000 char limit with live character counter)
 - **Gift List Management:** 
   - Separated "Gift Ideas" (manual entries) and "Generated Ideas" (AI recommendations) sections
   - Settings dropdown menu for list operations (rename, delete)
@@ -44,7 +56,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
     - **One-Time:** $5 for 5,000 tokens.
     - **Basic Subscription:** $5/month for 10,000 tokens + up to 10 profiles.
     - **Premium Subscription:** $20/month for 50,000 tokens + up to 20 profiles.
-    - **Enterprise Subscription:** $100/month for 200,000 tokens + unlimited profiles.
+    - **Enterprise Subscription:** $100/month for 200,000 tokens + 100 profiles.
 - **Legal Pages:** Dedicated Privacy Policy and Terms & Conditions pages, accessible via footer links, compliant with app store requirements including third-party service disclosures and data retention policies.
 
 ### External Dependencies
