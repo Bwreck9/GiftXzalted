@@ -348,9 +348,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Remove userId from request body to prevent ownership reassignment
-      const { userId: _removed, ...updateData } = req.body;
+      const { userId: _removed, generateResponse, ...updateData } = req.body;
       
       const validated = insertProfileSchema.partial().parse(updateData);
+      
+      // If AI generation requested, check tokens and generate response
+      let tokensDeducted = false;
+      let deductionResult: any = null;
+      
+      if (generateResponse === true) {
+        // Merge validated data with existing profile to get complete data for validation
+        const completeData = { ...profile, ...validated };
+        
+        // Verify minimum required fields for AI generation
+        if (!completeData.personalityTraits || completeData.personalityTraits.length === 0) {
+          return res.status(400).json({ error: "Missing required questionnaire fields for AI generation. Please select at least one personality trait." });
+        }
+
+        // Check and reset subscription tokens if needed
+        await checkAndResetSubscriptionTokens(userId);
+        
+        // Refresh user data to get updated token count
+        const refreshedUser = await storage.getUser(userId);
+        if (!refreshedUser || getTotalTokens(refreshedUser) < TOKENS_PER_GENERATION) {
+          return res.status(400).json({ error: "Insufficient tokens", required: TOKENS_PER_GENERATION });
+        }
+
+        // Deduct tokens (uses purchased tokens first, then subscription tokens)
+        deductionResult = await deductTokens(userId, TOKENS_PER_GENERATION);
+        tokensDeducted = true;
+
+        // Generate AI response
+        try {
+          const aiResponse = await getGiftRecommendations(
+            {
+              name: completeData.name,
+              ageRange: completeData.ageRange || null,
+              gender: completeData.gender || null,
+              relationship: completeData.relationship || null,
+              personalityTraits: completeData.personalityTraits || [],
+              interests: completeData.interests || '',
+              closeness: completeData.closeness || null,
+              budget: completeData.budget || null,
+              giftPreferences: completeData.giftPreferences || [],
+              dislikes: completeData.dislikes || null,
+              giftStyle: completeData.giftStyle || null,
+              location: completeData.location || null,
+              additionalNotes: completeData.additionalNotes || null,
+            } as any,
+            `Generate thoughtful gift recommendations for ${completeData.name} based on their profile.`,
+            []
+          );
+          
+          // Add AI response to update data
+          (validated as any).aiResponse = aiResponse;
+        } catch (error) {
+          // Refund tokens to their original sources if AI generation fails
+          await refundTokens(userId, deductionResult.deductedFromPurchased, deductionResult.deductedFromSubscription);
+          throw error;
+        }
+      }
+      
       const updated = await storage.updateProfile(id, validated);
       res.json(updated);
     } catch (error: any) {

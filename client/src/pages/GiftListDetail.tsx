@@ -452,7 +452,7 @@ export default function GiftListDetail() {
             <Button
               onClick={() => {
                 setQuestionnaireDialogOpen(false);
-                setLocation(`/questionnaire?profile=${giftList?.profileId}`);
+                setLocation(`/questionnaire?profile=${giftList?.profileId}&from=giftlist&listId=${id}`);
               }}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
               data-testid="button-go-to-questionnaire"

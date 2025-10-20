@@ -78,9 +78,11 @@ export default function Questionnaire() {
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [pendingGenerate, setPendingGenerate] = useState(false);
   
-  // Get profile ID from URL parameter if training an existing profile
+  // Get URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const profileId = urlParams.get('profile');
+  const fromContext = urlParams.get('from'); // e.g., 'giftlist'
+  const listId = urlParams.get('listId'); // gift list ID if coming from gift list
 
   // Draft persistence for unauthenticated users
   const { draft, setDraft, clearDraft } = usePersistedDraft<FormValues>(
@@ -177,11 +179,21 @@ export default function Questionnaire() {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
       queryClient.invalidateQueries({ queryKey: ['/api/profiles', profileId] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-      toast({ 
-        title: isGenerating ? 'Profile updated with AI response!' : 'Profile updated!', 
-        description: isGenerating ? 'Your AI-powered gift recommendations are ready.' : 'Your profile has been saved.' 
-      });
-      setLocation(`/profile/${data.id}`);
+      
+      // If coming from gift list context, navigate back to the list
+      if (fromContext === 'giftlist' && listId) {
+        toast({ 
+          title: isGenerating ? 'Profile updated! Returning to gift list...' : 'Profile saved!', 
+          description: isGenerating ? 'Your AI-powered gift recommendations are ready.' : 'Returning to your gift list.' 
+        });
+        setLocation(`/gift-list/${listId}`);
+      } else {
+        toast({ 
+          title: isGenerating ? 'Profile updated with AI response!' : 'Profile updated!', 
+          description: isGenerating ? 'Your AI-powered gift recommendations are ready.' : 'Your profile has been saved.' 
+        });
+        setLocation(`/profile/${data.id}`);
+      }
     },
     onError: (error: any) => {
       toast({ 
@@ -755,55 +767,111 @@ export default function Questionnaire() {
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
         <div className="max-w-lg mx-auto space-y-3">
-          <Button
-            onClick={handleSubmit(false)}
-            disabled={createMutation.isPending || (!!user && !canCreateProfile)}
-            variant="outline"
-            className="w-full h-12 text-base hover-elevate active-elevate-2"
-            data-testid="button-create-profile"
-          >
-            {createMutation.isPending && !isGenerating ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin w-4 h-4 border-2 border-foreground border-t-transparent rounded-full" />
-                Creating...
-              </div>
-            ) : (
-              <>
-                {!user && <Lock className="w-4 h-4 mr-2" />}
-                Create Profile (Free)
-              </>
-            )}
-          </Button>
-          
-          <Button
-            onClick={handleSubmit(true)}
-            disabled={createMutation.isPending || (!!user && (!canCreateProfile || !hasEnoughTokens))}
-            className="w-full h-12 text-base hover-elevate active-elevate-2"
-            data-testid="button-create-with-ai"
-          >
-            {createMutation.isPending && isGenerating ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
-                Generating AI Response...
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                Create + Generate Response ({TOKENS_PER_GENERATION} tokens)
-              </div>
-            )}
-          </Button>
-
-          {user && !hasEnoughTokens && (
-            <p className="text-xs text-center text-muted-foreground">
-              Need more tokens?{' '}
-              <button
-                onClick={() => setLocation('/pricing')}
-                className="text-primary underline"
+          {fromContext === 'giftlist' && profileId ? (
+            // Gift list context - show "Save" and "Save & Generate" buttons
+            <>
+              <Button
+                onClick={handleSubmit(false)}
+                disabled={updateMutation.isPending}
+                variant="outline"
+                className="w-full h-12 text-base hover-elevate active-elevate-2"
+                data-testid="button-save-profile"
               >
-                View Pricing
-              </button>
-            </p>
+                {updateMutation.isPending && !isGenerating ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-foreground border-t-transparent rounded-full" />
+                    Saving...
+                  </div>
+                ) : (
+                  'Save'
+                )}
+              </Button>
+              
+              <Button
+                onClick={handleSubmit(true)}
+                disabled={updateMutation.isPending || (!!user && !hasEnoughTokens)}
+                className="w-full h-12 text-base hover-elevate active-elevate-2"
+                data-testid="button-save-and-generate"
+              >
+                {updateMutation.isPending && isGenerating ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
+                    Saving & Generating...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Save & Generate ({TOKENS_PER_GENERATION} tokens)
+                  </div>
+                )}
+              </Button>
+
+              {user && !hasEnoughTokens && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Need more tokens?{' '}
+                  <button
+                    onClick={() => setLocation('/pricing')}
+                    className="text-primary underline"
+                  >
+                    View Pricing
+                  </button>
+                </p>
+              )}
+            </>
+          ) : (
+            // Normal context - show "Create Profile" and "Create + Generate" buttons
+            <>
+              <Button
+                onClick={handleSubmit(false)}
+                disabled={createMutation.isPending || (!!user && !canCreateProfile)}
+                variant="outline"
+                className="w-full h-12 text-base hover-elevate active-elevate-2"
+                data-testid="button-create-profile"
+              >
+                {createMutation.isPending && !isGenerating ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-foreground border-t-transparent rounded-full" />
+                    Creating...
+                  </div>
+                ) : (
+                  <>
+                    {!user && <Lock className="w-4 h-4 mr-2" />}
+                    Create Profile (Free)
+                  </>
+                )}
+              </Button>
+              
+              <Button
+                onClick={handleSubmit(true)}
+                disabled={createMutation.isPending || (!!user && (!canCreateProfile || !hasEnoughTokens))}
+                className="w-full h-12 text-base hover-elevate active-elevate-2"
+                data-testid="button-create-with-ai"
+              >
+                {createMutation.isPending && isGenerating ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
+                    Generating AI Response...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Create + Generate Response ({TOKENS_PER_GENERATION} tokens)
+                  </div>
+                )}
+              </Button>
+
+              {user && !hasEnoughTokens && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Need more tokens?{' '}
+                  <button
+                    onClick={() => setLocation('/pricing')}
+                    className="text-primary underline"
+                  >
+                    View Pricing
+                  </button>
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>
