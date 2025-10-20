@@ -62,26 +62,43 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.email, userData.email));
 
     if (existingUser && existingUser.id !== userData.id) {
-      // User exists with different ID - need to update profiles first, then update user
-      // Update all profiles to point to the new user ID
+      // User exists with different ID - need to migrate to new ID
+      // Strategy: temporarily change email, create new user, migrate profiles, delete old
+      
+      const tempEmail = `temp_${Date.now()}_${existingUser.email}`;
+      
+      // Step 1: Change old user's email to temp value to avoid duplicate constraint
+      await db
+        .update(users)
+        .set({ email: tempEmail })
+        .where(eq(users.id, existingUser.id));
+      
+      // Step 2: Create the new user with correct email
+      const [newUser] = await db
+        .insert(users)
+        .values(userData)
+        .onConflictDoUpdate({
+          target: users.id,
+          set: {
+            email: userData.email,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            profileImageUrl: userData.profileImageUrl,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      
+      // Step 3: Update all profiles to point to the new user ID
       await db
         .update(profiles)
         .set({ userId: userData.id })
         .where(eq(profiles.userId, existingUser.id));
-
-      // Now update the user's ID and other fields
-      const [user] = await db
-        .update(users)
-        .set({
-          id: userData.id,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          profileImageUrl: userData.profileImageUrl,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.email, userData.email))
-        .returning();
-      return user;
+      
+      // Step 4: Delete the old user record
+      await db.delete(users).where(eq(users.id, existingUser.id));
+      
+      return newUser;
     }
 
     // Normal upsert by ID
