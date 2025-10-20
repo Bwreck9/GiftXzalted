@@ -1,235 +1,486 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { insertProfileSchema, type InsertProfile } from '@shared/schema';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card } from '@/components/ui/card';
+import { z } from 'zod';
 
-const questionnaireSchema = z.object({
-  shoppingFor: z.enum(['self', 'another']),
-  age: z.number().min(1).max(120),
-  event: z.enum(['Birthday', 'Anniversary', 'Christmas', "Valentine's Day", 'Other']),
-  gender: z.string().min(1, 'Gender is required'),
-  relationship: z.string().optional(),
-  personality: z.string().min(1, 'Personality is required').max(1000),
-  interests: z.string().min(1, 'Interests are required').max(1000),
+const formSchema = insertProfileSchema.omit({
+  userId: true,
+  name: true,
+  color: true,
 });
 
-type QuestionnaireFormValues = z.infer<typeof questionnaireSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 interface QuestionnaireDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: QuestionnaireFormValues) => void;
+  onSubmit: (data: Partial<InsertProfile>) => void;
   isSubmitting?: boolean;
 }
 
 export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting }: QuestionnaireDialogProps) {
-  const form = useForm<QuestionnaireFormValues>({
-    resolver: zodResolver(questionnaireSchema),
+  const [customGender, setCustomGender] = useState('');
+  const [additionalNotesCount, setAdditionalNotesCount] = useState(0);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      shoppingFor: 'another',
-      age: 25,
-      event: 'Birthday',
-      gender: '',
-      relationship: '',
-      personality: '',
-      interests: '',
+      ageRange: undefined,
+      gender: undefined,
+      personalityTraits: [],
+      interests: undefined,
+      relationship: undefined,
+      closeness: undefined,
+      budget: undefined,
+      giftPreferences: [],
+      dislikes: undefined,
+      giftStyle: undefined,
+      location: undefined,
+      additionalNotes: undefined,
     },
   });
 
-  const handleSubmit = (data: QuestionnaireFormValues) => {
+  const handleSubmit = (data: FormValues) => {
     onSubmit(data);
+    onOpenChange(false);
   };
 
-  const shoppingFor = form.watch('shoppingFor');
+  const gender = form.watch('gender');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-questionnaire">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-questionnaire">
         <DialogHeader>
-          <DialogTitle>Complete Questionnaire</DialogTitle>
+          <DialogTitle>Train Agent</DialogTitle>
           <DialogDescription>
-            Fill out these details to generate personalized AI gift recommendations
+            Help our AI understand this person better by answering these questions
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {/* Shopping For */}
-            <FormField
-              control={form.control}
-              name="shoppingFor"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Who are you shopping for?</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      className="flex gap-4"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="self" id="self" data-testid="radio-shopping-self" />
-                        <label htmlFor="self" className="cursor-pointer">Myself</label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="another" id="another" data-testid="radio-shopping-another" />
-                        <label htmlFor="another" className="cursor-pointer">Someone Else</label>
-                      </div>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Age Slider */}
-            <FormField
-              control={form.control}
-              name="age"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Age: {field.value}</FormLabel>
-                  <FormControl>
-                    <Slider
-                      min={1}
-                      max={120}
-                      step={1}
-                      value={[field.value]}
-                      onValueChange={(value) => field.onChange(value[0])}
-                      data-testid="slider-age"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Event */}
-            <FormField
-              control={form.control}
-              name="event"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Event/Occasion</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-event">
-                        <SelectValue placeholder="Select an event" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Birthday">Birthday</SelectItem>
-                      <SelectItem value="Anniversary">Anniversary</SelectItem>
-                      <SelectItem value="Christmas">Christmas</SelectItem>
-                      <SelectItem value="Valentine's Day">Valentine's Day</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Gender */}
-            <FormField
-              control={form.control}
-              name="gender"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Gender</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g., Female, Male, Non-binary"
-                      data-testid="input-gender"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Relationship (conditional) */}
-            {shoppingFor === 'another' && (
+            <div className="space-y-6">
+              {/* Age Range */}
               <FormField
                 control={form.control}
-                name="relationship"
+                name="ageRange"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Relationship</FormLabel>
+                    <FormLabel>What's their age range?</FormLabel>
                     <FormControl>
-                      <Input
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                      >
+                        {['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult (31-50)', 'Senior (50+)'].map((age) => (
+                          <Card key={age} className="hover-elevate">
+                            <label className="flex items-center gap-2 p-3 cursor-pointer">
+                              <RadioGroupItem 
+                                value={age} 
+                                id={`age-${age}`}
+                                data-testid={`radio-age-${age.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                              />
+                              <span className="text-sm">{age}</span>
+                            </label>
+                          </Card>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Gender */}
+              <FormField
+                control={form.control}
+                name="gender"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gender</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-2 gap-3"
+                      >
+                        {['Male', 'Female', 'Non-binary', 'Other'].map((g) => (
+                          <Card key={g} className="hover-elevate">
+                            <label className="flex items-center gap-2 p-3 cursor-pointer">
+                              <RadioGroupItem 
+                                value={g} 
+                                id={`gender-${g}`}
+                                data-testid={`radio-gender-${g.toLowerCase()}`}
+                              />
+                              <span className="text-sm">{g}</span>
+                            </label>
+                          </Card>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    {gender === 'Other' && (
+                      <div className="mt-2">
+                        <Input
+                          placeholder="Please specify..."
+                          value={customGender}
+                          onChange={(e) => {
+                            setCustomGender(e.target.value);
+                            field.onChange(e.target.value);
+                          }}
+                          maxLength={500}
+                          data-testid="input-custom-gender"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Our AI is inclusive and understands all gender identities</p>
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Personality Traits */}
+              <FormField
+                control={form.control}
+                name="personalityTraits"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>How would you describe their personality?</FormLabel>
+                    <FormDescription className="text-xs">Select all that apply</FormDescription>
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      {['Adventurous', 'Thoughtful', 'Funny/Lighthearted', 'Introverted', 'Outgoing', 'Artistic', 'Tech-savvy', 'Sentimental'].map((trait) => (
+                        <FormField
+                          key={trait}
+                          control={form.control}
+                          name="personalityTraits"
+                          render={({ field }) => (
+                            <FormItem key={trait} className="flex flex-row items-start space-x-3 space-y-0">
+                              <Card className="flex-1 hover-elevate">
+                                <label className="flex items-center gap-3 p-3 cursor-pointer">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(trait as any)}
+                                      onCheckedChange={(checked) => {
+                                        const current = field.value || [];
+                                        if (checked) {
+                                          field.onChange([...current, trait as any]);
+                                        } else {
+                                          field.onChange(current.filter((t) => t !== trait));
+                                        }
+                                      }}
+                                      data-testid={`checkbox-personality-${trait.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                                    />
+                                  </FormControl>
+                                  <span className="text-sm">{trait}</span>
+                                </label>
+                              </Card>
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Interests */}
+              <FormField
+                control={form.control}
+                name="interests"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What are some of their main interests or hobbies?</FormLabel>
+                    <FormDescription className="text-xs">e.g., hiking, gaming, cooking, reading, fashion</FormDescription>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Tell us about their interests and hobbies..."
+                        maxLength={500}
                         {...field}
-                        placeholder="e.g., Mother, Best Friend, Colleague"
-                        data-testid="input-relationship"
+                        data-testid="textarea-interests"
+                        className="min-h-[80px] resize-none"
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            )}
 
-            {/* Personality */}
-            <FormField
-              control={form.control}
-              name="personality"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Personality Traits</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="e.g., Outgoing, creative, loves adventure..."
-                      rows={3}
-                      data-testid="textarea-personality"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              {/* Relationship */}
+              <FormField
+                control={form.control}
+                name="relationship"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What's your relationship to them?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                      >
+                        {['Partner', 'Family', 'Friend', 'Coworker', 'Acquaintance'].map((rel) => (
+                          <Card key={rel} className="hover-elevate">
+                            <label className="flex items-center gap-2 p-3 cursor-pointer">
+                              <RadioGroupItem 
+                                value={rel} 
+                                id={`rel-${rel}`}
+                                data-testid={`radio-relationship-${rel.toLowerCase()}`}
+                              />
+                              <span className="text-sm">{rel}</span>
+                            </label>
+                          </Card>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Interests */}
-            <FormField
-              control={form.control}
-              name="interests"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Interests & Hobbies</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="e.g., Photography, hiking, cooking, reading sci-fi..."
-                      rows={3}
-                      data-testid="textarea-interests"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              {/* Closeness */}
+              <FormField
+                control={form.control}
+                name="closeness"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How close are you?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-3 gap-3"
+                      >
+                        {['Very close', 'Somewhat close', 'Casual'].map((close) => (
+                          <Card key={close} className="hover-elevate">
+                            <label className="flex items-center gap-2 p-3 cursor-pointer">
+                              <RadioGroupItem 
+                                value={close} 
+                                id={`close-${close}`}
+                                data-testid={`radio-closeness-${close.toLowerCase().replace(/\s/g, '-')}`}
+                              />
+                              <span className="text-sm">{close}</span>
+                            </label>
+                          </Card>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <DialogFooter>
+              {/* Budget */}
+              <FormField
+                control={form.control}
+                name="budget"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What's your budget range for gifts?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-2 gap-3"
+                      >
+                        {['Under $25', '$25-$50', '$50-$100', '$100+'].map((budg) => (
+                          <Card key={budg} className="hover-elevate">
+                            <label className="flex items-center gap-2 p-3 cursor-pointer">
+                              <RadioGroupItem 
+                                value={budg} 
+                                id={`budget-${budg}`}
+                                data-testid={`radio-budget-${budg.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                              />
+                              <span className="text-sm">{budg}</span>
+                            </label>
+                          </Card>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Gift Preferences */}
+              <FormField
+                control={form.control}
+                name="giftPreferences"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Do they prefer:</FormLabel>
+                    <FormDescription className="text-xs">Select all that apply</FormDescription>
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      {['Practical gifts', 'Sentimental/personalized gifts', 'Experiences', 'Funny/novelty items'].map((pref) => (
+                        <FormField
+                          key={pref}
+                          control={form.control}
+                          name="giftPreferences"
+                          render={({ field }) => (
+                            <FormItem key={pref} className="flex flex-row items-start space-x-3 space-y-0">
+                              <Card className="flex-1 hover-elevate">
+                                <label className="flex items-center gap-3 p-3 cursor-pointer">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(pref as any)}
+                                      onCheckedChange={(checked) => {
+                                        const current = field.value || [];
+                                        if (checked) {
+                                          field.onChange([...current, pref as any]);
+                                        } else {
+                                          field.onChange(current.filter((p) => p !== pref));
+                                        }
+                                      }}
+                                      data-testid={`checkbox-gift-pref-${pref.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                                    />
+                                  </FormControl>
+                                  <span className="text-sm">{pref}</span>
+                                </label>
+                              </Card>
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Dislikes */}
+              <FormField
+                control={form.control}
+                name="dislikes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Any dislikes or no-go areas?</FormLabel>
+                    <FormDescription className="text-xs">e.g., no alcohol, no perfumes, avoid tech</FormDescription>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Things to avoid..."
+                        maxLength={500}
+                        {...field}
+                        data-testid="textarea-dislikes"
+                        className="min-h-[60px] resize-none"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Gift Style */}
+              <FormField
+                control={form.control}
+                name="giftStyle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Do you want the gift to be:</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-2 gap-3"
+                      >
+                        <Card className="hover-elevate">
+                          <label className="flex items-center gap-2 p-3 cursor-pointer">
+                            <RadioGroupItem 
+                              value="unique-thoughtful" 
+                              id="style-unique"
+                              data-testid="radio-gift-style-unique-thoughtful"
+                            />
+                            <span className="text-sm">Unique & Thoughtful</span>
+                          </label>
+                        </Card>
+                        <Card className="hover-elevate">
+                          <label className="flex items-center gap-2 p-3 cursor-pointer">
+                            <RadioGroupItem 
+                              value="safe-popular" 
+                              id="style-safe"
+                              data-testid="radio-gift-style-safe-popular"
+                            />
+                            <span className="text-sm">Safe & Popular</span>
+                          </label>
+                        </Card>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Location */}
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Where do they live? (optional)</FormLabel>
+                    <FormDescription className="text-xs">Helps with local availability</FormDescription>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Seattle, WA or London, UK"
+                        maxLength={100}
+                        {...field}
+                        data-testid="input-location"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Additional Notes */}
+              <FormField
+                control={form.control}
+                name="additionalNotes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Anything else you'd like to mention about them?</FormLabel>
+                    <FormDescription className="text-xs">
+                      e.g., "They love their dog more than anything," "They recently started a new job"
+                    </FormDescription>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Additional context..."
+                        maxLength={2000}
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setAdditionalNotesCount(e.target.value.length);
+                        }}
+                        data-testid="textarea-additional-notes"
+                        className="min-h-[80px] resize-none"
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">{additionalNotesCount}/2000 characters</p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                className="flex-1"
                 data-testid="button-cancel-questionnaire"
               >
                 Cancel
@@ -237,11 +488,12 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
               <Button
                 type="submit"
                 disabled={isSubmitting}
+                className="flex-1"
                 data-testid="button-submit-questionnaire"
               >
-                {isSubmitting ? 'Saving...' : 'Save & Generate'}
+                {isSubmitting ? 'Saving...' : 'Save'}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
       </DialogContent>
