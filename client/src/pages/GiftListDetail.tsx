@@ -34,6 +34,10 @@ export default function GiftListDetail() {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [questionnaireDialogOpen, setQuestionnaireDialogOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
+  const [shouldTriggerGenerate, setShouldTriggerGenerate] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('trigger') === 'generate';
+  });
 
   const { data: giftList, isLoading } = useQuery<GiftList>({
     queryKey: ['/api/gift-lists', id],
@@ -192,6 +196,18 @@ export default function GiftListDetail() {
     }
     generateMutation.mutate();
   };
+
+  // Auto-trigger generation if coming back from questionnaire with trigger=generate
+  useEffect(() => {
+    if (shouldTriggerGenerate && profile && !profileLoading && giftList && !generateMutation.isPending) {
+      // Clear the trigger flag immediately to prevent loops
+      setShouldTriggerGenerate(false);
+      // Clear the trigger parameter from URL
+      window.history.replaceState({}, '', `/gift-list/${id}`);
+      // Trigger generation
+      handleGenerate();
+    }
+  }, [shouldTriggerGenerate, profile, profileLoading, giftList, generateMutation.isPending]);
 
   const handleRenameList = () => {
     if (!newListName.trim()) {

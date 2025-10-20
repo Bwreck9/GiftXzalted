@@ -171,8 +171,8 @@ export default function Questionnaire() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data, generateResponse }: { id: string; data: Partial<InsertProfile>; generateResponse: boolean }) => {
-      const response = await apiRequest('PATCH', `/api/profiles/${id}`, { ...data, generateResponse });
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertProfile> }) => {
+      const response = await apiRequest('PATCH', `/api/profiles/${id}`, data);
       return response.json();
     },
     onSuccess: (data: any) => {
@@ -183,10 +183,11 @@ export default function Questionnaire() {
       // If coming from gift list context, navigate back to the list
       if (fromContext === 'giftlist' && listId) {
         toast({ 
-          title: isGenerating ? 'Profile updated! Returning to gift list...' : 'Profile saved!', 
-          description: isGenerating ? 'Your AI-powered gift recommendations are ready.' : 'Returning to your gift list.' 
+          title: 'Profile saved!', 
+          description: 'Returning to your gift list.' 
         });
-        setLocation(`/gift-list/${listId}`);
+        // Add trigger parameter to auto-generate when returning to list
+        setLocation(`/gift-list/${listId}${isGenerating ? '?trigger=generate' : ''}`);
       } else {
         toast({ 
           title: isGenerating ? 'Profile updated with AI response!' : 'Profile updated!', 
@@ -236,11 +237,11 @@ export default function Questionnaire() {
       setIsGenerating(generateResponse);
 
       // If updating an existing profile
-      if (profileId && existingProfile) {
+      if (profileId) {
         const profileData: Partial<InsertProfile> = {
           ...data,
         };
-        updateMutation.mutate({ id: profileId, data: profileData, generateResponse });
+        updateMutation.mutate({ id: profileId, data: profileData });
       } else {
         // Creating a new profile
         const profileData: InsertProfile = {
@@ -789,34 +790,22 @@ export default function Questionnaire() {
               
               <Button
                 onClick={handleSubmit(true)}
-                disabled={updateMutation.isPending || (!!user && !hasEnoughTokens)}
+                disabled={updateMutation.isPending}
                 className="w-full h-12 text-base hover-elevate active-elevate-2"
                 data-testid="button-save-and-generate"
               >
-                {updateMutation.isPending && isGenerating ? (
+                {updateMutation.isPending ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
-                    Saving & Generating...
+                    Saving...
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />
-                    Save & Generate ({TOKENS_PER_GENERATION} tokens)
+                    Save & Generate Ideas
                   </div>
                 )}
               </Button>
-
-              {user && !hasEnoughTokens && (
-                <p className="text-xs text-center text-muted-foreground">
-                  Need more tokens?{' '}
-                  <button
-                    onClick={() => setLocation('/pricing')}
-                    className="text-primary underline"
-                  >
-                    View Pricing
-                  </button>
-                </p>
-              )}
             </>
           ) : (
             // Normal context - show "Create Profile" and "Create + Generate" buttons
