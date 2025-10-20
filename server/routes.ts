@@ -264,8 +264,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (generateResponse === true) {
         // Verify minimum required fields for AI generation
-        if (!validated.interests || !validated.personalityTraits || validated.personalityTraits.length === 0) {
-          return res.status(400).json({ error: "Missing required questionnaire fields for AI generation. Please complete personality traits and interests." });
+        if (!validated.personalityTraits || validated.personalityTraits.length === 0) {
+          return res.status(400).json({ error: "Missing required questionnaire fields for AI generation. Please select at least one personality trait." });
         }
 
         // Check and reset subscription tokens if needed

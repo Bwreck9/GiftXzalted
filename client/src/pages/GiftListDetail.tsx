@@ -39,7 +39,7 @@ export default function GiftListDetail() {
     queryKey: ['/api/gift-lists', id],
   });
 
-  const { data: profile } = useQuery<Profile>({
+  const { data: profile, isLoading: profileLoading } = useQuery<Profile>({
     queryKey: ['/api/profiles', giftList?.profileId],
     queryFn: async () => {
       const res = await fetch(`/api/profiles/${giftList?.profileId}`, { credentials: 'include' });
@@ -166,8 +166,17 @@ export default function GiftListDetail() {
   };
 
   const handleGenerate = () => {
+    // Wait for profile to load before checking questionnaire completion
+    if (profileLoading) {
+      toast({
+        title: 'Loading profile...',
+        description: 'Please wait while we load the profile data',
+      });
+      return;
+    }
+
     // Check if profile questionnaire is completed
-    if (!profile?.interests || !profile?.personalityTraits || profile.personalityTraits.length === 0) {
+    if (!profile?.personalityTraits || profile.personalityTraits.length === 0) {
       setQuestionnaireDialogOpen(true);
       return;
     }

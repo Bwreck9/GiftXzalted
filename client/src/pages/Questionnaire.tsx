@@ -94,7 +94,7 @@ export default function Questionnaire() {
   });
 
   // Load existing profile if profileId is provided (must be before useEffect that uses it)
-  const { data: existingProfile } = useQuery<Profile>({
+  const { data: existingProfile, isLoading: profileLoading } = useQuery<Profile>({
     queryKey: ['/api/profiles', profileId],
     queryFn: async () => {
       const response = await fetch(`/api/profiles/${profileId}`);
@@ -288,7 +288,7 @@ export default function Questionnaire() {
         {!user && <div className="w-10" />}
       </header>
 
-      {user && (
+      {user && !profileId && (
         <div className="border-b bg-muted/50 px-4 py-3">
           <div className="max-w-lg mx-auto flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
@@ -313,7 +313,12 @@ export default function Questionnaire() {
                 </div>
 
                 {/* Profile Name - Display only if editing, input if creating */}
-                {profileId && existingProfile ? (
+                {profileId && profileLoading ? (
+                  <div>
+                    <FormLabel>Profile Name</FormLabel>
+                    <div className="h-9 flex items-center text-muted-foreground">Loading...</div>
+                  </div>
+                ) : profileId && existingProfile ? (
                   <div>
                     <FormLabel>Profile Name</FormLabel>
                     <p className="text-2xl font-bold mt-2" data-testid="text-profile-name">{existingProfile.name}</p>
