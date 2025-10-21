@@ -3,10 +3,11 @@ import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { WelcomeDialog } from '@/components/WelcomeDialog';
 import { AppHeader } from '@/components/AppHeader';
 import type { Profile } from '@shared/schema';
-import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins } from 'lucide-react';
+import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -173,22 +174,72 @@ export default function Landing() {
         <AppHeader />
 
         <main className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-md w-full text-center space-y-8">
+          <div className="max-w-2xl w-full text-center space-y-10">
             <div className="space-y-4">
               <h1 className="text-4xl font-bold text-foreground">Find the Perfect Gift</h1>
               <p className="text-lg text-muted-foreground">
-                Create profiles and get thoughtful gift suggestions that actually fit the person you're shopping for
+                Never forget a gift again with your free, always-available gift tracker and memory system
               </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 text-left">
+              <Card className="p-6 space-y-3 hover-elevate">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
+                    <Gift className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-foreground">Free Gift Tracker</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Create unlimited profiles and gift lists to keep track of ideas for everyone you care about. All completely free, forever.
+                </p>
+              </Card>
+
+              <Card className="p-6 space-y-3 hover-elevate">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+                    <ListPlus className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h3 className="font-semibold text-foreground">Never Forget</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Remember birthdays, anniversaries, and special occasions. Store gift ideas as you find them throughout the year.
+                </p>
+              </Card>
+
+              <Card className="p-6 space-y-3 hover-elevate">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500/20 to-primary/20 flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+                  </div>
+                  <h3 className="font-semibold text-foreground">AI-Powered Ideas</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Upgrade to get personalized AI recommendations based on detailed profiles and preferences.
+                </p>
+              </Card>
+
+              <Card className="p-6 space-y-3 hover-elevate">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-pink-500/20 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-foreground">Organized by Person</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Keep separate profiles for each person with their own gift lists for different occasions.
+                </p>
+              </Card>
             </div>
 
             <Button
               onClick={handleSignIn}
               size="lg"
-              className="w-full h-12 text-base hover-elevate active-elevate-2"
+              className="w-full max-w-md h-12 text-base hover-elevate active-elevate-2"
               data-testid="button-signin"
             >
               <LogIn className="mr-2 h-5 w-5" />
-              Sign In
+              Sign In to Get Started - It's Free
             </Button>
           </div>
         </main>
