@@ -38,6 +38,7 @@ export default function GiftListDetail() {
   const [manualIdeas, setManualIdeas] = useState<string[]>([]);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [questionnaireDialogOpen, setQuestionnaireDialogOpen] = useState(false);
+  const [needTokensDialogOpen, setNeedTokensDialogOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [shouldTriggerGenerate, setShouldTriggerGenerate] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -240,12 +241,7 @@ export default function GiftListDetail() {
 
     const totalTokens = (user?.tokens ?? 0) + (user?.purchasedTokens ?? 0);
     if (!user || totalTokens < 500) {
-      toast({
-        title: 'Insufficient tokens',
-        description: 'You need at least 500 tokens to generate recommendations',
-        variant: 'destructive',
-      });
-      setLocation('/pricing');
+      setNeedTokensDialogOpen(true);
       return;
     }
     generateMutation.mutate();
@@ -343,8 +339,10 @@ export default function GiftListDetail() {
           <div className="flex items-center gap-2">
             <Button
               onClick={handleGenerate}
-              disabled={generateMutation.isPending || !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < 500}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
+              disabled={generateMutation.isPending}
+              className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
+                !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < 500 ? 'opacity-60' : ''
+              }`}
               data-testid="button-generate-ideas"
             >
               <Sparkles className="h-4 w-4 mr-2" />
@@ -555,6 +553,36 @@ export default function GiftListDetail() {
               data-testid="button-go-to-questionnaire"
             >
               Complete Questionnaire
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={needTokensDialogOpen} onOpenChange={setNeedTokensDialogOpen}>
+        <DialogContent data-testid="dialog-tokens-required">
+          <DialogHeader>
+            <DialogTitle>Tokens Required</DialogTitle>
+            <DialogDescription>
+              You need at least 500 tokens to generate AI-powered gift recommendations. Each generation costs 500 tokens and creates 10 personalized gift ideas.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setNeedTokensDialogOpen(false)}
+              data-testid="button-cancel-tokens"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setNeedTokensDialogOpen(false);
+                setLocation('/pricing');
+              }}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
+              data-testid="button-go-to-pricing"
+            >
+              View Pricing
             </Button>
           </DialogFooter>
         </DialogContent>
