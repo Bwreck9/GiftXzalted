@@ -75,16 +75,18 @@ export function PreviewQuestionnaireModal({ open, onClose }: PreviewQuestionnair
 
                 <div className="space-y-2">
                   <Label>Age Range</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult 1 (31-50)', 'Adult 2 (51-70)', 'Senior 70+'].map((range) => (
-                      <Card key={range} className="opacity-60">
-                        <label className="flex items-center gap-2 p-2 cursor-not-allowed">
-                          <RadioGroupItem value={range} disabled />
-                          <span className="text-xs">{range}</span>
-                        </label>
-                      </Card>
-                    ))}
-                  </div>
+                  <RadioGroup disabled value="">
+                    <div className="grid grid-cols-2 gap-2">
+                      {['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult 1 (31-50)', 'Adult 2 (51-70)', 'Senior 70+'].map((range) => (
+                        <Card key={range} className="opacity-60">
+                          <label className="flex items-center gap-2 p-2 cursor-not-allowed">
+                            <RadioGroupItem value={range} disabled />
+                            <span className="text-xs">{range}</span>
+                          </label>
+                        </Card>
+                      ))}
+                    </div>
+                  </RadioGroup>
                 </div>
 
                 <div className="space-y-2">
@@ -137,30 +139,34 @@ export function PreviewQuestionnaireModal({ open, onClose }: PreviewQuestionnair
 
                 <div className="space-y-2">
                   <Label>What's your relationship to them?</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {['Partner', 'Family', 'Friend', 'Coworker', 'Classmate', 'Acquaintance'].map((rel) => (
-                      <Card key={rel} className="opacity-60">
-                        <label className="flex items-center gap-2 p-2 cursor-not-allowed">
-                          <RadioGroupItem value={rel} disabled />
-                          <span className="text-xs">{rel}</span>
-                        </label>
-                      </Card>
-                    ))}
-                  </div>
+                  <RadioGroup disabled value="">
+                    <div className="grid grid-cols-2 gap-2">
+                      {['Partner', 'Family', 'Friend', 'Coworker', 'Classmate', 'Acquaintance'].map((rel) => (
+                        <Card key={rel} className="opacity-60">
+                          <label className="flex items-center gap-2 p-2 cursor-not-allowed">
+                            <RadioGroupItem value={rel} disabled />
+                            <span className="text-xs">{rel}</span>
+                          </label>
+                        </Card>
+                      ))}
+                    </div>
+                  </RadioGroup>
                 </div>
 
                 <div className="space-y-2">
                   <Label>How close are you?</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['Very close', 'Somewhat close', 'Casual'].map((level) => (
-                      <Card key={level} className="opacity-60">
-                        <label className="flex items-center gap-2 p-2 cursor-not-allowed">
-                          <RadioGroupItem value={level} disabled />
-                          <span className="text-xs">{level}</span>
-                        </label>
-                      </Card>
-                    ))}
-                  </div>
+                  <RadioGroup disabled value="">
+                    <div className="grid grid-cols-3 gap-2">
+                      {['Very close', 'Somewhat close', 'Casual'].map((level) => (
+                        <Card key={level} className="opacity-60">
+                          <label className="flex items-center gap-2 p-2 cursor-not-allowed">
+                            <RadioGroupItem value={level} disabled />
+                            <span className="text-xs">{level}</span>
+                          </label>
+                        </Card>
+                      ))}
+                    </div>
+                  </RadioGroup>
                 </div>
               </div>
 
@@ -214,20 +220,22 @@ export function PreviewQuestionnaireModal({ open, onClose }: PreviewQuestionnair
 
                 <div className="space-y-2">
                   <Label>Do you want the gift to be:</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Card className="opacity-60">
-                      <label className="flex items-center gap-2 p-2 cursor-not-allowed">
-                        <RadioGroupItem value="unique" disabled />
-                        <span className="text-xs">Unique & Thoughtful</span>
-                      </label>
-                    </Card>
-                    <Card className="opacity-60">
-                      <label className="flex items-center gap-2 p-2 cursor-not-allowed">
-                        <RadioGroupItem value="safe" disabled />
-                        <span className="text-xs">Safe & Popular</span>
-                      </label>
-                    </Card>
-                  </div>
+                  <RadioGroup disabled value="">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Card className="opacity-60">
+                        <label className="flex items-center gap-2 p-2 cursor-not-allowed">
+                          <RadioGroupItem value="unique" disabled />
+                          <span className="text-xs">Unique & Thoughtful</span>
+                        </label>
+                      </Card>
+                      <Card className="opacity-60">
+                        <label className="flex items-center gap-2 p-2 cursor-not-allowed">
+                          <RadioGroupItem value="safe" disabled />
+                          <span className="text-xs">Safe & Popular</span>
+                        </label>
+                      </Card>
+                    </div>
+                  </RadioGroup>
                 </div>
               </div>
 
