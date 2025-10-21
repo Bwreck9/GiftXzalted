@@ -35,8 +35,9 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
   - Separated "Gift Ideas" (manual entries) and "Generated Ideas" (AI recommendations) sections
   - Settings dropdown menu for list operations (rename, delete)
   - "Add to list" functionality to promote AI suggestions to manual gift list
-  - "Generate ideas" button for AI recommendations (500 tokens per generation)
+  - "Generate ideas" button for AI recommendations (500 tokens per generation, generates 10 ideas)
   - Empty state messaging ("No generations yet") when AI recommendations haven't been created
+  - **Session-based Duplicate Prevention:** AI tracks previously generated ideas during current page session to avoid suggesting duplicates across multiple generations. Session state resets on navigation, making generated ideas ephemeral unless manually added to persistent list. Backend passes `alreadyGeneratedIdeas` to OpenAI with avoidance instruction. Frontend normalizes titles (trim, lowercase) and uses Set-based deduplication. Disclaimer below generated ideas: "These AI suggestions are temporary. Add your favorites to the manual list above to save them permanently."
 - **Pricing Page:** Profile plans (Free, Basic, Premium, Enterprise) grouped in a gradient-styled container. One-time token purchase displayed below subscription plans.
 
 **Technical Implementations & Feature Specifications:**
