@@ -90,15 +90,16 @@ export default function GiftListDetail() {
 
   const generateMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', '/api/messages', {
+      const res = await apiRequest('POST', '/api/messages', {
         profileId: giftList?.profileId,
         giftListId: id,
         content: 'Generate gift recommendations',
         isUser: true,
         alreadyGeneratedIdeas: sessionGeneratedIdeas,
       });
+      return await res.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: async (data: any) => {
       // Update session state with newly generated ideas to prevent duplicates
       if (data?.aiResponse) {
         try {
@@ -125,9 +126,10 @@ export default function GiftListDetail() {
         }
       }
       
-      queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
+      // Force refetch to ensure UI updates with new premium results
+      await queryClient.refetchQueries({ queryKey: ['/api/gift-lists', id] });
       if (giftList?.profileId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/profiles', giftList.profileId, 'gift-lists'] });
+        await queryClient.refetchQueries({ queryKey: ['/api/profiles', giftList.profileId, 'gift-lists'] });
       }
       toast({ title: 'Premium recommendations generated!' });
     },
