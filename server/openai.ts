@@ -24,7 +24,8 @@ export async function getGiftRecommendations(
     additionalNotes?: string | null;
   },
   userMessage?: string,
-  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
+  alreadyGeneratedIdeas?: string[]
 ): Promise<string> {
   try {
     // Build profile context from available data
@@ -72,7 +73,7 @@ Current profile for ${profileData.name}:`;
     profileContext += `\n\nInstructions:
 1. Provide thoughtful, personalized gift recommendations based on the profile above
 2. Consider their personality traits, interests, budget, and preferences
-3. Suggest exactly 5 specific, practical gift ideas with clear reasoning based on the profile
+3. Suggest exactly 10 specific, practical gift ideas with clear reasoning based on the profile
 4. Return ONLY a valid JSON array (no markdown, no extra text) with this exact format:
 [
   {
@@ -87,6 +88,15 @@ IMPORTANT:
 - No markdown code blocks, no explanations
 - Each reason should be 1-2 sentences explaining why it matches their profile
 - Focus on gift ideas and descriptions. Do NOT include product links or URLs.`;
+
+    // Add already-generated ideas to avoid duplicates
+    if (alreadyGeneratedIdeas && alreadyGeneratedIdeas.length > 0) {
+      profileContext += `\n\nPREVIOUSLY GENERATED IDEAS TO AVOID:
+The following gift ideas have already been suggested in this session. DO NOT suggest these again. Be creative and provide completely different, unique gift ideas:
+${alreadyGeneratedIdeas.map((idea, idx) => `${idx + 1}. ${idea}`).join('\n')}
+
+Generate 10 NEW and DIFFERENT gift ideas that are NOT similar to the ones listed above.`;
+    }
 
     const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
       { role: 'system', content: profileContext },

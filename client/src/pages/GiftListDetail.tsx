@@ -38,6 +38,10 @@ export default function GiftListDetail() {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('trigger') === 'generate';
   });
+  
+  // Session-based tracking of generated ideas to prevent duplicates
+  // This state resets when user navigates away (component unmounts)
+  const [sessionGeneratedIdeas, setSessionGeneratedIdeas] = useState<string[]>([]);
 
   const { data: giftList, isLoading } = useQuery<GiftList>({
     queryKey: ['/api/gift-lists', id],
@@ -86,9 +90,36 @@ export default function GiftListDetail() {
         giftListId: id,
         content: 'Generate gift recommendations',
         isUser: true,
+        alreadyGeneratedIdeas: sessionGeneratedIdeas,
       });
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      // Update session state with newly generated ideas to prevent duplicates
+      if (data?.aiResponse) {
+        try {
+          // Parse the AI response to extract the new idea titles
+          let responseText = data.aiResponse.trim();
+          
+          // Remove code fences case-insensitively (```json, ```JSON, ```)
+          if (responseText.startsWith('```')) {
+            responseText = responseText.replace(/^```(?:json|JSON)?\n?/i, '').replace(/\n?```$/i, '');
+          }
+          
+          const newIdeas = JSON.parse(responseText);
+          
+          // Extract titles and normalize (trim, lowercase) to prevent duplicates from case/punctuation variants
+          const newTitles = newIdeas.map((idea: any) => idea.title.trim().toLowerCase());
+          
+          // Use Set to deduplicate within this batch and with previous batches
+          setSessionGeneratedIdeas(prev => {
+            const allIdeas = [...prev.map(t => t.toLowerCase()), ...newTitles];
+            return Array.from(new Set(allIdeas));
+          });
+        } catch (error) {
+          console.error('Failed to parse AI response for session tracking:', error);
+        }
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
       if (giftList?.profileId) {
         queryClient.invalidateQueries({ queryKey: ['/api/profiles', giftList.profileId, 'gift-lists'] });
@@ -418,6 +449,12 @@ export default function GiftListDetail() {
                     </div>
                   </div>
                 ))}
+                
+                <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-muted" data-testid="disclaimer-temporary-ideas">
+                  <p className="text-sm text-muted-foreground">
+                    Note: These AI suggestions are temporary. Add your favorites to the manual list above to save them permanently.
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="text-center py-8 rounded-lg border bg-card/50">

@@ -502,7 +502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/messages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { profileId, content, giftListId } = req.body;
+      const { profileId, content, giftListId, alreadyGeneratedIdeas } = req.body;
 
       if (!profileId || !content || typeof content !== 'string') {
         return res.status(400).json({ error: "Missing required fields" });
@@ -589,7 +589,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           additionalNotes: profile.additionalNotes || null,
         } as any,
         content,
-        conversationHistory
+        conversationHistory,
+        alreadyGeneratedIdeas || []
       );
 
       // Deduct tokens FIRST (uses purchased tokens first, then subscription tokens)
@@ -623,10 +624,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Parse the AI response to extract gift recommendations
             // Expected format: JSON array of {id, title, reason}
             try {
-              // Remove markdown code blocks if present (```json ... ```)
+              // Remove markdown code blocks if present (case-insensitive)
               let cleanedResponse = aiResponse.trim();
               if (cleanedResponse.startsWith('```')) {
-                cleanedResponse = cleanedResponse.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+                cleanedResponse = cleanedResponse.replace(/^```(?:json|JSON)?\s*/i, '').replace(/\s*```$/i, '');
               }
               
               const recommendations = JSON.parse(cleanedResponse);
@@ -653,7 +654,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw error;
       }
 
-      res.json(assistantMessage);
+      res.json({ 
+        ...assistantMessage, 
+        aiResponse // Include the raw AI response for frontend session tracking
+      });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid message data", details: error.errors });
