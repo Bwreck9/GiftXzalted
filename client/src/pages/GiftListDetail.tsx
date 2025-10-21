@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sparkles, Plus, X, Brain, ArrowLeft, Settings, Pencil, Trash2 } from 'lucide-react';
+import { Sparkles, Plus, X, Brain, ArrowLeft, Settings, Pencil, Trash2, Info } from 'lucide-react';
 import type { GiftList, Profile } from '@shared/schema';
 import { AppHeader } from '@/components/AppHeader';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -24,6 +24,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 export default function GiftListDetail() {
   const { id } = useParams<{ id: string }>();
@@ -433,8 +438,29 @@ export default function GiftListDetail() {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <h3 className="font-medium text-foreground mb-2">{result.title}</h3>
-                        <p className="text-sm text-muted-foreground">{result.reason}</p>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-foreground">{result.title}</h3>
+                          {result.reason && (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 rounded-full hover-elevate shrink-0"
+                                  data-testid={`button-info-${index}`}
+                                >
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-80" data-testid={`popover-reason-${index}`}>
+                                <div className="space-y-2">
+                                  <h4 className="font-medium">Why this gift?</h4>
+                                  <p className="text-sm text-muted-foreground">{result.reason}</p>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          )}
+                        </div>
                       </div>
                       <Button
                         onClick={() => handleAddToList(result.title)}

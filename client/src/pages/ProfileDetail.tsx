@@ -141,14 +141,9 @@ export default function ProfileDetail() {
               className="w-12 h-12 rounded-lg shadow-md"
               style={{ backgroundColor: profile.color || '#3B82F6' }}
             />
-            <div>
-              <h1 className="text-xl font-semibold text-foreground">
-                {profile.name}
-              </h1>
-              {profile.relationship && (
-                <p className="text-sm text-muted-foreground">{profile.relationship}</p>
-              )}
-            </div>
+            <h1 className="text-xl font-semibold text-foreground">
+              {profile.name}
+            </h1>
           </div>
           <Button
             onClick={() => setQuestionnaireOpen(true)}
@@ -163,8 +158,8 @@ export default function ProfileDetail() {
 
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
               <Button
                 onClick={() => setLocation('/')}
                 variant="outline"
@@ -174,16 +169,16 @@ export default function ProfileDetail() {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to profiles
               </Button>
-              <h2 className="text-2xl font-bold">Gift Lists</h2>
+              <Button
+                onClick={() => setCreateDialogOpen(true)}
+                className="hover-elevate active-elevate-2"
+                data-testid="button-create-list"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New List
+              </Button>
             </div>
-            <Button
-              onClick={() => setCreateDialogOpen(true)}
-              className="hover-elevate active-elevate-2"
-              data-testid="button-create-list"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New List
-            </Button>
+            <h2 className="text-2xl font-bold">Gift Lists</h2>
           </div>
 
           {listsLoading ? (
@@ -252,11 +247,11 @@ export default function ProfileDetail() {
       </main>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent data-testid="dialog-create-list">
+        <DialogContent className="sm:max-w-[500px]" data-testid="dialog-create-list">
           <DialogHeader>
             <DialogTitle>Create Gift List</DialogTitle>
             <DialogDescription>
-              Enter a name for the occasion (e.g., "Birthday", "Christmas", "Anniversary")
+              Enter a name for the occasion or select from popular events
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -276,11 +271,43 @@ export default function ProfileDetail() {
                 data-testid="input-list-name"
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Quick Select</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  'Birthday',
+                  'Christmas',
+                  'Anniversary',
+                  "Mother's Day",
+                  "Father's Day",
+                  "Valentine's Day",
+                  'Graduation',
+                  'Wedding',
+                  'Baby Shower',
+                  'Housewarming',
+                  'Thank You',
+                  'Just Because',
+                ].map((occasion) => (
+                  <Button
+                    key={occasion}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setNewListName(occasion)}
+                    className="hover-elevate text-xs h-8"
+                    data-testid={`button-quick-${occasion.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                  >
+                    {occasion}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button
               onClick={handleCreateList}
-              disabled={createListMutation.isPending}
+              disabled={createListMutation.isPending || !newListName.trim()}
               className="hover-elevate active-elevate-2"
               data-testid="button-create-list-submit"
             >
