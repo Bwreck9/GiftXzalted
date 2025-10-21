@@ -16,6 +16,12 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 - **Character Limits:** Profile names and list names limited to 20 characters (enforced in frontend maxLength and backend schema validation).
 - **Components:** Reusable UI components for consistent design, Settings gear icons positioned inside list tiles (right side) for list options.
 - **Welcome Experience:** Closeable splash screen explains app features. Feature buttons and close button navigate to landing page. "Web Search Agent (In development)" displayed. Footer button to reopen.
+- **Mobile-First UX Optimizations (Oct 2025):**
+  - Profile cards display clean, condensed layout with only profile name and color badge (no relationship/event subcaptions)
+  - Gift idea reasons moved from visible subcaptions to info button popovers for more compact mobile display
+  - Gift Lists page header restructured with title on separate row to prevent squishing on narrow screens
+  - Profile info bar in Gift Lists page shows only profile name (no relationship subcaption)
+  - Create Gift List dialog includes 12 quick-select occasion buttons (Birthday, Christmas, Anniversary, Mother's Day, Father's Day, Valentine's Day, Graduation, Wedding, Baby Shower, Housewarming, Thank You, Just Because) that populate textbox without auto-creating
 - **Profile System:** Questionnaire-based profiles for AI training with comprehensive checkbox/dropdown interface to minimize user typing:
   - Age Range: 5 radio options (Child 0-12, Teen 13-19, Young Adult 20-30, Adult 31-50, Senior 50+)
   - Gender: Radio options (Male, Female, Non-binary, Other with custom text input)
