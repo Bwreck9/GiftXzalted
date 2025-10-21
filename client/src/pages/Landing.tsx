@@ -62,8 +62,8 @@ export default function Landing() {
     mutationFn: async (id: string) => {
       return apiRequest('DELETE', `/api/profiles/${id}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['/api/profiles'] });
       toast({ title: 'Profile deleted successfully' });
     },
     onError: () => {
