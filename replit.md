@@ -80,6 +80,46 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
     - **Premium Subscription:** $20/month for 50,000 tokens + up to 20 profiles.
     - **Enterprise Subscription:** $100/month for 200,000 tokens + 100 profiles.
 - **Legal Pages:** Dedicated Privacy Policy and Terms & Conditions pages, accessible via footer links, compliant with app store requirements including third-party service disclosures and data retention policies.
+- **Progressive Web App (PWA):** Full PWA support enables installation on desktop and mobile devices:
+  - **Web App Manifest** (`client/public/manifest.json`): Defines app metadata, theme colors (#3b82f6), display mode (standalone), app icons (192px, 512px), and shortcuts
+  - **Service Worker** (`client/public/service-worker.js`): Implements intelligent caching strategies:
+    - Cache-first for navigation and static assets with background refresh
+    - Network-first for API calls (/api/*) with offline JSON fallback
+    - Precaches essential app shell (HTML, manifest, icons) on install
+  - **iOS Support:** Includes apple-mobile-web-app meta tags for proper iOS PWA behavior
+  - **Offline Functionality:** App remains accessible offline with cached content; API calls gracefully fail with informative messages
+  - **Installation:** Users can "Add to Home Screen" on mobile or install from browser on desktop for app-like experience without browser chrome
+
+### Deployment & Custom Domain
+**Target Subdomain:** gift.xzalted.com
+
+**Deployment Process:**
+1. **Publish on Replit:**
+   - Click "Deploy" in Replit workspace
+   - Select deployment type (Autoscale recommended for production)
+   - App will be available at `<your-app>.replit.app`
+
+2. **Configure Custom Domain:**
+   - Navigate to Deployments tab → Settings → "Link a domain"
+   - Enter `gift.xzalted.com`
+   - Replit provides DNS records (A and TXT)
+
+3. **Update DNS at Domain Registrar:**
+   - Add A record: `gift.xzalted.com` → Replit's IP address
+   - Add TXT record for verification
+   - Wait 5 minutes to 48 hours for DNS propagation
+
+4. **Verification:**
+   - Replit shows "Verified" status once DNS propagates
+   - App accessible at https://gift.xzalted.com
+   - Automatic SSL certificate provisioned
+
+**PWA Installation on Custom Domain:**
+- Once deployed to gift.xzalted.com, users can install the PWA
+- Desktop: Chrome/Edge show install icon in address bar
+- Mobile (Android): Chrome shows "Add to Home Screen" banner
+- Mobile (iOS): Safari → Share → "Add to Home Screen"
+- Installed app runs in standalone mode (full screen, no browser UI)
 
 ### External Dependencies
 - **Frontend:** React, TypeScript, Tailwind CSS, Shadcn UI
