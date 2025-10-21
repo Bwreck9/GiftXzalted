@@ -1,0 +1,40 @@
+{
+  "name": "Gift Xzalted",
+  "short_name": "Gift Xzalted",
+  "description": "AI-powered gift recommendations. Create profiles for friends and family, get personalized gift ideas.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "shopping"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "My Profiles",
+      "short_name": "Profiles",
+      "description": "View your gift profiles",
+      "url": "/profiles",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
