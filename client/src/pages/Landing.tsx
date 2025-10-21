@@ -31,7 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function Landing() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
-  const [showSplash, setShowSplash] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
