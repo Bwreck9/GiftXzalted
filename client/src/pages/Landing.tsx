@@ -317,11 +317,6 @@ export default function Landing() {
                         className="flex-1 min-w-0 text-left hover-elevate active-elevate-2 p-2 rounded-md -m-2"
                       >
                         <h3 className="font-medium text-foreground truncate">{profile.name}</h3>
-                        {profile.relationship && (
-                          <p className="text-sm text-muted-foreground truncate">
-                            {profile.relationship}
-                          </p>
-                        )}
                       </button>
                       
                       {/* Settings Menu */}
@@ -555,11 +550,6 @@ export default function Landing() {
                 />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-foreground truncate">{profile.name}</h3>
-                  {profile.relationship && (
-                    <p className="text-sm text-muted-foreground truncate">
-                      {profile.relationship}
-                    </p>
-                  )}
                 </div>
               </button>
             ))}

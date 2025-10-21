@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   tokensResetDate: timestamp("tokens_reset_date"), // When subscription tokens reset
   stripeCustomerId: text("stripe_customer_id").unique(), // For subscription management
   stripeSubscriptionId: text("stripe_subscription_id").unique(), // Current subscription ID
+  demoProfilesCreated: boolean("demo_profiles_created").notNull().default(false), // Track if demo profiles were created
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

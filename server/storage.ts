@@ -1,7 +1,7 @@
 // Database storage implementation - referenced from javascript_database blueprint
 import { users, profiles, messages, transactions, giftLists, type User, type InsertUser, type UpsertUser, type Profile, type InsertProfile, type Message, type InsertMessage, type Transaction, type InsertTransaction, type GiftList, type InsertGiftList } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -98,7 +98,16 @@ export class DatabaseStorage implements IStorage {
       // Step 4: Delete the old user record
       await db.delete(users).where(eq(users.id, existingUser.id));
       
-      return newUser;
+      // Create demo profiles for new users (one-time only)
+      await this.maybeCreateDemoProfiles(newUser.id);
+      
+      // Re-fetch user to get updated demoProfilesCreated flag
+      const [updatedNewUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, newUser.id));
+      
+      return updatedNewUser;
     }
 
     // Normal upsert by ID
@@ -116,7 +125,108 @@ export class DatabaseStorage implements IStorage {
         },
       })
       .returning();
-    return user;
+    
+    // Create demo profiles for new users (one-time only)
+    await this.maybeCreateDemoProfiles(user.id);
+    
+    // Re-fetch user to get updated demoProfilesCreated flag
+    const [updatedUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, user.id));
+    
+    return updatedUser;
+  }
+
+  private async maybeCreateDemoProfiles(userId: string): Promise<void> {
+    // Use transaction to ensure atomicity and prevent race conditions
+    await db.transaction(async (tx) => {
+      // Atomically claim the demo creation operation
+      // This UPDATE will only succeed if flag is still false (preventing concurrent duplicates)
+      const claimResult = await tx
+        .update(users)
+        .set({ demoProfilesCreated: true })
+        .where(and(eq(users.id, userId), eq(users.demoProfilesCreated, false)))
+        .returning();
+      
+      if (claimResult.length === 0) {
+        // Another transaction already claimed this or flag was already true
+        return;
+      }
+      
+      // We claimed it! Now check if user has any existing profiles
+      const existingProfiles = await tx
+        .select()
+        .from(profiles)
+        .where(eq(profiles.userId, userId));
+      
+      if (existingProfiles.length > 0) {
+        // Existing user with profiles - flag is already set, just skip demo creation
+        return;
+      }
+      
+      // Check if demo profiles already exist (defensive guard)
+      const existingDemoProfiles = await tx
+        .select()
+        .from(profiles)
+        .where(and(
+          eq(profiles.userId, userId),
+          sql`${profiles.name} IN ('Girlfriend', 'Wife')`
+        ));
+      
+      if (existingDemoProfiles.length > 0) {
+        // Demo profiles already exist, skip creation
+        return;
+      }
+      
+      // New user with no profiles - create demo profiles
+      const [girlfriendProfile] = await tx
+        .insert(profiles)
+        .values({
+          userId,
+          name: 'Girlfriend',
+          color: '#EC4899', // Pink
+          ageRange: 'Young Adult (20-30)',
+          gender: 'Female',
+          personalityTraits: ['Thoughtful', 'Sentimental'],
+          interests: 'fashion, coffee, photography, reading',
+          relationship: 'Partner',
+          closeness: 'Very close',
+          budget: '$50-$100',
+          giftPreferences: ['Sentimental/personalized gifts', 'Experiences'],
+          giftStyle: 'unique-thoughtful',
+        })
+        .returning();
+
+      const [wifeProfile] = await tx
+        .insert(profiles)
+        .values({
+          userId,
+          name: 'Wife',
+          color: '#A855F7', // Purple
+          ageRange: 'Adult 1 (31-50)',
+          gender: 'Female',
+          personalityTraits: ['Thoughtful', 'Artistic'],
+          interests: 'cooking, yoga, gardening, travel',
+          relationship: 'Partner',
+          closeness: 'Very close',
+          budget: '$100-$500',
+          giftPreferences: ['Sentimental/personalized gifts', 'Practical gifts'],
+          giftStyle: 'unique-thoughtful',
+        })
+        .returning();
+
+      // Create demo gift lists
+      await tx.insert(giftLists).values({
+        profileId: girlfriendProfile.id,
+        title: 'Birthday',
+      });
+
+      await tx.insert(giftLists).values({
+        profileId: wifeProfile.id,
+        title: 'Anniversary',
+      });
+    });
   }
 
   async updateUserTokens(id: string, tokens: number): Promise<User> {
