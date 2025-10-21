@@ -162,11 +162,31 @@ export default function Questionnaire() {
       setLocation(`/profile/${data.id}`);
     },
     onError: (error: any) => {
-      toast({ 
-        title: 'Error', 
-        description: error.message || 'Failed to create profile', 
-        variant: 'destructive' 
-      });
+      // Handle profile limit error specially
+      if (error.message?.includes('Profile limit reached')) {
+        toast({ 
+          title: 'Profile limit reached', 
+          description: (
+            <div className="flex flex-col gap-2">
+              <p>{error.message}</p>
+              <button
+                onClick={() => setLocation('/pricing')}
+                className="text-sm underline text-left hover:no-underline"
+                data-testid="link-pricing-from-error"
+              >
+                View pricing plans →
+              </button>
+            </div>
+          ) as any,
+          variant: 'destructive' 
+        });
+      } else {
+        toast({ 
+          title: 'Error', 
+          description: error.message || 'Failed to create profile', 
+          variant: 'destructive' 
+        });
+      }
     },
   });
 
@@ -257,7 +277,18 @@ export default function Questionnaire() {
           const tierName = userData?.subscriptionTier || 'free';
           toast({ 
             title: 'Profile limit reached', 
-            description: `You've reached the maximum of ${profileLimit} ${tierName} profiles. Upgrade to create more.`, 
+            description: (
+              <div className="flex flex-col gap-2">
+                <p>You've reached the maximum of {profileLimit} {tierName} profiles.</p>
+                <button
+                  onClick={() => setLocation('/pricing')}
+                  className="text-sm underline text-left hover:no-underline"
+                  data-testid="link-pricing-from-limit"
+                >
+                  Upgrade to create more profiles →
+                </button>
+              </div>
+            ) as any,
             variant: 'destructive' 
           });
           return;
@@ -579,7 +610,7 @@ export default function Questionnaire() {
                           value={field.value}
                           className="grid grid-cols-2 gap-3"
                         >
-                          {['Partner', 'Family', 'Friend', 'Coworker', 'Acquaintance'].map((rel) => (
+                          {['Partner', 'Family', 'Friend', 'Coworker', 'Classmate', 'Acquaintance'].map((rel) => (
                             <Card key={rel} className="hover-elevate">
                               <label className="flex items-center gap-3 p-3 cursor-pointer">
                                 <RadioGroupItem value={rel} data-testid={`radio-relationship-${rel.toLowerCase()}`} />
@@ -637,22 +668,22 @@ export default function Questionnaire() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>What's your budget range?</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          className="grid grid-cols-2 gap-3"
-                        >
-                          {['Under $25', '$25-$50', '$50-$100', '$100+'].map((budget) => (
-                            <Card key={budget} className="hover-elevate">
-                              <label className="flex items-center gap-3 p-3 cursor-pointer">
-                                <RadioGroupItem value={budget} data-testid={`radio-budget-${budget.toLowerCase().replace(/[^a-z0-9]/g, '-')}`} />
-                                <span className="text-sm">{budget}</span>
-                              </label>
-                            </Card>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-budget">
+                            <SelectValue placeholder="Select your budget range" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Under $25">Under $25</SelectItem>
+                          <SelectItem value="$25-$50">$25 - $50</SelectItem>
+                          <SelectItem value="$50-$100">$50 - $100</SelectItem>
+                          <SelectItem value="$100-$500">$100 - $500</SelectItem>
+                          <SelectItem value="$500-$1,000">$500 - $1,000</SelectItem>
+                          <SelectItem value="$1,000+">$1,000+</SelectItem>
+                          <SelectItem value="$10,000+">$10,000+</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
