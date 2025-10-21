@@ -77,6 +77,7 @@ export default function Questionnaire() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [pendingGenerate, setPendingGenerate] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
   
   // Get URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -299,6 +300,15 @@ export default function Questionnaire() {
     });
   };
 
+  const handleClearAll = () => {
+    form.reset(defaultValues);
+    setCustomGender('');
+    setCustomPersonalityOther('');
+    setAdditionalNotesCount(0);
+    setShowClearDialog(false);
+    toast({ title: 'All selections cleared', description: 'The questionnaire has been reset.' });
+  };
+
   const [customGender, setCustomGender] = useState('');
   const [customPersonalityOther, setCustomPersonalityOther] = useState('');
   const [additionalNotesCount, setAdditionalNotesCount] = useState(0);
@@ -326,13 +336,23 @@ export default function Questionnaire() {
           <Gift className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-semibold">{profileId ? 'Train Agent' : 'New Profile'}</h1>
         </div>
-        {user && userData && (
-          <Badge variant="secondary" className="gap-1" data-testid="badge-tokens">
-            <Coins className="h-3 w-3" />
-            {(userData.tokens ?? 0) + (userData.purchasedTokens ?? 0)}
-          </Badge>
-        )}
-        {!user && <div className="w-10" />}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowClearDialog(true)}
+            data-testid="button-clear-all"
+            className="hover-elevate text-xs"
+          >
+            Clear All
+          </Button>
+          {user && userData && (
+            <Badge variant="secondary" className="gap-1" data-testid="badge-tokens">
+              <Coins className="h-3 w-3" />
+              {(userData.tokens ?? 0) + (userData.purchasedTokens ?? 0)}
+            </Badge>
+          )}
+        </div>
       </header>
 
       {user && !profileId && (
@@ -1017,6 +1037,36 @@ export default function Questionnaire() {
             >
               <Coins className="w-4 h-4 mr-2" />
               Buy Tokens
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear All Confirmation Dialog */}
+      <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <DialogContent data-testid="dialog-clear-all">
+          <DialogHeader>
+            <DialogTitle>Clear All Selections?</DialogTitle>
+            <DialogDescription>
+              This will reset all questionnaire fields to their default values. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowClearDialog(false)}
+              className="w-full sm:w-auto"
+              data-testid="button-clear-cancel"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleClearAll}
+              className="w-full sm:w-auto"
+              data-testid="button-clear-confirm"
+            >
+              Clear All
             </Button>
           </DialogFooter>
         </DialogContent>
