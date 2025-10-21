@@ -671,14 +671,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const amount = ONETIME_PURCHASE_AMOUNT;
+      
+      // Validate quantity from request body
+      const quantitySchema = z.object({
+        quantity: z.number().int().min(1).max(20)
+      });
+      
+      const { quantity } = quantitySchema.parse(req.body);
+      
+      // Calculate total amount and tokens based on quantity
+      const amount = ONETIME_PURCHASE_AMOUNT * quantity;
+      const tokens = TOKENS_PER_ONETIME_PURCHASE * quantity;
       
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: "usd",
         metadata: {
           userId,
-          tokens: TOKENS_PER_ONETIME_PURCHASE.toString(),
+          tokens: tokens.toString(),
+          quantity: quantity.toString(),
         },
       });
 
@@ -686,7 +697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createTransaction({
         userId,
         amount: amount * 100,
-        tokens: TOKENS_PER_ONETIME_PURCHASE,
+        tokens: tokens,
         type: 'one-time',
         stripePaymentIntentId: paymentIntent.id,
         status: 'pending',
@@ -694,6 +705,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid quantity", details: error.errors });
+      }
       console.error("Error creating payment intent:", error);
       res.status(500).json({ error: "Error creating payment intent: " + error.message });
     }
