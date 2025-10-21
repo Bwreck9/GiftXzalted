@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
-import { Lock, X } from 'lucide-react';
+import { Lock, X, Mail } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 interface PreviewQuestionnaireModalProps {
@@ -288,6 +288,18 @@ export function PreviewQuestionnaireModal({ open, onClose }: PreviewQuestionnair
           >
             Close Preview
           </Button>
+          
+          {/* Support Link */}
+          <div className="pt-2 border-t">
+            <a
+              href="mailto:support@xzalted.com?subject=Gift%20Xzalted%20Feedback&body=Please%20describe%20your%20issue,%20bug%20finding,%20or%20enhancement%20request:"
+              className="flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
+              data-testid="support-email-link"
+            >
+              <Mail className="h-3 w-3" />
+              Found a bug or have an idea? Email support@xzalted.com
+            </a>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

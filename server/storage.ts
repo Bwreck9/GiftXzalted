@@ -171,7 +171,7 @@ export class DatabaseStorage implements IStorage {
         .from(profiles)
         .where(and(
           eq(profiles.userId, userId),
-          sql`${profiles.name} IN ('Girlfriend', 'Wife')`
+          sql`${profiles.name} IN ('Demo: Girlfriend', 'Demo: Wife')`
         ));
       
       if (existingDemoProfiles.length > 0) {
@@ -184,7 +184,7 @@ export class DatabaseStorage implements IStorage {
         .insert(profiles)
         .values({
           userId,
-          name: 'Girlfriend',
+          name: 'Demo: Girlfriend',
           color: '#EC4899', // Pink
           ageRange: 'Young Adult (20-30)',
           gender: 'Female',
@@ -202,7 +202,7 @@ export class DatabaseStorage implements IStorage {
         .insert(profiles)
         .values({
           userId,
-          name: 'Wife',
+          name: 'Demo: Wife',
           color: '#A855F7', // Purple
           ageRange: 'Adult 1 (31-50)',
           gender: 'Female',
