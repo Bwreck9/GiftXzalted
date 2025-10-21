@@ -77,48 +77,45 @@ const CheckoutForm = ({ quantity, onQuantityChange }: CheckoutFormProps) => {
         <div className="w-10" />
       </header>
 
-      <main className="flex-1 overflow-auto p-4">
-        <div className="max-w-md mx-auto space-y-6">
-          <Card className="p-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">${totalPrice.toFixed(2)}</h2>
-              <p className="text-muted-foreground">{totalTokens.toLocaleString()} query credits for AI recommendations</p>
-            </div>
-
-            <div className="mb-8 space-y-4">
-              <div className="space-y-2">
+      <main className="flex-1 overflow-auto p-4 flex items-center justify-center">
+        <div className="w-full max-w-sm space-y-4">
+          <Card className="p-6 space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Quantity</label>
+                <span className="text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                  {quantity} × ${PRICE_PER_BATCH}
+                </span>
+              </div>
+              <Slider
+                value={[quantity]}
+                onValueChange={([value]) => onQuantityChange(value)}
+                min={1}
+                max={20}
+                step={1}
+                className="w-full"
+                data-testid="slider-quantity"
+              />
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>1 batch</span>
+                <span>20 batches</span>
+              </div>
+              
+              <div className="pt-3 border-t">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-muted-foreground">Total Tokens</span>
+                  <span className="text-base font-medium">{totalTokens.toLocaleString()}</span>
+                </div>
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Quantity</label>
-                  <span className="text-sm text-muted-foreground">{quantity} batch{quantity !== 1 ? 'es' : ''}</span>
-                </div>
-                <Slider
-                  value={[quantity]}
-                  onValueChange={([value]) => onQuantityChange(value)}
-                  min={1}
-                  max={20}
-                  step={1}
-                  className="w-full"
-                  data-testid="slider-quantity"
-                />
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>$5 (5K tokens)</span>
-                  <span>$100 (100K tokens)</span>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Price per batch</span>
-                  <span className="font-medium">${PRICE_PER_BATCH.toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Tokens per batch</span>
-                  <span className="font-medium">{TOKENS_PER_BATCH.toLocaleString()}</span>
+                  <span className="text-base font-medium">Total Price</span>
+                  <span className="text-2xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    ${totalPrice.toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <PaymentElement />
               <Button
                 type="submit"
@@ -137,6 +134,10 @@ const CheckoutForm = ({ quantity, onQuantityChange }: CheckoutFormProps) => {
               </Button>
             </form>
           </Card>
+          
+          <div className="text-center text-xs text-muted-foreground px-4">
+            <p>One-time purchase • ${PRICE_PER_BATCH} per {TOKENS_PER_BATCH.toLocaleString()} tokens</p>
+          </div>
         </div>
       </main>
     </div>
@@ -183,7 +184,7 @@ export default function Checkout() {
 
   const handleQuantityChange = (newQuantity: number) => {
     setQuantity(newQuantity);
-    setClientSecret(""); // Reset to show loading while new payment intent is created
+    // Don't reset clientSecret to avoid page blink - let the new payment intent load in background
   };
 
   if (!clientSecret) {

@@ -27,7 +27,7 @@ export function PreviewQuestionnaireModal({ open, onClose }: PreviewQuestionnair
             <div className="flex items-center gap-2">
               <Lock className="h-5 w-5" />
               <div>
-                <h3 className="font-semibold">🔒 AI Training Required</h3>
+                <h3 className="font-semibold">AI Training Required</h3>
                 <p className="text-sm text-white/90">Preview of our comprehensive questionnaire. Get AI recommendations by training a profile!</p>
               </div>
             </div>
