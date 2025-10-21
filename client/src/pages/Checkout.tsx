@@ -147,17 +147,39 @@ export default function Checkout() {
   const [clientSecret, setClientSecret] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
+    const abortController = new AbortController();
+    let isCurrentRequest = true;
+
     apiRequest("POST", "/api/create-payment-intent", { quantity })
       .then((res) => res.json())
       .then((data) => {
-        setClientSecret(data.clientSecret);
+        // Only update if this is still the current request
+        if (isCurrentRequest && !abortController.signal.aborted) {
+          setClientSecret(data.clientSecret);
+        }
       })
-      .catch(() => {
-        setLocation('/settings');
+      .catch((error) => {
+        // Only handle errors for current request
+        if (isCurrentRequest && !abortController.signal.aborted) {
+          console.error("Failed to create payment intent:", error);
+          toast({
+            title: "Payment Setup Failed",
+            description: "Unable to initialize payment. Please try again.",
+            variant: "destructive",
+          });
+          setLocation('/settings');
+        }
       });
-  }, [quantity, setLocation]);
+
+    // Cleanup: mark request as stale when effect re-runs or unmounts
+    return () => {
+      isCurrentRequest = false;
+      abortController.abort();
+    };
+  }, [quantity, setLocation, toast]);
 
   const handleQuantityChange = (newQuantity: number) => {
     setQuantity(newQuantity);
