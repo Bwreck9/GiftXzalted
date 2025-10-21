@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { WelcomeDialog } from '@/components/WelcomeDialog';
 import { AppHeader } from '@/components/AppHeader';
 import type { Profile } from '@shared/schema';
 import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus } from 'lucide-react';
@@ -32,7 +31,6 @@ import { useToast } from '@/hooks/use-toast';
 export default function Landing() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
-  const [showSplash, setShowSplash] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -164,13 +162,6 @@ export default function Landing() {
   if (!isAuthenticated) {
     return (
       <div className="h-screen flex flex-col">
-        <WelcomeDialog 
-          externalOpen={showSplash} 
-          onExternalClose={() => setShowSplash(false)}
-          onGiftTrackerClick={handleGiftTrackerClick}
-          onTrainAgentClick={handleTrainAgentClick}
-        />
-        
         <AppHeader />
 
         <main className="flex-1 flex items-center justify-center p-6">
@@ -180,6 +171,19 @@ export default function Landing() {
               <p className="text-lg text-muted-foreground">
                 Never forget a gift again with your free, always-available gift tracker and memory system
               </p>
+            </div>
+
+            {/* Sign In Button - Mobile First */}
+            <div className="md:hidden">
+              <Button
+                onClick={handleSignIn}
+                size="lg"
+                className="w-full max-w-md h-12 text-base hover-elevate active-elevate-2"
+                data-testid="button-signin-mobile"
+              >
+                <LogIn className="mr-2 h-5 w-5" />
+                Sign In to Get Started - It's Free
+              </Button>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6 text-left">
@@ -232,15 +236,18 @@ export default function Landing() {
               </Card>
             </div>
 
-            <Button
-              onClick={handleSignIn}
-              size="lg"
-              className="w-full max-w-md h-12 text-base hover-elevate active-elevate-2"
-              data-testid="button-signin"
-            >
-              <LogIn className="mr-2 h-5 w-5" />
-              Sign In to Get Started - It's Free
-            </Button>
+            {/* Sign In Button - Desktop */}
+            <div className="hidden md:block">
+              <Button
+                onClick={handleSignIn}
+                size="lg"
+                className="w-full max-w-md h-12 text-base hover-elevate active-elevate-2"
+                data-testid="button-signin"
+              >
+                <LogIn className="mr-2 h-5 w-5" />
+                Sign In to Get Started - It's Free
+              </Button>
+            </div>
           </div>
         </main>
 
@@ -265,16 +272,6 @@ export default function Landing() {
             >
               <DollarSign className="h-4 w-4 mr-2" />
               Pricing
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSplash(true)}
-              data-testid="button-splash"
-              className="hover-elevate"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Splash
             </Button>
           </div>
           <div className="flex items-center justify-center gap-4 px-6 py-2 text-xs text-muted-foreground border-t">
@@ -301,12 +298,6 @@ export default function Landing() {
 
   return (
     <div className="h-screen flex flex-col">
-      <WelcomeDialog 
-        externalOpen={showSplash} 
-        onExternalClose={() => setShowSplash(false)}
-        onGiftTrackerClick={handleGiftTrackerClick}
-        onTrainAgentClick={handleTrainAgentClick}
-      />
       <SettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
@@ -464,16 +455,6 @@ export default function Landing() {
           >
             <FileText className="h-4 w-4 mr-2" />
             About
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowSplash(true)}
-            data-testid="button-splash"
-            className="hover-elevate"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Splash
           </Button>
         </div>
         <div className="flex items-center justify-center gap-4 px-6 py-2 text-xs text-muted-foreground border-t">

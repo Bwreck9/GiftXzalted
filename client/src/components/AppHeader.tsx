@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
-import { Gift, User, Settings, Coins, Moon, Sun, LogOut } from 'lucide-react';
+import { Gift, User, Settings, Coins, Moon, Sun, LogOut, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 export function AppHeader() {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -79,20 +79,32 @@ export function AppHeader() {
                 )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => setLocation('/settings')}
-                data-testid="menu-item-settings"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => window.location.href = '/api/logout'}
-                data-testid="menu-item-sign-out"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </DropdownMenuItem>
+              {isAuthenticated && (
+                <DropdownMenuItem 
+                  onClick={() => setLocation('/settings')}
+                  data-testid="menu-item-settings"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+              )}
+              {isAuthenticated ? (
+                <DropdownMenuItem 
+                  onClick={() => window.location.href = '/api/logout'}
+                  data-testid="menu-item-sign-out"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem 
+                  onClick={() => window.location.href = '/api/login'}
+                  data-testid="menu-item-sign-in"
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Sign In
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

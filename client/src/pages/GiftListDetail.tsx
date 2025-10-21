@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sparkles, Plus, X, Brain, ArrowLeft, Settings, Pencil, Trash2, Info } from 'lucide-react';
+import { Sparkles, Plus, X, Brain, ArrowLeft, Settings, Pencil, Trash2, Info, Loader2 } from 'lucide-react';
 import type { GiftList, Profile } from '@shared/schema';
 import { AppHeader } from '@/components/AppHeader';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -91,6 +91,26 @@ export default function GiftListDetail() {
 
   const generateMutation = useMutation({
     mutationFn: async () => {
+      // Optimistically deduct 500 tokens from the user's token count
+      if (user) {
+        queryClient.setQueryData(['/api/auth/user'], (oldData: any) => {
+          if (!oldData) return oldData;
+          const totalTokens = (oldData.tokens ?? 0) + (oldData.purchasedTokens ?? 0);
+          if (totalTokens < 500) return oldData;
+          
+          // Deduct from purchased tokens first, then subscription tokens
+          const newPurchasedTokens = Math.max(0, (oldData.purchasedTokens ?? 0) - 500);
+          const remainingToDeduct = 500 - ((oldData.purchasedTokens ?? 0) - newPurchasedTokens);
+          const newTokens = remainingToDeduct > 0 ? Math.max(0, (oldData.tokens ?? 0) - remainingToDeduct) : oldData.tokens;
+          
+          return {
+            ...oldData,
+            tokens: newTokens,
+            purchasedTokens: newPurchasedTokens,
+          };
+        });
+      }
+
       const res = await apiRequest('POST', '/api/messages', {
         profileId: giftList?.profileId,
         giftListId: id,
@@ -135,6 +155,11 @@ export default function GiftListDetail() {
       toast({ title: 'Premium recommendations generated!' });
     },
     onError: (error: any) => {
+      // Revert optimistic update on error
+      if (user) {
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      }
+      
       const errorMessage = error.message || 'Please try again';
       if (errorMessage.includes('Insufficient tokens')) {
         toast({
@@ -345,8 +370,17 @@ export default function GiftListDetail() {
               }`}
               data-testid="button-generate-ideas"
             >
-              <Sparkles className="h-4 w-4 mr-2" />
-              {generateMutation.isPending ? 'Generating...' : 'Generate ideas'}
+              {generateMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate ideas
+                </>
+              )}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
