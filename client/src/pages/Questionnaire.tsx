@@ -623,7 +623,7 @@ export default function Questionnaire() {
                   name="relationship"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>What's your relationship to them?</FormLabel>
+                      <FormLabel>What's your relationship type?</FormLabel>
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
