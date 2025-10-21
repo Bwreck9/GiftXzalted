@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { insertProfileSchema, type InsertProfile } from '@shared/schema';
+import { insertProfileSchema, type InsertProfile, type Profile } from '@shared/schema';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { z } from 'zod';
 
 const formSchema = insertProfileSchema.omit({
@@ -31,10 +38,12 @@ interface QuestionnaireDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: Partial<InsertProfile>) => void;
   isSubmitting?: boolean;
+  existingProfile?: Profile;
 }
 
-export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting }: QuestionnaireDialogProps) {
+export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting, existingProfile }: QuestionnaireDialogProps) {
   const [customGender, setCustomGender] = useState('');
+  const [customPersonalityOther, setCustomPersonalityOther] = useState('');
   const [additionalNotesCount, setAdditionalNotesCount] = useState(0);
 
   const form = useForm<FormValues>({
@@ -55,12 +64,38 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
     },
   });
 
+  // Pre-fill form when existingProfile changes
+  useEffect(() => {
+    if (existingProfile) {
+      form.reset({
+        ageRange: existingProfile.ageRange as any,
+        gender: existingProfile.gender as any,
+        personalityTraits: (existingProfile.personalityTraits || []) as any,
+        interests: existingProfile.interests || undefined,
+        relationship: existingProfile.relationship as any,
+        closeness: existingProfile.closeness as any,
+        budget: existingProfile.budget as any,
+        giftPreferences: (existingProfile.giftPreferences || []) as any,
+        dislikes: existingProfile.dislikes || undefined,
+        giftStyle: existingProfile.giftStyle as any,
+        location: existingProfile.location || undefined,
+        additionalNotes: existingProfile.additionalNotes || undefined,
+      });
+      setAdditionalNotesCount(existingProfile.additionalNotes?.length || 0);
+    }
+  }, [existingProfile, form]);
+
   const handleSubmit = (data: FormValues) => {
-    onSubmit(data);
+    const submitData = {
+      ...data,
+      ...(data.personalityTraits?.includes('Other') && customPersonalityOther ? { customPersonalityOther } : {}),
+    };
+    onSubmit(submitData);
     onOpenChange(false);
   };
 
   const gender = form.watch('gender');
+  const personalityTraits = form.watch('personalityTraits');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -68,7 +103,7 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
         <DialogHeader>
           <DialogTitle>Train Agent</DialogTitle>
           <DialogDescription>
-            Help our AI understand this person better by answering these questions
+            Help our AI understand {existingProfile?.name || 'this person'} better by answering these questions
           </DialogDescription>
         </DialogHeader>
 
@@ -81,14 +116,14 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                 name="ageRange"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>What's their age range?</FormLabel>
+                    <FormLabel>What's {existingProfile?.name ? `${existingProfile.name}'s` : 'their'} age range?</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
                         value={field.value}
                         className="grid grid-cols-2 sm:grid-cols-3 gap-3"
                       >
-                        {['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult (31-50)', 'Senior (50+)'].map((age) => (
+                        {['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult 1 (31-50)', 'Adult 2 (51-70)', 'Senior 70+'].map((age) => (
                           <Card key={age} className="hover-elevate">
                             <label className="flex items-center gap-2 p-3 cursor-pointer">
                               <RadioGroupItem 
@@ -120,7 +155,7 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                         value={field.value}
                         className="grid grid-cols-2 gap-3"
                       >
-                        {['Male', 'Female', 'Non-binary', 'Other'].map((g) => (
+                        {['Male', 'Female', 'Other'].map((g) => (
                           <Card key={g} className="hover-elevate">
                             <label className="flex items-center gap-2 p-3 cursor-pointer">
                               <RadioGroupItem 
@@ -160,10 +195,10 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                 name="personalityTraits"
                 render={() => (
                   <FormItem>
-                    <FormLabel>How would you describe their personality?</FormLabel>
+                    <FormLabel>How would you describe {existingProfile?.name ? `${existingProfile.name}'s` : 'their'} personality?</FormLabel>
                     <FormDescription className="text-xs">Select all that apply</FormDescription>
                     <div className="grid grid-cols-2 gap-3 mt-2">
-                      {['Adventurous', 'Thoughtful', 'Funny/Lighthearted', 'Introverted', 'Outgoing', 'Artistic', 'Tech-savvy', 'Sentimental'].map((trait) => (
+                      {['Adventurous', 'Thoughtful', 'Funny/Lighthearted', 'Introverted', 'Outgoing', 'Artistic', 'Tech-savvy', 'Sentimental', 'Other'].map((trait) => (
                         <FormField
                           key={trait}
                           control={form.control}
@@ -194,6 +229,18 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                         />
                       ))}
                     </div>
+                    {personalityTraits?.includes('Other') && (
+                      <div className="mt-3">
+                        <Input
+                          placeholder="Describe their personality..."
+                          value={customPersonalityOther}
+                          onChange={(e) => setCustomPersonalityOther(e.target.value)}
+                          maxLength={200}
+                          data-testid="input-custom-personality"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Keep it concise - use keywords, not sentences</p>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -227,14 +274,14 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                 name="relationship"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>What's your relationship to them?</FormLabel>
+                    <FormLabel>What's your relationship to {existingProfile?.name || 'them'}?</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
                         value={field.value}
                         className="grid grid-cols-2 sm:grid-cols-3 gap-3"
                       >
-                        {['Partner', 'Family', 'Friend', 'Coworker', 'Acquaintance'].map((rel) => (
+                        {['Partner', 'Family', 'Friend', 'Coworker', 'Acquaintance', 'Classmate'].map((rel) => (
                           <Card key={rel} className="hover-elevate">
                             <label className="flex items-center gap-2 p-3 cursor-pointer">
                               <RadioGroupItem 
@@ -292,26 +339,22 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>What's your budget range for gifts?</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="grid grid-cols-2 gap-3"
-                      >
-                        {['Under $25', '$25-$50', '$50-$100', '$100+'].map((budg) => (
-                          <Card key={budg} className="hover-elevate">
-                            <label className="flex items-center gap-2 p-3 cursor-pointer">
-                              <RadioGroupItem 
-                                value={budg} 
-                                id={`budget-${budg}`}
-                                data-testid={`radio-budget-${budg.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
-                              />
-                              <span className="text-sm">{budg}</span>
-                            </label>
-                          </Card>
-                        ))}
-                      </RadioGroup>
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-budget">
+                          <SelectValue placeholder="Select budget range" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Under $25">Under $25</SelectItem>
+                        <SelectItem value="$25-$50">$25-$50</SelectItem>
+                        <SelectItem value="$50-$100">$50-$100</SelectItem>
+                        <SelectItem value="$100-$500">$100-$500</SelectItem>
+                        <SelectItem value="$500-$1,000">$500-$1,000</SelectItem>
+                        <SelectItem value="$1,000-$10,000">$1,000-$10,000</SelectItem>
+                        <SelectItem value="$10,000+">$10,000+</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

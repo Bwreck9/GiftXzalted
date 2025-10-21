@@ -128,6 +128,7 @@ export default function ProfileDetail() {
         onOpenChange={setQuestionnaireOpen}
         onSubmit={(data) => updateProfileMutation.mutate(data)}
         isSubmitting={updateProfileMutation.isPending}
+        existingProfile={profile}
       />
 
       <AppHeader />
