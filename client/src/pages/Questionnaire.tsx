@@ -269,6 +269,7 @@ export default function Questionnaire() {
   };
 
   const [customGender, setCustomGender] = useState('');
+  const [customPersonalityOther, setCustomPersonalityOther] = useState('');
   const [additionalNotesCount, setAdditionalNotesCount] = useState(0);
   const gender = form.watch('gender');
 
@@ -323,8 +324,14 @@ export default function Questionnaire() {
               {/* Section 1: About the Recipient */}
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-semibold mb-1">About the Recipient</h2>
-                  <p className="text-sm text-muted-foreground">Tell us about the person you're shopping for</p>
+                  <h2 className="text-xl font-semibold mb-1">
+                    {existingProfile?.name ? `About ${existingProfile.name}` : 'About the Recipient'}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {existingProfile?.name 
+                      ? `Tell us about ${existingProfile.name}` 
+                      : 'Tell us about the person you\'re shopping for'}
+                  </p>
                 </div>
 
                 {/* Profile Name - Display only if editing, input if creating */}
@@ -374,7 +381,7 @@ export default function Questionnaire() {
                           value={field.value}
                           className="grid grid-cols-2 gap-3"
                         >
-                          {['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult (31-50)', 'Senior (50+)'].map((range) => (
+                          {['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult 1 (31-50)', 'Adult 2 (51-70)', 'Senior 70+'].map((range) => (
                             <Card key={range} className="hover-elevate">
                               <label className="flex items-center gap-3 p-3 cursor-pointer">
                                 <RadioGroupItem value={range} data-testid={`radio-age-${range.toLowerCase().replace(/[^a-z0-9]/g, '-')}`} />
@@ -446,7 +453,7 @@ export default function Questionnaire() {
                   render={() => (
                     <FormItem>
                       <FormLabel>How would you describe their personality?</FormLabel>
-                      <FormDescription className="text-xs">Select all that apply</FormDescription>
+                      <FormDescription className="text-xs">Select all that apply — use keywords, not sentences</FormDescription>
                       <div className="grid grid-cols-2 gap-3 mt-2">
                         {['Adventurous', 'Thoughtful', 'Funny/Lighthearted', 'Introverted', 'Outgoing', 'Artistic', 'Tech-savvy', 'Sentimental'].map((trait) => (
                           <FormField
@@ -479,6 +486,51 @@ export default function Questionnaire() {
                           />
                         ))}
                       </div>
+                      
+                      {/* Other Personality Trait */}
+                      <FormField
+                        control={form.control}
+                        name="personalityTraits"
+                        render={({ field }) => {
+                          const hasOther = field.value?.includes('Other' as any);
+                          return (
+                            <div className="mt-3">
+                              <Card className="hover-elevate">
+                                <label className="flex items-center gap-3 p-3 cursor-pointer">
+                                  <Checkbox
+                                    checked={hasOther}
+                                    onCheckedChange={(checked) => {
+                                      const current = field.value || [];
+                                      if (checked) {
+                                        field.onChange([...current, 'Other' as any]);
+                                      } else {
+                                        field.onChange(current.filter((t) => t !== 'Other'));
+                                        setCustomPersonalityOther('');
+                                      }
+                                    }}
+                                    data-testid="checkbox-personality-other"
+                                  />
+                                  <span className="text-sm">Other</span>
+                                </label>
+                              </Card>
+                              {hasOther && (
+                                <div className="mt-2">
+                                  <Input
+                                    placeholder="Enter personality traits (e.g., ambitious, creative)"
+                                    maxLength={200}
+                                    value={customPersonalityOther}
+                                    onChange={(e) => setCustomPersonalityOther(e.target.value)}
+                                    data-testid="input-custom-personality"
+                                  />
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {customPersonalityOther.length}/200 characters
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}

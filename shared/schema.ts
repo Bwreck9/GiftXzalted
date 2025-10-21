@@ -41,13 +41,13 @@ export const profiles = pgTable("profiles", {
   color: text("color").notNull().default('#3B82F6'), // Profile card color (hex or preset key)
   
   // Questionnaire fields - all optional until questionnaire is completed
-  ageRange: text("age_range"), // 'Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult (31-50)', 'Senior (50+)'
+  ageRange: text("age_range"), // 'Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult 1 (31-50)', 'Adult 2 (51-70)', 'Senior 70+'
   gender: text("gender"), // 'Male', 'Female', or custom text if 'Other'
-  personalityTraits: text("personality_traits").array().default(sql`ARRAY[]::text[]`), // Multi-select: Adventurous, Thoughtful, etc.
+  personalityTraits: text("personality_traits").array().default(sql`ARRAY[]::text[]`), // Multi-select: Adventurous, Thoughtful, Other, etc.
   interests: text("interests"), // Hobbies and interests (text field)
-  relationship: text("relationship"), // Partner, Family, Friend, Coworker, Acquaintance
+  relationship: text("relationship"), // Partner, Family, Friend, Coworker, Acquaintance, Classmate
   closeness: text("closeness"), // Very close, Somewhat close, Casual
-  budget: text("budget"), // Under $25, $25-$50, $50-$100, $100+
+  budget: text("budget"), // Under $25, $25-$50, $50-$100, $100-$500, $500-$1,000, $1,000+, $10,000+
   giftPreferences: text("gift_preferences").array().default(sql`ARRAY[]::text[]`), // Multi-select: Practical, Sentimental, Experiences, Funny/novelty
   dislikes: text("dislikes"), // No-go areas (text field)
   giftStyle: text("gift_style"), // 'unique-thoughtful' or 'safe-popular'
@@ -152,13 +152,13 @@ export const insertProfileSchema = createInsertSchema(profiles).omit({
   color: z.string().optional(), // Hex color or preset key
   
   // Questionnaire fields - all optional
-  ageRange: z.enum(['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult (31-50)', 'Senior (50+)']).optional(),
+  ageRange: z.enum(['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult 1 (31-50)', 'Adult 2 (51-70)', 'Senior 70+']).optional(),
   gender: z.string().max(500).optional(), // Male, Female, or custom text (500 char limit for custom)
-  personalityTraits: z.array(z.enum(['Adventurous', 'Thoughtful', 'Funny/Lighthearted', 'Introverted', 'Outgoing', 'Artistic', 'Tech-savvy', 'Sentimental'])).optional(),
+  personalityTraits: z.array(z.enum(['Adventurous', 'Thoughtful', 'Funny/Lighthearted', 'Introverted', 'Outgoing', 'Artistic', 'Tech-savvy', 'Sentimental', 'Other'])).optional(),
   interests: z.string().max(500).optional(), // Text field for interests
-  relationship: z.enum(['Partner', 'Family', 'Friend', 'Coworker', 'Acquaintance']).optional(),
+  relationship: z.enum(['Partner', 'Family', 'Friend', 'Coworker', 'Acquaintance', 'Classmate']).optional(),
   closeness: z.enum(['Very close', 'Somewhat close', 'Casual']).optional(),
-  budget: z.enum(['Under $25', '$25-$50', '$50-$100', '$100+']).optional(),
+  budget: z.enum(['Under $25', '$25-$50', '$50-$100', '$100-$500', '$500-$1,000', '$1,000+', '$10,000+']).optional(),
   giftPreferences: z.array(z.enum(['Practical gifts', 'Sentimental/personalized gifts', 'Experiences', 'Funny/novelty items'])).optional(),
   dislikes: z.string().max(500).optional(), // No-go areas
   giftStyle: z.enum(['unique-thoughtful', 'safe-popular']).optional(),
