@@ -28,6 +28,10 @@ const PROFILE_LIMITS = {
   enterprise: 100
 };
 
+// Gift list and idea limits
+const GIFT_LIST_LIMIT = 25; // Maximum gift lists per profile
+const MANUAL_IDEA_LIMIT = 100; // Maximum manual gift ideas per list
+
 // Monthly subscription tokens (reset monthly, don't stack)
 const SUBSCRIPTION_TOKENS = {
   basic: 10000,      // $5/month gets 10,000 tokens/month
@@ -884,6 +888,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Forbidden" });
       }
 
+      // Check gift list limit
+      const existingLists = await storage.getGiftListsByProfileId(profileId);
+      if (existingLists.length >= GIFT_LIST_LIMIT) {
+        return res.status(400).json({ 
+          error: `Gift list limit reached. You can have up to ${GIFT_LIST_LIMIT} lists per profile. Delete some lists to create new ones.`,
+          code: 'GIFT_LIST_LIMIT'
+        });
+      }
+
       const { eventDate, ...bodyData } = req.body;
       
       const validated = insertGiftListSchema.parse({
@@ -923,6 +936,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Don't allow changing profileId
       const { profileId: _, eventDate, ...updates } = req.body;
+      
+      // Check manual ideas limit if manualIdeas are being updated
+      if (updates.manualIdeas !== undefined) {
+        // Filter out empty strings and trim
+        const cleanedIdeas = updates.manualIdeas
+          .map((idea: string) => idea.trim())
+          .filter((idea: string) => idea.length > 0);
+        
+        if (cleanedIdeas.length > MANUAL_IDEA_LIMIT) {
+          return res.status(400).json({ 
+            error: `Gift idea limit reached. You can have up to ${MANUAL_IDEA_LIMIT} ideas per list. Delete some ideas to add new ones.`,
+            code: 'MANUAL_IDEA_LIMIT'
+          });
+        }
+        
+        // Use the cleaned ideas
+        updates.manualIdeas = cleanedIdeas;
+      }
       
       // Convert eventDate string to Date object if provided
       const processedUpdates: any = { ...updates };
