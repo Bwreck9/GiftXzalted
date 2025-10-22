@@ -12,9 +12,17 @@ export default function Pricing() {
   const { user } = useAuth();
   const [showPreview, setShowPreview] = useState(false);
 
-  const handleGetStarted = () => {
+  const handleBuyTokens = () => {
     if (user) {
       setLocation('/checkout');
+    } else {
+      setLocation('/');
+    }
+  };
+
+  const handleSubscribe = () => {
+    if (user) {
+      setLocation('/subscribe');
     } else {
       setLocation('/');
     }
@@ -78,7 +86,7 @@ export default function Pricing() {
                   <div className="text-sm text-muted-foreground">Starting as low as</div>
                   <div className="text-3xl font-bold">$5</div>
                   <Button
-                    onClick={handleGetStarted}
+                    onClick={handleBuyTokens}
                     variant="outline"
                     className="hover-elevate active-elevate-2"
                     data-testid="button-buy-tokens"
@@ -192,7 +200,7 @@ export default function Pricing() {
                 </div>
 
                 <Button
-                  onClick={handleGetStarted}
+                  onClick={handleSubscribe}
                   className="w-full bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
                   data-testid="button-basic-plan"
                 >
@@ -235,7 +243,7 @@ export default function Pricing() {
                 </div>
 
                 <Button
-                  onClick={handleGetStarted}
+                  onClick={handleSubscribe}
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
                   data-testid="button-premium-plan"
                 >
@@ -282,7 +290,7 @@ export default function Pricing() {
                 </div>
 
                 <Button
-                  onClick={handleGetStarted}
+                  onClick={handleSubscribe}
                   className="w-full bg-gradient-to-r from-pink-600 to-primary hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
                   data-testid="button-enterprise-plan"
                 >

@@ -16,6 +16,7 @@ import Pricing from "@/pages/Pricing";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsConditions from "@/pages/TermsConditions";
 import Checkout from "@/pages/Checkout";
+import Subscribe from "@/pages/Subscribe";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import GiftLists from "@/pages/GiftLists";
 import GiftListDetail from "@/pages/GiftListDetail";
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsConditions} />
       <Route path="/checkout" component={Checkout} />
+      <Route path="/subscribe" component={Subscribe} />
       <Route path="/payment-success" component={PaymentSuccess} />
       <Route component={NotFound} />
     </Switch>

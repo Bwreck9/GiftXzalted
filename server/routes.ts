@@ -769,15 +769,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         items: [{
           price_data: {
             currency: 'usd',
-            product_data: {
-              name: `Gift Xzalted ${plan.name}`,
-              description: `${plan.tokens.toLocaleString()} tokens/month`,
-            },
+            product: `prod_giftxzalted_${planId}`, // Use a consistent product ID per plan
             unit_amount: plan.price * 100, // Convert to cents
             recurring: {
               interval: 'month',
             },
-          },
+          } as any, // Type assertion for inline price creation
         }],
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
