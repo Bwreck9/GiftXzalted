@@ -884,9 +884,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Forbidden" });
       }
 
+      const { eventDate, ...bodyData } = req.body;
+      
       const validated = insertGiftListSchema.parse({
-        ...req.body,
+        ...bodyData,
         profileId,
+        eventDate: eventDate ? new Date(eventDate) : undefined,
       });
 
       const list = await storage.createGiftList(validated);
@@ -919,8 +922,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Don't allow changing profileId
-      const { profileId: _, ...updates } = req.body;
-      const updatedList = await storage.updateGiftList(id, updates);
+      const { profileId: _, eventDate, ...updates } = req.body;
+      
+      // Convert eventDate string to Date object if provided
+      const processedUpdates: any = { ...updates };
+      if (eventDate !== undefined) {
+        processedUpdates.eventDate = eventDate ? new Date(eventDate) : null;
+      }
+      
+      const updatedList = await storage.updateGiftList(id, processedUpdates);
       res.json(updatedList);
     } catch (error: any) {
       if (error instanceof z.ZodError) {

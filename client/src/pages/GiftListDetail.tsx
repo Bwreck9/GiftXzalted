@@ -625,9 +625,12 @@ export default function GiftListDetail() {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            {giftList.eventDate && (
+            {(giftList.eventDate || newEventDate) && (
               <Button
-                onClick={() => updateDateMutation.mutate(null)}
+                onClick={() => {
+                  updateDateMutation.mutate(null);
+                  setNewEventDate('');
+                }}
                 variant="outline"
                 disabled={updateDateMutation.isPending}
                 data-testid="button-clear-date"
