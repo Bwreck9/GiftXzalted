@@ -46,7 +46,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
   - "Generate ideas" button for AI recommendations (500 tokens per generation, generates 10 ideas) - always clickable, shows helpful dialog with pricing link when tokens insufficient
   - Empty state messaging ("No generations yet") when AI recommendations haven't been created
   - **Session-based Duplicate Prevention:** AI tracks previously generated ideas during current page session to avoid suggesting duplicates across multiple generations. Session state resets on navigation, making generated ideas ephemeral unless manually added to persistent list. Backend passes `alreadyGeneratedIdeas` to OpenAI with avoidance instruction. Frontend normalizes titles (trim, lowercase) and uses Set-based deduplication. Disclaimer below generated ideas: "These AI suggestions are temporary. Add your favorites to the manual list above to save them permanently."
-- **Landing Page (Non-Authenticated):** Features four gradient-styled cards highlighting app benefits: free unlimited gift tracker, memory/organization features, AI-powered recommendations, and multi-list organization capabilities. Includes "See Full Questionnaire" button to preview modal.
+- **Landing Page (Non-Authenticated):** Features four gradient-styled cards highlighting app benefits: free unlimited gift tracker, memory/organization features, AI-powered recommendations, and multi-list organization capabilities. Includes "See Full Questionnaire" button to preview modal. Theme toggle card allows users to switch between light/dark mode directly on landing page for immediate good first impression.
 - **Pricing Page:** Profile plans (Free, Basic, Premium, Enterprise) grouped in a gradient-styled container. One-time token purchase displayed below subscription plans.
 - **Checkout Page:** Mini-checkout UX with centered max-w-sm card, gradient quantity display (X × $5), prominent total price below slider with gradient text, compact layout showing total tokens and price. No scroll blink when quantity changes (1-20 batches).
 
@@ -80,6 +80,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
     - **Premium Subscription:** $20/month for 50,000 tokens + up to 20 profiles.
     - **Enterprise Subscription:** $100/month for 200,000 tokens + 100 profiles.
 - **Legal Pages:** Dedicated Privacy Policy and Terms & Conditions pages, accessible via footer links, compliant with app store requirements including third-party service disclosures and data retention policies.
+- **Support Page:** Dedicated support page (accessible via footer link) with email contact form. Form opens user's email client with pre-filled message to support@xzalted.com. Includes direct email link and back button navigation.
 - **Progressive Web App (PWA):** Full PWA support enables installation on desktop and mobile devices:
   - **Web App Manifest** (`client/public/manifest.json`): Defines app metadata, theme colors (#3b82f6), display mode (standalone), app icons (192px, 512px), and shortcuts
   - **Service Worker** (`client/public/service-worker.js`): Implements intelligent caching strategies:
