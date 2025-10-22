@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { X } from 'lucide-react';
 import type { Profile } from '@shared/schema';
 
 interface SettingsModalProps {
@@ -64,7 +65,17 @@ export function SettingsModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md" data-testid="settings-modal">
-        <DialogHeader>
+        <DialogHeader className="relative">
+          <Button
+            onClick={() => onOpenChange(false)}
+            variant="ghost"
+            size="icon"
+            className="absolute right-0 top-0 hover-elevate"
+            data-testid="settings-close-top"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </Button>
           <DialogTitle>Profile Settings</DialogTitle>
           <DialogDescription>
             Manage settings for {profile.name}
@@ -154,6 +165,15 @@ export function SettingsModal({
               data-testid="settings-delete"
             >
               Delete Profile
+            </Button>
+            <Button
+              onClick={() => onOpenChange(false)}
+              variant="outline"
+              className="w-full border-2 border-foreground/20 font-semibold hover-elevate active-elevate-2"
+              data-testid="settings-close-bottom"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Close
             </Button>
           </div>
         </div>

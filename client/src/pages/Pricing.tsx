@@ -70,10 +70,12 @@ export default function Pricing() {
                 <div>
                   <h3 className="text-xl font-bold mb-2">Buy Tokens</h3>
                   <p className="text-muted-foreground">
-                    Purchase <strong>5,000 tokens</strong> for $5 – no subscription required.
+                    Purchase <strong>5,000 tokens</strong> for $5.<br className="md:hidden" />
+                    <span className="block md:inline"> No subscription required.</span>
                   </p>
                 </div>
                 <div className="flex flex-col items-start md:items-end gap-2">
+                  <div className="text-sm text-muted-foreground">Starting as low as</div>
                   <div className="text-3xl font-bold">$5</div>
                   <Button
                     onClick={handleGetStarted}
