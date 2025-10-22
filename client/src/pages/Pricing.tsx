@@ -150,14 +150,6 @@ export default function Pricing() {
                     <Eye className="h-4 w-4 mr-2" />
                     Preview Questionnaire
                   </Button>
-                  <Button
-                    onClick={() => setLocation('/')}
-                    variant="ghost"
-                    className="w-full hover-elevate active-elevate-2"
-                    data-testid="button-free-account"
-                  >
-                    Create Free Account
-                  </Button>
                 </div>
               </div>
             </Card>

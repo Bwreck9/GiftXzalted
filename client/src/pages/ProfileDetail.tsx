@@ -32,6 +32,7 @@ export default function ProfileDetail() {
   const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
+  const [newListDate, setNewListDate] = useState<string>('');
   
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -67,14 +68,15 @@ export default function ProfileDetail() {
   });
 
   const createListMutation = useMutation({
-    mutationFn: async (title: string) => {
-      return apiRequest('POST', `/api/profiles/${id}/gift-lists`, { title });
+    mutationFn: async (data: { title: string; eventDate?: string }) => {
+      return apiRequest('POST', `/api/profiles/${id}/gift-lists`, data);
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles', id, 'gift-lists'] });
       toast({ title: 'Gift list created successfully' });
       setCreateDialogOpen(false);
       setNewListName('');
+      setNewListDate('');
       response.json().then((list: GiftList) => {
         setLocation(`/gift-list/${list.id}`);
       });
@@ -102,7 +104,10 @@ export default function ProfileDetail() {
       toast({ title: 'Please enter a name', variant: 'destructive' });
       return;
     }
-    createListMutation.mutate(newListName);
+    createListMutation.mutate({ 
+      title: newListName,
+      eventDate: newListDate || undefined,
+    });
   };
 
   if (profileLoading) {
@@ -269,6 +274,17 @@ export default function ProfileDetail() {
                 }}
                 maxLength={20}
                 data-testid="input-list-name"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="list-date">Event Date (Optional)</Label>
+              <Input
+                id="list-date"
+                type="date"
+                value={newListDate}
+                onChange={(e) => setNewListDate(e.target.value)}
+                data-testid="input-list-date"
               />
             </div>
             

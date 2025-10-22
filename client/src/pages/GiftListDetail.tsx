@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sparkles, Plus, X, Brain, ArrowLeft, Settings, Pencil, Trash2, Info, Loader2 } from 'lucide-react';
+import { Sparkles, Plus, X, Brain, ArrowLeft, Settings, Pencil, Trash2, Info, Loader2, Calendar } from 'lucide-react';
 import type { GiftList, Profile } from '@shared/schema';
 import { AppHeader } from '@/components/AppHeader';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -40,6 +40,8 @@ export default function GiftListDetail() {
   const [questionnaireDialogOpen, setQuestionnaireDialogOpen] = useState(false);
   const [needTokensDialogOpen, setNeedTokensDialogOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
+  const [editDateDialogOpen, setEditDateDialogOpen] = useState(false);
+  const [newEventDate, setNewEventDate] = useState('');
   const [shouldTriggerGenerate, setShouldTriggerGenerate] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('trigger') === 'generate';
@@ -195,6 +197,24 @@ export default function GiftListDetail() {
     },
     onError: () => {
       toast({ title: 'Failed to rename list', variant: 'destructive' });
+    },
+  });
+
+  const updateDateMutation = useMutation({
+    mutationFn: async (eventDate: string | null) => {
+      return apiRequest('PATCH', `/api/gift-lists/${id}`, { eventDate });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
+      if (giftList?.profileId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/profiles', giftList.profileId, 'gift-lists'] });
+      }
+      toast({ title: 'Event date updated successfully' });
+      setEditDateDialogOpen(false);
+      setNewEventDate('');
+    },
+    onError: () => {
+      toast({ title: 'Failed to update event date', variant: 'destructive' });
     },
   });
 
@@ -357,7 +377,19 @@ export default function GiftListDetail() {
       {/* Gift List Actions Bar */}
       <div className="border-b px-6 py-3 bg-card">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{giftList.title}</h2>
+          <div>
+            <h2 className="text-lg font-semibold">{giftList.title}</h2>
+            {giftList.eventDate && (
+              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1" data-testid="text-event-date">
+                <Calendar className="h-3 w-3" />
+                {new Date(giftList.eventDate).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </p>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Button
               onClick={handleGenerate}
@@ -400,6 +432,19 @@ export default function GiftListDetail() {
                 >
                   <Pencil className="h-4 w-4 mr-2" />
                   Rename list
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    const currentDate = giftList?.eventDate 
+                      ? new Date(giftList.eventDate).toISOString().split('T')[0]
+                      : '';
+                    setNewEventDate(currentDate);
+                    setEditDateDialogOpen(true);
+                  }}
+                  data-testid="menu-item-edit-date"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Edit date
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive"
@@ -554,6 +599,49 @@ export default function GiftListDetail() {
               data-testid="button-rename-list-submit"
             >
               {renameListMutation.isPending ? 'Renaming...' : 'Rename'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDateDialogOpen} onOpenChange={setEditDateDialogOpen}>
+        <DialogContent data-testid="dialog-edit-date">
+          <DialogHeader>
+            <DialogTitle>Edit Event Date</DialogTitle>
+            <DialogDescription>
+              Set the date for this occasion
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="event-date">Event Date</Label>
+              <Input
+                id="event-date"
+                type="date"
+                value={newEventDate}
+                onChange={(e) => setNewEventDate(e.target.value)}
+                data-testid="input-event-date"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            {giftList.eventDate && (
+              <Button
+                onClick={() => updateDateMutation.mutate(null)}
+                variant="outline"
+                disabled={updateDateMutation.isPending}
+                data-testid="button-clear-date"
+              >
+                Clear Date
+              </Button>
+            )}
+            <Button
+              onClick={() => updateDateMutation.mutate(newEventDate || null)}
+              disabled={updateDateMutation.isPending}
+              className="hover-elevate active-elevate-2"
+              data-testid="button-save-date"
+            >
+              {updateDateMutation.isPending ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>
