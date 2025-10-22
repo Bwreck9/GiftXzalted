@@ -197,7 +197,7 @@ export default function Landing() {
                   <h3 className="font-semibold text-foreground">Free Gift Tracker</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Create unlimited profiles and gift lists to keep track of ideas for everyone you care about. All completely free, forever.
+                  Create up to 5 profiles with unlimited gift lists to keep track of ideas for everyone you care about. Need more? Check out our plans.
                 </p>
               </Card>
 

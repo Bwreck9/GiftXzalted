@@ -36,10 +36,11 @@ export default function GiftLists() {
         description: "Your gift list has been created successfully",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMsg = error?.message || "Failed to create gift list";
       toast({
         title: "Error",
-        description: "Failed to create gift list",
+        description: errorMsg,
         variant: "destructive",
       });
     },

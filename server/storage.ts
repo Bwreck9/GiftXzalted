@@ -180,24 +180,7 @@ export class DatabaseStorage implements IStorage {
       }
       
       // New user with no profiles - create demo profiles
-      const [girlfriendProfile] = await tx
-        .insert(profiles)
-        .values({
-          userId,
-          name: 'Demo: Girlfriend',
-          color: '#EC4899', // Pink
-          ageRange: 'Young Adult (20-30)',
-          gender: 'Female',
-          personalityTraits: ['Thoughtful', 'Sentimental'],
-          interests: 'fashion, coffee, photography, reading',
-          relationship: 'Partner',
-          closeness: 'Very close',
-          budget: '$50-$100',
-          giftPreferences: ['Sentimental/personalized gifts', 'Experiences'],
-          giftStyle: 'unique-thoughtful',
-        })
-        .returning();
-
+      // Wife first, then Girlfriend
       const [wifeProfile] = await tx
         .insert(profiles)
         .values({
@@ -212,6 +195,24 @@ export class DatabaseStorage implements IStorage {
           closeness: 'Very close',
           budget: '$100-$500',
           giftPreferences: ['Sentimental/personalized gifts', 'Practical gifts'],
+          giftStyle: 'unique-thoughtful',
+        })
+        .returning();
+
+      const [girlfriendProfile] = await tx
+        .insert(profiles)
+        .values({
+          userId,
+          name: 'Demo: Girlfriend',
+          color: '#EC4899', // Pink
+          ageRange: 'Young Adult (20-30)',
+          gender: 'Female',
+          personalityTraits: ['Thoughtful', 'Sentimental'],
+          interests: 'fashion, coffee, photography, reading',
+          relationship: 'Partner',
+          closeness: 'Very close',
+          budget: '$50-$100',
+          giftPreferences: ['Sentimental/personalized gifts', 'Experiences'],
           giftStyle: 'unique-thoughtful',
         })
         .returning();

@@ -86,8 +86,9 @@ export default function GiftListDetail() {
       }
       toast({ title: 'Ideas saved successfully' });
     },
-    onError: () => {
-      toast({ title: 'Failed to save ideas', variant: 'destructive' });
+    onError: (error: any) => {
+      const errorMsg = error?.message || 'Failed to save ideas';
+      toast({ title: errorMsg, variant: 'destructive' });
     },
   });
 
@@ -319,6 +320,18 @@ export default function GiftListDetail() {
   };
 
   const handleAddToList = (title: string) => {
+    const currentIdeas = manualIdeas.filter(idea => idea.trim() !== '');
+    
+    // Check if adding this idea would exceed the limit
+    if (currentIdeas.length >= 100) {
+      toast({ 
+        title: 'Gift idea limit reached', 
+        description: 'You can have up to 100 ideas per list. Delete some ideas to add new ones.',
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
     const newIdeas = [...manualIdeas, title];
     setManualIdeas(newIdeas);
     updateIdeasMutation.mutate(newIdeas.filter(idea => idea.trim() !== ''));
