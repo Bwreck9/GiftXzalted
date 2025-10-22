@@ -96,10 +96,6 @@ const CheckoutForm = ({ quantity, onQuantityChange }: CheckoutFormProps) => {
                 className="w-full"
                 data-testid="slider-quantity"
               />
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>1 batch</span>
-                <span>20 batches</span>
-              </div>
               
               <div className="pt-3 border-t">
                 <div className="flex items-center justify-between mb-1">

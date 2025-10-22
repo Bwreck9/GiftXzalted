@@ -569,6 +569,9 @@ export default function GiftListDetail() {
                   <p className="text-sm text-muted-foreground">
                     Note: These AI suggestions are temporary. Add your favorites to the manual list above to save them permanently.
                   </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Future enhancement: We're working on adding the ability to search trusted retailers directly for these gift ideas!
+                  </p>
                 </div>
               </div>
             ) : (
