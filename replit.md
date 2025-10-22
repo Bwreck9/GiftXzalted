@@ -80,7 +80,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
     - **Premium Subscription:** $20/month for 50,000 tokens + up to 20 profiles.
     - **Enterprise Subscription:** $100/month for 200,000 tokens + 100 profiles.
 - **Legal Pages:** Dedicated Privacy Policy and Terms & Conditions pages, accessible via footer links, compliant with app store requirements including third-party service disclosures and data retention policies.
-- **Support Page:** Dedicated support page (accessible via footer link) with email contact form. Form opens user's email client with pre-filled message to support@xzalted.com. Includes direct email link and back button navigation.
+- **Support Page:** Dedicated support page with email contact form (authenticated users only). Accessible via AppHeader profile dropdown menu. Form opens user's email client with pre-filled message to support@xzalted.com. Includes direct email link and back button navigation. Non-authenticated users attempting to access /support are redirected to landing page.
 - **Progressive Web App (PWA):** Full PWA support enables installation on desktop and mobile devices:
   - **Web App Manifest** (`client/public/manifest.json`): Defines app metadata, theme colors (#3b82f6), display mode (standalone), app icons (192px, 512px), and shortcuts
   - **Service Worker** (`client/public/service-worker.js`): Implements intelligent caching strategies:
