@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
-import { Gift, User, Settings, Coins, Moon, Sun, LogOut, LogIn } from 'lucide-react';
+import { Gift, User, Settings, Coins, Moon, Sun, LogOut, LogIn, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -80,13 +80,22 @@ export function AppHeader() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {isAuthenticated && (
-                <DropdownMenuItem 
-                  onClick={() => setLocation('/settings')}
-                  data-testid="menu-item-settings"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem 
+                    onClick={() => setLocation('/settings')}
+                    data-testid="menu-item-settings"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setLocation('/support')}
+                    data-testid="menu-item-support"
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Support
+                  </DropdownMenuItem>
+                </>
               )}
               {isAuthenticated ? (
                 <DropdownMenuItem 

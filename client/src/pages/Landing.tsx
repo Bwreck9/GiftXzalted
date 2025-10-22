@@ -297,16 +297,6 @@ export default function Landing() {
               <DollarSign className="h-4 w-4 mr-2" />
               Pricing
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLocation('/support')}
-              data-testid="link-support"
-              className="hover-elevate"
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              Support
-            </Button>
           </div>
           <div className="flex items-center justify-center gap-4 px-6 py-2 text-xs text-muted-foreground border-t">
             <button
