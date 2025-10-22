@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AppHeader } from '@/components/AppHeader';
 import type { Profile } from '@shared/schema';
-import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus } from 'lucide-react';
+import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus, Moon, Sun, Mail } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +27,7 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Landing() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
@@ -38,6 +39,7 @@ export default function Landing() {
   const [loginPromptDialogOpen, setLoginPromptDialogOpen] = useState(false);
   const [newGiftListName, setNewGiftListName] = useState('');
   const { toast} = useToast();
+  const { theme, toggleTheme } = useTheme();
 
   const { data: profiles, isLoading: profilesLoading } = useQuery<Profile[]>({
     queryKey: ['/api/profiles'],
@@ -236,6 +238,28 @@ export default function Landing() {
               </Card>
             </div>
 
+            {/* Theme Toggle Card */}
+            <div className="flex justify-center">
+              <Card 
+                className="p-4 hover-elevate active-elevate-2 cursor-pointer max-w-xs"
+                onClick={toggleTheme}
+                data-testid="card-theme-toggle"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+                    {theme === 'light' ? (
+                      <Moon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    ) : (
+                      <Sun className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    )}
+                  </div>
+                  <p className="text-sm font-medium text-foreground">
+                    {theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+                  </p>
+                </div>
+              </Card>
+            </div>
+
             {/* Sign In Button - Desktop */}
             <div className="hidden md:block">
               <Button
@@ -272,6 +296,16 @@ export default function Landing() {
             >
               <DollarSign className="h-4 w-4 mr-2" />
               Pricing
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation('/support')}
+              data-testid="link-support"
+              className="hover-elevate"
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Support
             </Button>
           </div>
           <div className="flex items-center justify-center gap-4 px-6 py-2 text-xs text-muted-foreground border-t">

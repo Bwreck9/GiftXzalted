@@ -20,6 +20,7 @@ import Subscribe from "@/pages/Subscribe";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import GiftLists from "@/pages/GiftLists";
 import GiftListDetail from "@/pages/GiftListDetail";
+import Support from "@/pages/Support";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/checkout" component={Checkout} />
       <Route path="/subscribe" component={Subscribe} />
       <Route path="/payment-success" component={PaymentSuccess} />
+      <Route path="/support" component={Support} />
       <Route component={NotFound} />
     </Switch>
   );
