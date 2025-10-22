@@ -46,7 +46,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
   - "Generate ideas" button for AI recommendations (500 tokens per generation, generates 10 ideas) - always clickable, shows helpful dialog with pricing link when tokens insufficient
   - Empty state messaging ("No generations yet") when AI recommendations haven't been created
   - **Session-based Duplicate Prevention:** AI tracks previously generated ideas during current page session to avoid suggesting duplicates across multiple generations. Session state resets on navigation, making generated ideas ephemeral unless manually added to persistent list. Backend passes `alreadyGeneratedIdeas` to OpenAI with avoidance instruction. Frontend normalizes titles (trim, lowercase) and uses Set-based deduplication. Disclaimer below generated ideas: "These AI suggestions are temporary. Add your favorites to the manual list above to save them permanently."
-- **Landing Page (Non-Authenticated):** Features four gradient-styled cards highlighting app benefits: free unlimited gift tracker, memory/organization features, AI-powered recommendations, and multi-list organization capabilities. Includes "See Full Questionnaire" button to preview modal. Theme toggle card allows users to switch between light/dark mode directly on landing page for immediate good first impression.
+- **Landing Page (Non-Authenticated):** Features four gradient-styled cards highlighting app benefits: free gift tracker (5 profiles on free tier), memory/organization features, AI-powered recommendations, and multi-list organization capabilities. Includes "See Full Questionnaire" button to preview modal. Theme toggle card allows users to switch between light/dark mode directly on landing page for immediate good first impression.
 - **Pricing Page:** Profile plans (Free, Basic, Premium, Enterprise) grouped in a gradient-styled container. One-time token purchase displayed below subscription plans.
 - **Checkout Page:** Mini-checkout UX with centered max-w-sm card, gradient quantity display (X × $5), prominent total price below slider with gradient text, compact layout showing total tokens and price. No scroll blink when quantity changes (1-20 batches).
 
@@ -54,7 +54,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 - **Authentication:** Replit Auth with Google OAuth (session-based, cookie authentication).
 - **Database:** PostgreSQL with Drizzle ORM, storing users, sessions, profiles, gift_lists, messages, tokens, and transactions.
 - **Core Hierarchy:** Profiles (`profiles` table) represent individuals (e.g., "Mom"), Gift Lists (`gift_lists` table) represent occasions (e.g., "Birthday") and contain both manual and AI-generated gift ideas.
-- **Demo Profiles:** New users receive two pre-populated demo profiles ("Demo: Girlfriend" and "Demo: Wife") on first login to showcase app functionality.
+- **Demo Profiles:** New users receive two pre-populated demo profiles ("Demo: Wife" and "Demo: Girlfriend", in that order) on first login to showcase app functionality.
 - **Token System:** Dual-column token accounting with separate tracking for subscription and purchased tokens:
   - `tokens` column: Subscription tokens (reset monthly to tier amount, don't stack)
   - `purchasedTokens` column: One-time purchased tokens (never expire)
@@ -74,11 +74,12 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
     - `POST /api/profiles/:id/clear`: Clears profile data.
     - Ownership validation is enforced for all profile and gift list operations.
 - **Pricing Model:**
-    - **Free Tier:** 5 profiles, unlimited gift lists.
+    - **Free Tier:** 5 profiles, 25 gift lists per profile, 100 gift ideas per list.
     - **One-Time:** $5 for 5,000 tokens.
     - **Basic Subscription:** $5/month for 10,000 tokens + up to 10 profiles.
     - **Premium Subscription:** $20/month for 50,000 tokens + up to 20 profiles.
     - **Enterprise Subscription:** $100/month for 200,000 tokens + 100 profiles.
+    - **Limits:** 25 gift lists per profile, 100 manual gift ideas per list (enforced across all tiers).
 - **Legal Pages:** Dedicated Privacy Policy and Terms & Conditions pages, accessible via footer links, compliant with app store requirements including third-party service disclosures and data retention policies.
 - **Support Page:** Dedicated support page with email contact form (authenticated users only). Accessible via AppHeader profile dropdown menu. Form opens user's email client with pre-filled message to support@xzalted.com. Includes direct email link and back button navigation. Non-authenticated users attempting to access /support are redirected to landing page.
 - **Progressive Web App (PWA):** Full PWA support enables installation on desktop and mobile devices:
