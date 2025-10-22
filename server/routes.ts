@@ -713,6 +713,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stripe subscription route for recurring profile plans (referenced from javascript_stripe blueprint)
+  app.post("/api/create-subscription", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.email) {
+        return res.status(400).json({ error: "User email not found" });
+      }
+      
+      // Validate plan selection
+      const planSchema = z.object({
+        planId: z.enum(['basic', 'premium', 'enterprise'])
+      });
+      
+      const { planId } = planSchema.parse(req.body);
+      
+      // Define plan details
+      const planDetails = {
+        basic: { price: 5, tokens: 10000, name: 'Basic Plan' },
+        premium: { price: 20, tokens: 50000, name: 'Premium Plan' },
+        enterprise: { price: 100, tokens: 200000, name: 'Enterprise Plan' },
+      };
+      
+      const plan = planDetails[planId];
+      
+      // Create or retrieve Stripe customer
+      let customerId = user.stripeCustomerId;
+      
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.firstName && user.lastName 
+            ? `${user.firstName} ${user.lastName}` 
+            : user.email,
+          metadata: { userId },
+        });
+        customerId = customer.id;
+        
+        // Update user with Stripe customer ID
+        const { db } = await import('./db');
+        const { users } = await import('@shared/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        await db
+          .update(users)
+          .set({ stripeCustomerId: customerId })
+          .where(eq(users.id, userId));
+      }
+      
+      // Create subscription
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `Gift Xzalted ${plan.name}`,
+              description: `${plan.tokens.toLocaleString()} tokens/month`,
+            },
+            unit_amount: plan.price * 100, // Convert to cents
+            recurring: {
+              interval: 'month',
+            },
+          },
+        }],
+        payment_behavior: 'default_incomplete',
+        payment_settings: { save_default_payment_method: 'on_subscription' },
+        expand: ['latest_invoice.payment_intent'],
+        metadata: {
+          userId,
+          tier: planId,
+        },
+      });
+      
+      // Update user with subscription ID
+      const { db } = await import('./db');
+      const { users } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      
+      await db
+        .update(users)
+        .set({ stripeSubscriptionId: subscription.id })
+        .where(eq(users.id, userId));
+      
+      const invoice: any = subscription.latest_invoice;
+      const paymentIntent: any = invoice?.payment_intent;
+      
+      res.json({
+        subscriptionId: subscription.id,
+        clientSecret: paymentIntent?.client_secret,
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid plan selection", details: error.errors });
+      }
+      console.error("Error creating subscription:", error);
+      res.status(500).json({ error: "Error creating subscription: " + error.message });
+    }
+  });
+
   // Gift Lists - occasions within a profile
   
   // Get all gift lists for a profile
