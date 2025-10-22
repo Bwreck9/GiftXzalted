@@ -206,12 +206,26 @@ export default function Subscribe() {
   useEffect(() => {
     const abortController = new AbortController();
     let isCurrentRequest = true;
+    
+    // Reset client secret when plan changes
+    setClientSecret("");
 
     apiRequest("POST", "/api/create-subscription", { planId: selectedPlan })
       .then((res) => res.json())
       .then((data) => {
         if (isCurrentRequest && !abortController.signal.aborted) {
-          setClientSecret(data.clientSecret);
+          console.log("Subscription created:", data);
+          if (data.clientSecret) {
+            setClientSecret(data.clientSecret);
+          } else {
+            console.error("No client secret returned:", data);
+            toast({
+              title: "Subscription Setup Failed",
+              description: "Missing payment information. Please try again.",
+              variant: "destructive",
+            });
+            setLocation('/pricing');
+          }
         }
       })
       .catch((error) => {

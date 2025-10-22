@@ -763,19 +763,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(users.id, userId));
       }
       
-      // Create subscription
+      // Create a price with inline product data
+      const price = await stripe.prices.create({
+        currency: 'usd',
+        unit_amount: plan.price * 100,
+        recurring: { interval: 'month' },
+        product_data: {
+          name: `Gift Xzalted ${plan.name}`,
+        },
+      });
+      
+      // Create subscription using the price ID
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
-        items: [{
-          price_data: {
-            currency: 'usd',
-            product: `prod_giftxzalted_${planId}`, // Use a consistent product ID per plan
-            unit_amount: plan.price * 100, // Convert to cents
-            recurring: {
-              interval: 'month',
-            },
-          } as any, // Type assertion for inline price creation
-        }],
+        items: [{ price: price.id }],
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
         expand: ['latest_invoice.payment_intent'],
@@ -797,6 +798,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const invoice: any = subscription.latest_invoice;
       const paymentIntent: any = invoice?.payment_intent;
+      
+      console.log("Subscription created:", {
+        subscriptionId: subscription.id,
+        hasInvoice: !!invoice,
+        hasPaymentIntent: !!paymentIntent,
+        clientSecret: paymentIntent?.client_secret ? "present" : "missing"
+      });
       
       res.json({
         subscriptionId: subscription.id,
