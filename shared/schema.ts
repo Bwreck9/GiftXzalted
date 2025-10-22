@@ -86,6 +86,7 @@ export const giftLists = pgTable("gift_lists", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   profileId: varchar("profile_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
   title: text("title").notNull(), // Occasion name (e.g., "Birthday", "Christmas", "General")
+  eventDate: timestamp("event_date"), // Optional date of the event/occasion
   // Manual gift ideas (free feature)
   manualIdeas: text("manual_ideas").array().notNull().default(sql`ARRAY[]::text[]`),
   // AI-generated gift ideas (premium feature)

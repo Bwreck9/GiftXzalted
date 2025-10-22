@@ -147,10 +147,10 @@ export default function GiftListDetail() {
         }
       }
       
-      // Force refetch to ensure UI updates with new premium results
-      await queryClient.refetchQueries({ queryKey: ['/api/gift-lists', id] });
+      // Invalidate to mark as stale and force fresh fetch on next access
+      await queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
       if (giftList?.profileId) {
-        await queryClient.refetchQueries({ queryKey: ['/api/profiles', giftList.profileId, 'gift-lists'] });
+        await queryClient.invalidateQueries({ queryKey: ['/api/profiles', giftList.profileId, 'gift-lists'] });
       }
       toast({ title: 'Premium recommendations generated!' });
     },
@@ -339,19 +339,16 @@ export default function GiftListDetail() {
                 <h1 className="text-xl font-semibold text-foreground">
                   {profile.name}
                 </h1>
-                {profile.relationship && (
-                  <p className="text-sm text-muted-foreground">{profile.relationship}</p>
-                )}
               </div>
             </div>
             <Button
-              onClick={() => setLocation(`/profile/${profile.id}`)}
+              onClick={() => setLocation('/')}
               variant="outline"
               className="hover-elevate active-elevate-2"
-              data-testid="button-back-to-profile"
+              data-testid="button-back-to-profiles"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              Back to profiles
             </Button>
           </div>
         </div>

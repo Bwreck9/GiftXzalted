@@ -216,15 +216,17 @@ export class DatabaseStorage implements IStorage {
         })
         .returning();
 
-      // Create demo gift lists
+      // Create demo gift lists with pre-populated manual ideas
       await tx.insert(giftLists).values({
         profileId: girlfriendProfile.id,
         title: 'Birthday',
+        manualIdeas: ['Candles', 'Jewelry', 'Perfume', 'Travel'],
       });
 
       await tx.insert(giftLists).values({
         profileId: wifeProfile.id,
         title: 'Anniversary',
+        manualIdeas: ['Candles', 'Jewelry', 'Perfume', 'Travel'],
       });
     });
   }
