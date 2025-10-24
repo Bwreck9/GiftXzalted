@@ -299,7 +299,7 @@ export default function Pricing() {
             <h3 className="font-semibold mb-4 text-lg">How Tokens Work</h3>
             <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
               <div className="space-y-2">
-                <p>• Each AI generation uses <strong>500 tokens</strong></p>
+                <p>• Each AI generation uses <strong>200 tokens</strong></p>
                 <p>• One-time tokens <strong>never expire</strong></p>
                 <p>• Subscription tokens <strong>reset monthly</strong></p>
               </div>
