@@ -17,7 +17,7 @@ export default function PaymentSuccess() {
     
     // Redirect after tokens have been refreshed (4 seconds total)
     const redirectTimer = setTimeout(() => {
-      setLocation('/settings');
+      setLocation('/');
     }, 4000);
 
     return () => {
@@ -43,7 +43,7 @@ export default function PaymentSuccess() {
         </div>
 
         <Button
-          onClick={() => setLocation('/settings')}
+          onClick={() => setLocation('/')}
           className="w-full hover-elevate active-elevate-2"
           data-testid="button-continue"
         >
