@@ -9,14 +9,21 @@ export default function PaymentSuccess() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    // Invalidate user data to refetch updated token balance
-    queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+    // Give webhook time to process (1 second), then refetch user data
+    const refreshTimer = setTimeout(async () => {
+      // Force refetch user data to get updated token balance
+      await queryClient.refetchQueries({ queryKey: ['/api/auth/user'] });
+    }, 1000);
     
-    const timer = setTimeout(() => {
+    // Redirect after tokens have been refreshed (4 seconds total)
+    const redirectTimer = setTimeout(() => {
       setLocation('/settings');
-    }, 3000);
+    }, 4000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(refreshTimer);
+      clearTimeout(redirectTimer);
+    };
   }, [setLocation]);
 
   return (
