@@ -8,11 +8,16 @@ import { insertProfileSchema, insertMessageSchema, insertGiftListSchema } from "
 import { z } from "zod";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+// Use testing secret in development, production secret otherwise
+const stripeSecretKey = process.env.NODE_ENV === 'development'
+  ? process.env.TESTING_STRIPE_SECRET_KEY
+  : process.env.STRIPE_SECRET_KEY;
+
+if (!stripeSecretKey) {
+  throw new Error('Missing required Stripe secret: ' + (process.env.NODE_ENV === 'development' ? 'TESTING_STRIPE_SECRET_KEY' : 'STRIPE_SECRET_KEY'));
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+const stripe = new Stripe(stripeSecretKey, {
   apiVersion: "2025-09-30.clover",
 });
 
@@ -1002,13 +1007,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/stripe-webhook", async (req, res) => {
     try {
       const signature = req.headers['stripe-signature'];
-      // Use dev webhook secret in development, production secret otherwise
+      // Use testing webhook secret in development, production secret otherwise
       const webhookSecret = process.env.NODE_ENV === 'development' 
-        ? process.env.STRIPE_WEBHOOK_SECRET_DEV 
+        ? process.env.TESTING_STRIPE_WEBHOOK_SECRET 
         : process.env.STRIPE_WEBHOOK_SECRET;
 
       if (!webhookSecret) {
-        console.error("CRITICAL: STRIPE_WEBHOOK_SECRET is not set - webhook endpoint is vulnerable!");
+        const secretName = process.env.NODE_ENV === 'development' ? 'TESTING_STRIPE_WEBHOOK_SECRET' : 'STRIPE_WEBHOOK_SECRET';
+        console.error(`CRITICAL: ${secretName} is not set - webhook endpoint is vulnerable!`);
         return res.status(500).json({ error: "Webhook secret not configured" });
       }
 

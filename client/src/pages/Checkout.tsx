@@ -10,10 +10,15 @@ import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { ArrowLeft } from 'lucide-react';
 
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+// Use testing key in development, production key otherwise
+const stripePublicKey = import.meta.env.DEV 
+  ? import.meta.env.VITE_TESTING_STRIPE_PUBLIC_KEY
+  : import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+
+if (!stripePublicKey) {
+  throw new Error('Missing required Stripe key: ' + (import.meta.env.DEV ? 'VITE_TESTING_STRIPE_PUBLIC_KEY' : 'VITE_STRIPE_PUBLIC_KEY'));
 }
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const stripePromise = loadStripe(stripePublicKey);
 
 const PRICE_PER_BATCH = 5;
 const TOKENS_PER_BATCH = 5000;
