@@ -25,7 +25,7 @@ const stripe = new Stripe(stripeSecretKey, {
 
 const TOKENS_PER_ONETIME_PURCHASE = 5000; // $5 gets you 5,000 tokens
 const ONETIME_PURCHASE_AMOUNT = 5; // $5
-const TOKENS_PER_GENERATION = 500; // Each AI generation costs 500 tokens
+const TOKENS_PER_GENERATION = 200; // Each AI generation costs 200 tokens
 
 // Profile limits based on subscription tier
 const PROFILE_LIMITS = {

@@ -43,7 +43,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
   - Separated "Gift Ideas" (manual entries) and "Generated Ideas" (AI recommendations) sections
   - Settings dropdown menu for list operations (rename, delete)
   - "Add to list" functionality to promote AI suggestions to manual gift list
-  - "Generate ideas" button for AI recommendations (500 tokens per generation, generates 10 ideas) - always clickable, shows helpful dialog with pricing link when tokens insufficient
+  - "Generate ideas" button for AI recommendations (200 tokens per generation, generates 10 ideas) - always clickable, shows helpful dialog with pricing link when tokens insufficient
   - Empty state messaging ("No generations yet") when AI recommendations haven't been created
   - **Session-based Duplicate Prevention:** AI tracks previously generated ideas during current page session to avoid suggesting duplicates across multiple generations. Session state resets on navigation, making generated ideas ephemeral unless manually added to persistent list. Backend passes `alreadyGeneratedIdeas` to OpenAI with avoidance instruction. Frontend normalizes titles (trim, lowercase) and uses Set-based deduplication. Disclaimer below generated ideas: "These AI suggestions are temporary. Add your favorites to the manual list above to save them permanently."
 - **Landing Page (Non-Authenticated):** Features four gradient-styled cards highlighting app benefits: free gift tracker (5 profiles on free tier), memory/organization features, AI-powered recommendations, and multi-list organization capabilities. Includes "See Full Questionnaire" button to preview modal. Theme toggle card allows users to switch between light/dark mode directly on landing page for immediate good first impression.
@@ -60,7 +60,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
   - `purchasedTokens` column: One-time purchased tokens (never expire)
   - Deduction order: Purchased tokens used first, then subscription tokens
   - Monthly reset: Only subscription tokens reset on 1st of each month
-  - Cost: 500 tokens per AI generation
+  - Cost: 200 tokens per AI generation
   - Refund protection: Tokens refunded if AI generation, message storage, or profile creation fails
   - **Known Limitation:** Current implementation lacks database transaction-level concurrency control. For production use, `deductTokens` should use row-level locking (SELECT FOR UPDATE) or optimistic concurrency control to prevent race conditions during concurrent requests.
 - **Payment Processing:** Secure Stripe integration with webhook signature verification for token and subscription purchases. Uses environment-specific keys based on `REPLIT_DEPLOYMENT` environment variable (automatically set to "1" in deployed apps): `VITE_TESTING_STRIPE_PUBLIC_KEY`, `TESTING_STRIPE_SECRET_KEY`, `TESTING_STRIPE_WEBHOOK_SECRET` in development; `VITE_STRIPE_PUBLIC_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` in production. Separate test and live webhook endpoints prevent test cards from awarding real tokens. Frontend uses `import.meta.env.DEV` (Vite's development detection) for public keys.
