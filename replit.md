@@ -46,7 +46,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
   - "Generate ideas" button for AI recommendations (200 tokens per generation, generates 10 ideas) - always clickable, shows helpful dialog with pricing link when tokens insufficient
   - Empty state messaging ("No generations yet") when AI recommendations haven't been created
   - **Session-based Duplicate Prevention:** AI tracks previously generated ideas during current page session to avoid suggesting duplicates across multiple generations. Session state resets on navigation, making generated ideas ephemeral unless manually added to persistent list. Backend passes `alreadyGeneratedIdeas` to OpenAI with avoidance instruction. Frontend normalizes titles (trim, lowercase) and uses Set-based deduplication. Disclaimer below generated ideas: "These AI suggestions are temporary. Add your favorites to the manual list above to save them permanently."
-- **Landing Page (Non-Authenticated):** Features four gradient-styled cards highlighting app benefits: free gift tracker (5 profiles on free tier), memory/organization features, AI-powered recommendations, and multi-list organization capabilities. Includes "See Full Questionnaire" button to preview modal. Theme toggle card allows users to switch between light/dark mode directly on landing page for immediate good first impression.
+- **Landing Page (Non-Authenticated):** Features four gradient-styled cards highlighting app benefits: free gift tracker (5 profiles on free tier), memory/organization features, AI-powered recommendations, and multi-list organization capabilities. Conditionally displays PWA install card when browser supports installation (Chrome/Edge on desktop/Android). Includes "See Full Questionnaire" button to preview modal. Theme toggle card allows users to switch between light/dark mode directly on landing page for immediate good first impression.
 - **Pricing Page:** Profile plans (Free, Basic, Premium, Enterprise) grouped in a gradient-styled container. One-time token purchase displayed below subscription plans.
 - **Checkout Page:** Mini-checkout UX with centered max-w-sm card, gradient quantity display (X × $5), prominent total price below slider with gradient text, compact layout showing total tokens and price. No scroll blink when quantity changes (1-20 batches).
 
@@ -82,6 +82,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
     - **Limits:** 25 gift lists per profile, 100 manual gift ideas per list (enforced across all tiers).
 - **Legal Pages:** Dedicated Privacy Policy and Terms & Conditions pages, accessible via footer links, compliant with app store requirements including third-party service disclosures and data retention policies.
 - **Support Page:** Dedicated support page with email contact form (authenticated users only). Accessible via AppHeader profile dropdown menu. Form opens user's email client with pre-filled message to support@xzalted.com. Includes direct email link and back button navigation. Non-authenticated users attempting to access /support are redirected to landing page.
+- **Settings Page:** Displays account information, token balance (subscription + purchased), PWA installation card (when installable), and sign-out button. PWA install section shows "Add to Home Screen" button for installable browsers or "App Installed" message for already-installed users. Token purchase button redirects to checkout page.
 - **Progressive Web App (PWA):** Full PWA support enables installation on desktop and mobile devices:
   - **Web App Manifest** (`client/public/manifest.json`): Defines app metadata, theme colors (#3b82f6), display mode (standalone), app icons (192px, 512px), and shortcuts
   - **Service Worker** (`client/public/service-worker.js`): Implements intelligent caching strategies:
@@ -90,7 +91,8 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
     - Precaches essential app shell (HTML, manifest, icons) on install
   - **iOS Support:** Includes apple-mobile-web-app meta tags for proper iOS PWA behavior
   - **Offline Functionality:** App remains accessible offline with cached content; API calls gracefully fail with informative messages
-  - **Installation:** Users can "Add to Home Screen" on mobile or install from browser on desktop for app-like experience without browser chrome
+  - **Installation UI:** Custom `usePWAInstall` hook detects browser install capability via `beforeinstallprompt` event. Install button appears as feature card on landing page (non-authenticated) and in Settings page (authenticated). Shows "App Installed" message when already installed. Supports Chrome/Edge on desktop and Android.
+  - **Manual Installation:** Users can still manually "Add to Home Screen" on iOS Safari or use browser menu on other platforms
 
 ### Deployment & Custom Domain
 **Target Subdomain:** gift.xzalted.com

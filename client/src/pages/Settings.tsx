@@ -6,11 +6,15 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { User } from '@shared/schema';
-import { ArrowLeft, Coins, LogOut, CreditCard } from 'lucide-react';
+import { ArrowLeft, Coins, LogOut, CreditCard, Smartphone } from 'lucide-react';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Settings() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
   
   const { data: userData } = useQuery<User>({
     queryKey: ['/api/auth/user'],
@@ -22,6 +26,13 @@ export default function Settings() {
 
   const handleBuyCredits = () => {
     setLocation('/checkout');
+  };
+
+  const handleInstallPWA = async () => {
+    const installed = await promptInstall();
+    if (installed) {
+      toast({ title: 'App installed successfully!', description: 'Gift Xzalted is now on your home screen.' });
+    }
   };
 
   const userName = userData?.firstName 
@@ -84,6 +95,41 @@ export default function Settings() {
               Buy More Tokens
             </Button>
           </Card>
+
+          {/* PWA Install Card - Only show if installable */}
+          {isInstallable && !isInstalled && (
+            <Card className="p-6 bg-gradient-to-br from-green-500/5 to-blue-500/5 border-green-500/20">
+              <h2 className="text-xl font-semibold mb-4">Install App</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Install Gift Xzalted on your device for quick access, offline support, and a native app experience.
+              </p>
+              <Button
+                onClick={handleInstallPWA}
+                className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
+                data-testid="button-install-pwa"
+              >
+                <Smartphone className="h-4 w-4 mr-2" />
+                Add to Home Screen
+              </Button>
+            </Card>
+          )}
+
+          {/* Already Installed Message */}
+          {isInstalled && (
+            <Card className="p-6 bg-gradient-to-br from-green-500/5 to-blue-500/5 border-green-500/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center">
+                  <Smartphone className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">App Installed</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Gift Xzalted is installed on your device
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
 
           <Card className="p-6 border-destructive/50">
             <h2 className="text-xl font-semibold mb-4 text-destructive">Account Actions</h2>

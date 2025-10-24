@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AppHeader } from '@/components/AppHeader';
 import type { Profile } from '@shared/schema';
-import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus, Moon, Sun, Mail } from 'lucide-react';
+import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus, Moon, Sun, Mail, Download, Smartphone } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +28,7 @@ import { useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/contexts/ThemeContext';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 export default function Landing() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
@@ -40,6 +41,7 @@ export default function Landing() {
   const [newGiftListName, setNewGiftListName] = useState('');
   const { toast} = useToast();
   const { theme, toggleTheme } = useTheme();
+  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
 
   const { data: profiles, isLoading: profilesLoading } = useQuery<Profile[]>({
     queryKey: ['/api/profiles'],
@@ -236,6 +238,30 @@ export default function Landing() {
                   Keep separate profiles for each person with their own gift lists for different occasions.
                 </p>
               </Card>
+
+              {/* PWA Install Card - Only show if installable */}
+              {isInstallable && !isInstalled && (
+                <Card 
+                  className="p-6 space-y-3 hover-elevate active-elevate-2 cursor-pointer"
+                  onClick={async () => {
+                    const installed = await promptInstall();
+                    if (installed) {
+                      toast({ title: 'App installed successfully!' });
+                    }
+                  }}
+                  data-testid="card-install-pwa"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center">
+                      <Smartphone className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h3 className="font-semibold text-foreground">Install App</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Add Gift Xzalted to your home screen for quick access and offline support.
+                  </p>
+                </Card>
+              )}
             </div>
 
             {/* Theme Toggle Card */}
