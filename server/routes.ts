@@ -1002,7 +1002,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/stripe-webhook", async (req, res) => {
     try {
       const signature = req.headers['stripe-signature'];
-      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      // Use dev webhook secret in development, production secret otherwise
+      const webhookSecret = process.env.NODE_ENV === 'development' 
+        ? process.env.STRIPE_WEBHOOK_SECRET_DEV 
+        : process.env.STRIPE_WEBHOOK_SECRET;
 
       if (!webhookSecret) {
         console.error("CRITICAL: STRIPE_WEBHOOK_SECRET is not set - webhook endpoint is vulnerable!");
