@@ -8,13 +8,15 @@ import { insertProfileSchema, insertMessageSchema, insertGiftListSchema } from "
 import { z } from "zod";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
-// Use testing secret in development, production secret otherwise
-const stripeSecretKey = process.env.NODE_ENV === 'development'
-  ? process.env.TESTING_STRIPE_SECRET_KEY
-  : process.env.STRIPE_SECRET_KEY;
+// Use production keys when deployed, testing keys in development
+// REPLIT_DEPLOYMENT is automatically set to "1" in deployed apps
+const isProduction = process.env.REPLIT_DEPLOYMENT === '1';
+const stripeSecretKey = isProduction
+  ? process.env.STRIPE_SECRET_KEY
+  : process.env.TESTING_STRIPE_SECRET_KEY;
 
 if (!stripeSecretKey) {
-  throw new Error('Missing required Stripe secret: ' + (process.env.NODE_ENV === 'development' ? 'TESTING_STRIPE_SECRET_KEY' : 'STRIPE_SECRET_KEY'));
+  throw new Error('Missing required Stripe secret: ' + (isProduction ? 'STRIPE_SECRET_KEY' : 'TESTING_STRIPE_SECRET_KEY'));
 }
 
 const stripe = new Stripe(stripeSecretKey, {
@@ -1007,13 +1009,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/stripe-webhook", async (req, res) => {
     try {
       const signature = req.headers['stripe-signature'];
-      // Use testing webhook secret in development, production secret otherwise
-      const webhookSecret = process.env.NODE_ENV === 'development' 
-        ? process.env.TESTING_STRIPE_WEBHOOK_SECRET 
-        : process.env.STRIPE_WEBHOOK_SECRET;
+      // Use production webhook secret when deployed, testing secret in development
+      const webhookSecret = isProduction
+        ? process.env.STRIPE_WEBHOOK_SECRET
+        : process.env.TESTING_STRIPE_WEBHOOK_SECRET;
 
       if (!webhookSecret) {
-        const secretName = process.env.NODE_ENV === 'development' ? 'TESTING_STRIPE_WEBHOOK_SECRET' : 'STRIPE_WEBHOOK_SECRET';
+        const secretName = isProduction ? 'STRIPE_WEBHOOK_SECRET' : 'TESTING_STRIPE_WEBHOOK_SECRET';
         console.error(`CRITICAL: ${secretName} is not set - webhook endpoint is vulnerable!`);
         return res.status(500).json({ error: "Webhook secret not configured" });
       }
