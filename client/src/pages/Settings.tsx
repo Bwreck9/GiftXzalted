@@ -69,7 +69,9 @@ export default function Settings() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Coins className="h-5 w-5 text-primary" />
-                <span className="text-2xl font-bold" data-testid="text-tokens">{userData?.tokens || 0}</span>
+                <span className="text-2xl font-bold" data-testid="text-tokens">
+                  {(userData?.tokens ?? 0) + (userData?.purchasedTokens ?? 0)}
+                </span>
                 <span className="text-muted-foreground">tokens remaining</span>
               </div>
             </div>
