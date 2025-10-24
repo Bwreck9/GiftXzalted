@@ -1040,11 +1040,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (event.type === 'payment_intent.succeeded') {
         const paymentIntent = event.data.object;
+        console.log('Payment intent succeeded:', {
+          id: paymentIntent.id,
+          metadata: paymentIntent.metadata
+        });
+        
         const userId = paymentIntent.metadata.userId;
         const tokens = parseInt(paymentIntent.metadata.tokens);
 
+        console.log('Extracted from metadata:', { userId, tokens });
+
         if (userId && tokens) {
           const user = await storage.getUser(userId);
+          console.log('User found:', user ? `Yes (id: ${user.id})` : 'No');
           
           if (user) {
             // Add one-time purchased tokens (never expire)
@@ -1052,16 +1060,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const { users } = await import('@shared/schema');
             const { eq } = await import('drizzle-orm');
             
+            const oldTokens = user.purchasedTokens || 0;
+            const newTokens = oldTokens + tokens;
+            
             await db
               .update(users)
               .set({
-                purchasedTokens: (user.purchasedTokens || 0) + tokens,
+                purchasedTokens: newTokens,
               })
               .where(eq(users.id, userId));
             
+            console.log(`✅ Tokens added for user ${userId}: ${oldTokens} -> ${newTokens} (+${tokens})`);
+            
             // Note: Transaction record was already created in create-payment-intent endpoint
             // No need to create duplicate transaction here
+          } else {
+            console.error(`❌ User not found for userId: ${userId}`);
           }
+        } else {
+          console.error(`❌ Missing metadata: userId=${userId}, tokens=${tokens}`);
         }
       }
       
