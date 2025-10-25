@@ -415,13 +415,13 @@ export default function GiftListDetail() {
               </div>
             </div>
             <Button
-              onClick={() => setLocation('/')}
+              onClick={() => setLocation(`/profile/${giftList.profileId}`)}
               variant="outline"
               className="hover-elevate active-elevate-2"
-              data-testid="button-back-to-profiles"
+              data-testid="button-back-to-lists"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to profiles
+              Back to lists
             </Button>
           </div>
         </div>
