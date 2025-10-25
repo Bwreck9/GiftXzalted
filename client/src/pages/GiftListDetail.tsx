@@ -46,6 +46,7 @@ export default function GiftListDetail() {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('trigger') === 'generate';
   });
+  const [clearGeneratedDialogOpen, setClearGeneratedDialogOpen] = useState(false);
   
   // Session-based tracking of generated ideas to prevent duplicates
   // This state resets when user navigates away (component unmounts)
@@ -92,18 +93,35 @@ export default function GiftListDetail() {
     },
   });
 
+  const clearGeneratedIdeasMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('PATCH', `/api/gift-lists/${id}`, { premiumResults: null });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
+      toast({ title: 'Generated ideas cleared' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Failed to clear generated ideas', variant: 'destructive' });
+    },
+  });
+
   const generateMutation = useMutation({
     mutationFn: async () => {
-      // Optimistically deduct 500 tokens from the user's token count
+      // Clear existing generated ideas first
+      await apiRequest('PATCH', `/api/gift-lists/${id}`, { premiumResults: null });
+      await queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
+
+      // Optimistically deduct 200 tokens from the user's token count
       if (user) {
         queryClient.setQueryData(['/api/auth/user'], (oldData: any) => {
           if (!oldData) return oldData;
           const totalTokens = (oldData.tokens ?? 0) + (oldData.purchasedTokens ?? 0);
-          if (totalTokens < 500) return oldData;
+          if (totalTokens < 200) return oldData;
           
           // Deduct from purchased tokens first, then subscription tokens
-          const newPurchasedTokens = Math.max(0, (oldData.purchasedTokens ?? 0) - 500);
-          const remainingToDeduct = 500 - ((oldData.purchasedTokens ?? 0) - newPurchasedTokens);
+          const newPurchasedTokens = Math.max(0, (oldData.purchasedTokens ?? 0) - 200);
+          const remainingToDeduct = 200 - ((oldData.purchasedTokens ?? 0) - newPurchasedTokens);
           const newTokens = remainingToDeduct > 0 ? Math.max(0, (oldData.tokens ?? 0) - remainingToDeduct) : oldData.tokens;
           
           return {
@@ -408,7 +426,7 @@ export default function GiftListDetail() {
               onClick={handleGenerate}
               disabled={generateMutation.isPending}
               className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
-                !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < 500 ? 'opacity-60' : ''
+                !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < 200 ? 'opacity-60' : ''
               }`}
               data-testid="button-generate-ideas"
             >
@@ -516,7 +534,21 @@ export default function GiftListDetail() {
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Generated Ideas</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Generated Ideas</h2>
+              {premiumResults && premiumResults.length > 0 && (
+                <Button
+                  onClick={() => setClearGeneratedDialogOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="hover-elevate text-destructive hover:text-destructive"
+                  data-testid="button-clear-generated"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear all
+                </Button>
+              )}
+            </div>
             {premiumResults && premiumResults.length > 0 ? (
               <div className="space-y-3">
                 {premiumResults.map((result: any, index: number) => (
@@ -701,7 +733,7 @@ export default function GiftListDetail() {
           <DialogHeader>
             <DialogTitle>Tokens Required</DialogTitle>
             <DialogDescription>
-              You need at least 500 tokens to generate AI-powered gift recommendations. Each generation costs 500 tokens and creates 10 personalized gift ideas.
+              You need at least 200 tokens to generate AI-powered gift recommendations. Each generation costs 200 tokens and creates 10 personalized gift ideas.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -721,6 +753,38 @@ export default function GiftListDetail() {
               data-testid="button-go-to-pricing"
             >
               View Pricing
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={clearGeneratedDialogOpen} onOpenChange={setClearGeneratedDialogOpen}>
+        <DialogContent data-testid="dialog-clear-generated">
+          <DialogHeader>
+            <DialogTitle>Clear Generated Ideas?</DialogTitle>
+            <DialogDescription>
+              This will remove all AI-generated gift ideas for this list. Your manual gift ideas will not be affected. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setClearGeneratedDialogOpen(false)}
+              data-testid="button-cancel-clear-generated"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setClearGeneratedDialogOpen(false);
+                clearGeneratedIdeasMutation.mutate();
+              }}
+              variant="destructive"
+              disabled={clearGeneratedIdeasMutation.isPending}
+              className="hover-elevate active-elevate-2"
+              data-testid="button-confirm-clear-generated"
+            >
+              {clearGeneratedIdeasMutation.isPending ? 'Clearing...' : 'Clear All Ideas'}
             </Button>
           </DialogFooter>
         </DialogContent>
