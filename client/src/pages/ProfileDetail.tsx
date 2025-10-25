@@ -166,7 +166,7 @@ export default function ProfileDetail() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Button
-                onClick={() => setLocation('/profiles')}
+                onClick={() => setLocation('/')}
                 variant="outline"
                 className="hover-elevate active-elevate-2"
                 data-testid="button-back-to-profiles"
