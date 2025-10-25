@@ -169,7 +169,7 @@ export default function Landing() {
         <AppHeader />
 
         <main className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-2xl w-full text-center space-y-10">
+          <div className="max-w-2xl w-full text-center space-y-8">
             <div className="space-y-4">
               <h1 className="text-4xl font-bold text-foreground">Never miss a gift</h1>
               <p className="text-lg text-muted-foreground">
@@ -177,17 +177,61 @@ export default function Landing() {
               </p>
             </div>
 
-            {/* Sign In Button - Mobile First */}
-            <div className="md:hidden">
+            {/* Sign In Button - First for all devices */}
+            <div className="flex justify-center">
               <Button
                 onClick={handleSignIn}
                 size="lg"
                 className="w-full max-w-md h-12 text-base hover-elevate active-elevate-2"
-                data-testid="button-signin-mobile"
+                data-testid="button-signin"
               >
                 <LogIn className="mr-2 h-5 w-5" />
                 Sign In to Get Started - It's Free
               </Button>
+            </div>
+
+            {/* Small Buttons Row: Install | Theme Toggle */}
+            <div className="flex justify-center gap-3">
+              {/* PWA Install Button - Small */}
+              {isInstallable && !isInstalled && (
+                <Card 
+                  className="p-3 hover-elevate active-elevate-2 cursor-pointer flex-1 max-w-[200px]"
+                  onClick={async () => {
+                    const installed = await promptInstall();
+                    if (installed) {
+                      toast({ title: 'App installed successfully!' });
+                    }
+                  }}
+                  data-testid="card-install-pwa"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <Smartphone className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">Install App</p>
+                  </div>
+                </Card>
+              )}
+              
+              {/* Theme Toggle Button - Small */}
+              <Card 
+                className="p-3 hover-elevate active-elevate-2 cursor-pointer flex-1 max-w-[200px]"
+                onClick={toggleTheme}
+                data-testid="card-theme-toggle"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center flex-shrink-0">
+                    {theme === 'light' ? (
+                      <Moon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    ) : (
+                      <Sun className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    )}
+                  </div>
+                  <p className="text-sm font-medium text-foreground">
+                    {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                  </p>
+                </div>
+              </Card>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6 text-left">
@@ -238,65 +282,6 @@ export default function Landing() {
                   Keep separate profiles for each person with their own gift lists for different occasions.
                 </p>
               </Card>
-
-              {/* PWA Install Card - Only show if installable */}
-              {isInstallable && !isInstalled && (
-                <Card 
-                  className="p-6 space-y-3 hover-elevate active-elevate-2 cursor-pointer"
-                  onClick={async () => {
-                    const installed = await promptInstall();
-                    if (installed) {
-                      toast({ title: 'App installed successfully!' });
-                    }
-                  }}
-                  data-testid="card-install-pwa"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center">
-                      <Smartphone className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <h3 className="font-semibold text-foreground">Install App</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Add Gift Xzalted to your home screen for quick access and offline support.
-                  </p>
-                </Card>
-              )}
-            </div>
-
-            {/* Theme Toggle Card */}
-            <div className="flex justify-center">
-              <Card 
-                className="p-4 hover-elevate active-elevate-2 cursor-pointer max-w-xs"
-                onClick={toggleTheme}
-                data-testid="card-theme-toggle"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                    {theme === 'light' ? (
-                      <Moon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    ) : (
-                      <Sun className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    )}
-                  </div>
-                  <p className="text-sm font-medium text-foreground">
-                    {theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-                  </p>
-                </div>
-              </Card>
-            </div>
-
-            {/* Sign In Button - Desktop */}
-            <div className="hidden md:block">
-              <Button
-                onClick={handleSignIn}
-                size="lg"
-                className="w-full max-w-md h-12 text-base hover-elevate active-elevate-2"
-                data-testid="button-signin"
-              >
-                <LogIn className="mr-2 h-5 w-5" />
-                Sign In to Get Started - It's Free
-              </Button>
             </div>
           </div>
         </main>
