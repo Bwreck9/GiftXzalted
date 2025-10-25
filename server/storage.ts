@@ -171,7 +171,7 @@ export class DatabaseStorage implements IStorage {
         .from(profiles)
         .where(and(
           eq(profiles.userId, userId),
-          sql`${profiles.name} IN ('Demo: Girlfriend', 'Demo: Wife')`
+          sql`${profiles.name} IN ('Demo: Wife', 'Demo: Husband', 'Demo: Girlfriend', 'Demo: Boyfriend')`
         ));
       
       if (existingDemoProfiles.length > 0) {
@@ -180,7 +180,7 @@ export class DatabaseStorage implements IStorage {
       }
       
       // New user with no profiles - create demo profiles
-      // Wife first, then Girlfriend
+      // Order: Wife → Husband → Girlfriend → Boyfriend
       const [wifeProfile] = await tx
         .insert(profiles)
         .values({
@@ -196,6 +196,24 @@ export class DatabaseStorage implements IStorage {
           budget: '$100-$500',
           giftPreferences: ['Sentimental/personalized gifts', 'Practical gifts'],
           giftStyle: 'unique-thoughtful',
+        })
+        .returning();
+
+      const [husbandProfile] = await tx
+        .insert(profiles)
+        .values({
+          userId,
+          name: 'Demo: Husband',
+          color: '#3B82F6', // Blue
+          ageRange: 'Adult 1 (31-50)',
+          gender: 'Male',
+          personalityTraits: ['Adventurous', 'Tech-savvy'],
+          interests: 'sports, technology, grilling, woodworking',
+          relationship: 'Partner',
+          closeness: 'Very close',
+          budget: '$100-$500',
+          giftPreferences: ['Practical gifts', 'Experiences'],
+          giftStyle: 'safe-popular',
         })
         .returning();
 
@@ -217,7 +235,37 @@ export class DatabaseStorage implements IStorage {
         })
         .returning();
 
+      const [boyfriendProfile] = await tx
+        .insert(profiles)
+        .values({
+          userId,
+          name: 'Demo: Boyfriend',
+          color: '#06B6D4', // Cyan/Light Blue
+          ageRange: 'Young Adult (20-30)',
+          gender: 'Male',
+          personalityTraits: ['Outgoing', 'Funny/Lighthearted'],
+          interests: 'gaming, music, fitness, movies',
+          relationship: 'Partner',
+          closeness: 'Very close',
+          budget: '$50-$100',
+          giftPreferences: ['Experiences', 'Funny/novelty items'],
+          giftStyle: 'safe-popular',
+        })
+        .returning();
+
       // Create demo gift lists with pre-populated manual ideas
+      await tx.insert(giftLists).values({
+        profileId: wifeProfile.id,
+        title: 'Anniversary',
+        manualIdeas: ['Candles', 'Jewelry', 'Perfume', 'Travel'],
+      });
+
+      await tx.insert(giftLists).values({
+        profileId: husbandProfile.id,
+        title: 'Anniversary',
+        manualIdeas: ['Watch', 'Tools', 'Golf Clubs', 'Concert Tickets'],
+      });
+
       await tx.insert(giftLists).values({
         profileId: girlfriendProfile.id,
         title: 'Birthday',
@@ -225,9 +273,9 @@ export class DatabaseStorage implements IStorage {
       });
 
       await tx.insert(giftLists).values({
-        profileId: wifeProfile.id,
-        title: 'Anniversary',
-        manualIdeas: ['Candles', 'Jewelry', 'Perfume', 'Travel'],
+        profileId: boyfriendProfile.id,
+        title: 'Birthday',
+        manualIdeas: ['Video Games', 'Sneakers', 'Cologne', 'Concert Tickets'],
       });
     });
   }
