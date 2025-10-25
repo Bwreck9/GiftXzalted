@@ -171,7 +171,7 @@ export default function Landing() {
         <main className="flex-1 flex items-center justify-center p-6">
           <div className="max-w-2xl w-full text-center space-y-8">
             <div className="space-y-4">
-              <h1 className="text-4xl font-bold text-foreground">Never miss a gift</h1>
+              <h1 className="text-4xl font-bold text-foreground">Start your gift list</h1>
               <p className="text-lg text-muted-foreground">
                 Remember people, dates, and ideas the old school way—then generate recommendations right when you need them.
               </p>

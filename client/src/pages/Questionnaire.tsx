@@ -41,7 +41,7 @@ const PROFILE_LIMITS = {
   enterprise: 100
 };
 
-const TOKENS_PER_GENERATION = 500;
+const TOKENS_PER_GENERATION = 200;
 
 // Helper function to get profile limit for a user
 function getProfileLimit(subscriptionTier: string | null): number {
