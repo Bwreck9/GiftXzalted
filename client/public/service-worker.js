@@ -1,5 +1,5 @@
-const CACHE_NAME = 'gift-xzalted-v1';
-const RUNTIME_CACHE = 'gift-xzalted-runtime';
+const CACHE_NAME = 'gift-xzalted-v2';
+const RUNTIME_CACHE = 'gift-xzalted-runtime-v2';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
@@ -61,37 +61,50 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For navigation requests and assets, use cache-first strategy
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Return cached version and update cache in background
-        fetch(request).then((response) => {
+  // For navigation requests (HTML pages), use network-first to ensure fresh content
+  // For static assets, use cache-first for performance
+  const isNavigationRequest = request.mode === 'navigate';
+  
+  if (isNavigationRequest) {
+    // Network-first for HTML/navigation to always get latest app version
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
           if (response && response.status === 200) {
+            const responseToCache = response.clone();
             caches.open(RUNTIME_CACHE).then((cache) => {
-              cache.put(request, response.clone());
+              cache.put(request, responseToCache);
             });
           }
-        });
-        return cachedResponse;
-      }
-
-      // Not in cache, fetch from network
-      return fetch(request).then((response) => {
-        // Cache successful responses
-        if (response && response.status === 200 && request.method === 'GET') {
-          const responseToCache = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => {
-            cache.put(request, responseToCache);
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if offline
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse || caches.match('/');
           });
+        })
+    );
+  } else {
+    // Cache-first for static assets (JS, CSS, images)
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
         }
-        return response;
-      }).catch(() => {
-        // Return offline page for navigation requests
-        if (request.mode === 'navigate') {
-          return caches.match('/');
-        }
-      });
-    })
-  );
+
+        // Not in cache, fetch from network
+        return fetch(request).then((response) => {
+          // Cache successful responses
+          if (response && response.status === 200 && request.method === 'GET') {
+            const responseToCache = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return response;
+        });
+      })
+    );
+  }
 });
