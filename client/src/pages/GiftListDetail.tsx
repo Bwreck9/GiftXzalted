@@ -74,6 +74,28 @@ export default function GiftListDetail() {
     }
   }, [giftList?.id]);
 
+  // Auto-save manual ideas with debouncing (1.5 seconds after user stops typing)
+  useEffect(() => {
+    if (!giftList?.id) return; // Don't save if no gift list loaded
+    
+    // Skip auto-save on initial load (when ideas match the database)
+    const dbIdeas = giftList.manualIdeas || [];
+    const currentIdeas = manualIdeas.filter(idea => idea.trim() !== '');
+    
+    // Compare current ideas with database ideas
+    const ideasChanged = 
+      currentIdeas.length !== dbIdeas.length ||
+      currentIdeas.some((idea, i) => idea !== dbIdeas[i]);
+    
+    if (!ideasChanged) return; // No changes, skip auto-save
+    
+    const timeoutId = setTimeout(() => {
+      updateIdeasMutation.mutate(currentIdeas);
+    }, 1500); // 1.5 second debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [manualIdeas, giftList?.id, giftList?.manualIdeas]);
+
   const updateIdeasMutation = useMutation({
     mutationFn: async (ideas: string[]) => {
       return apiRequest('PATCH', `/api/gift-lists/${id}`, { manualIdeas: ideas });
@@ -85,7 +107,7 @@ export default function GiftListDetail() {
           queryKey: ['/api/profiles', giftList.profileId, 'gift-lists']
         });
       }
-      toast({ title: 'Ideas saved successfully' });
+      // Silent auto-save - no toast notification
     },
     onError: (error: any) => {
       const errorMsg = error?.message || 'Failed to save ideas';
