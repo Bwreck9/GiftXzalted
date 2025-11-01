@@ -125,38 +125,26 @@ export default function Settings() {
               </div>
               
               <div className="space-y-8 mb-8">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-base font-bold text-primary">
-                      1
-                    </div>
-                    <p className="font-semibold text-foreground text-lg">Tap the Share button</p>
-                  </div>
-                  <p className="text-base text-muted-foreground pl-14 leading-relaxed">
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold text-primary">1)</div>
+                  <p className="font-semibold text-foreground text-lg">Tap the Share button</p>
+                  <p className="text-base text-muted-foreground leading-relaxed">
                     Look for <Share className="inline h-4 w-4 mx-1" /> in Safari (bottom of screen or top right)
                   </p>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-base font-bold text-primary">
-                      2
-                    </div>
-                    <p className="font-semibold text-foreground text-lg">Find "Add to Home Screen"</p>
-                  </div>
-                  <p className="text-base text-muted-foreground pl-14 leading-relaxed">
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold text-primary">2)</div>
+                  <p className="font-semibold text-foreground text-lg">Find "Add to Home Screen"</p>
+                  <p className="text-base text-muted-foreground leading-relaxed">
                     Scroll down in the share menu to find this option
                   </p>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-base font-bold text-primary">
-                      3
-                    </div>
-                    <p className="font-semibold text-foreground text-lg">Tap "Add" to confirm</p>
-                  </div>
-                  <p className="text-base text-muted-foreground pl-14 leading-relaxed">
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold text-primary">3)</div>
+                  <p className="font-semibold text-foreground text-lg">Tap "Add" to confirm</p>
+                  <p className="text-base text-muted-foreground leading-relaxed">
                     Check your Home Screen to find the app icon
                   </p>
                 </div>
