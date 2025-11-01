@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { User } from '@shared/schema';
-import { ArrowLeft, Coins, LogOut, CreditCard, Smartphone } from 'lucide-react';
+import { ArrowLeft, Coins, LogOut, CreditCard, Smartphone, Share } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,7 +14,7 @@ export default function Settings() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
+  const { isInstallable, isInstalled, isIOS, promptInstall } = usePWAInstall();
   
   const { data: userData } = useQuery<User>({
     queryKey: ['/api/auth/user'],
@@ -96,7 +96,7 @@ export default function Settings() {
             </Button>
           </Card>
 
-          {/* PWA Install Card - Only show if installable */}
+          {/* PWA Install Card - Android/Desktop */}
           {isInstallable && !isInstalled && (
             <Card className="p-6 bg-gradient-to-br from-green-500/5 to-blue-500/5 border-green-500/20">
               <h2 className="text-xl font-semibold mb-4">Install App</h2>
@@ -111,6 +111,27 @@ export default function Settings() {
                 <Smartphone className="h-4 w-4 mr-2" />
                 Add to Home Screen
               </Button>
+            </Card>
+          )}
+
+          {/* iOS Install Instructions */}
+          {isIOS && !isInstalled && !isInstallable && (
+            <Card className="p-6 bg-gradient-to-br from-green-500/5 to-blue-500/5 border-green-500/20">
+              <h2 className="text-xl font-semibold mb-4">Install App (iOS)</h2>
+              <div className="space-y-3 text-sm text-muted-foreground mb-4">
+                <p>To install Gift Xzalted on your iPhone or iPad:</p>
+                <ol className="list-decimal list-inside space-y-2 ml-2">
+                  <li>Tap the Share button <Share className="inline h-4 w-4 mx-1" /> in Safari</li>
+                  <li>Scroll down and tap "Add to Home Screen"</li>
+                  <li>Tap "Add" to confirm</li>
+                </ol>
+              </div>
+              <div className="flex items-center gap-2 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                <Smartphone className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Once installed, you'll find the app on your home screen
+                </p>
+              </div>
             </Card>
           )}
 

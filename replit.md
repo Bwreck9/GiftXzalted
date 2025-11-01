@@ -34,7 +34,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 - **Legal Pages:** Dedicated Privacy Policy and Terms & Conditions pages.
 - **Support Page:** Authenticated user support page with email contact form.
 - **Settings Page:** Displays account info, token balance, PWA installation card, and sign-out.
-- **Progressive Web App (PWA):** Full PWA support with web app manifest, service worker for intelligent caching, iOS support, offline functionality, and custom installation UI.
+- **Progressive Web App (PWA):** Full PWA support with web app manifest, service worker (v2) for intelligent caching (network-first for HTML, cache-first for assets), offline functionality, and custom installation UI. Auto-install prompts for Android/Desktop (Chrome/Edge), manual install instructions for iOS (Safari share menu).
 
 **Deployment & Custom Domain:**
 - **Target Subdomain:** `gift.xzalted.com`

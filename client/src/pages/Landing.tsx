@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AppHeader } from '@/components/AppHeader';
 import type { Profile } from '@shared/schema';
-import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus, Moon, Sun, Mail, Download, Smartphone } from 'lucide-react';
+import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus, Moon, Sun, Mail, Download, Smartphone, Share } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,7 +41,7 @@ export default function Landing() {
   const [newGiftListName, setNewGiftListName] = useState('');
   const { toast} = useToast();
   const { theme, toggleTheme } = useTheme();
-  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
+  const { isInstallable, isInstalled, isIOS, promptInstall } = usePWAInstall();
 
   const { data: profiles, isLoading: profilesLoading } = useQuery<Profile[]>({
     queryKey: ['/api/profiles'],
@@ -192,7 +192,7 @@ export default function Landing() {
 
             {/* Small Buttons Row: Install | Theme Toggle */}
             <div className="flex justify-center gap-3">
-              {/* PWA Install Button - Small */}
+              {/* PWA Install Button - Small (Android/Desktop) */}
               {isInstallable && !isInstalled && (
                 <Card 
                   className="p-3 hover-elevate active-elevate-2 cursor-pointer flex-1 max-w-[200px]"
@@ -207,6 +207,27 @@ export default function Landing() {
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center flex-shrink-0">
                       <Smartphone className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">Install App</p>
+                  </div>
+                </Card>
+              )}
+
+              {/* iOS Install Instructions */}
+              {isIOS && !isInstalled && !isInstallable && (
+                <Card 
+                  className="p-3 hover-elevate active-elevate-2 cursor-pointer flex-1 max-w-[200px]"
+                  onClick={() => {
+                    toast({ 
+                      title: 'Install on iOS', 
+                      description: 'Tap the Share button, then "Add to Home Screen"'
+                    });
+                  }}
+                  data-testid="card-install-ios"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <Share className="h-4 w-4 text-green-600 dark:text-green-400" />
                     </div>
                     <p className="text-sm font-medium text-foreground">Install App</p>
                   </div>
