@@ -117,56 +117,56 @@ export default function Settings() {
           {/* iOS Install Instructions */}
           {isIOS && !isInstalled && !isInstallable && (
             <Card className="p-6 bg-gradient-to-br from-green-500/5 to-blue-500/5 border-green-500/20">
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center flex-shrink-0">
                   <Smartphone className="h-5 w-5 text-green-600 dark:text-green-400" />
                 </div>
                 <h2 className="text-xl font-semibold">Install App on iPhone</h2>
               </div>
               
-              <div className="space-y-4 mb-4">
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary">
-                    1
+              <div className="space-y-6 mb-6">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">
+                      1
+                    </div>
+                    <p className="font-semibold text-foreground text-base">Tap the Share button</p>
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">Tap the Share button</p>
-                    <p className="text-sm text-muted-foreground">
-                      Look for <Share className="inline h-4 w-4 mx-1" /> in Safari (usually bottom of screen or top right)
-                    </p>
-                  </div>
+                  <p className="text-sm text-muted-foreground pl-11">
+                    Look for <Share className="inline h-4 w-4 mx-1" /> in Safari (bottom of screen or top right)
+                  </p>
                 </div>
 
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary">
-                    2
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">
+                      2
+                    </div>
+                    <p className="font-semibold text-foreground text-base">Find "Add to Home Screen"</p>
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">Find "Add to Home Screen"</p>
-                    <p className="text-sm text-muted-foreground">
-                      Scroll down in the menu to find this option
-                    </p>
-                  </div>
+                  <p className="text-sm text-muted-foreground pl-11">
+                    Scroll down in the share menu to find this option
+                  </p>
                 </div>
 
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary">
-                    3
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">
+                      3
+                    </div>
+                    <p className="font-semibold text-foreground text-base">Tap "Add" to confirm</p>
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">Tap "Add" to confirm</p>
-                    <p className="text-sm text-muted-foreground">
-                      Check your Home Screen to find the app icon
-                    </p>
-                  </div>
+                  <p className="text-sm text-muted-foreground pl-11">
+                    Check your Home Screen to find the app icon
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg">💡</span>
+              <div className="flex items-start gap-3 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-base">💡</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   This must be done in Safari browser. The Share button cannot be triggered automatically on iOS.
                 </p>
               </div>
