@@ -219,8 +219,9 @@ export default function Landing() {
                   className="p-3 hover-elevate active-elevate-2 cursor-pointer flex-1 max-w-[200px]"
                   onClick={() => {
                     toast({ 
-                      title: 'Install on iOS', 
-                      description: 'Tap the Share button, then "Add to Home Screen"'
+                      title: 'Install on iPhone', 
+                      description: '1) Tap Share button in Safari  2) Scroll to "Add to Home Screen"  3) Tap Add',
+                      duration: 8000
                     });
                   }}
                   data-testid="card-install-ios"
