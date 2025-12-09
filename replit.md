@@ -27,7 +27,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 - **Core Hierarchy:** Profiles (`profiles` table) represent individuals, Gift Lists (`gift_lists` table) represent occasions and contain both manual and AI-generated gift ideas.
 - **Demo Profiles:** Four pre-populated demo profiles for new users.
 - **Token System:** Dual-column accounting for subscription (`tokens`) and purchased (`purchasedTokens`) tokens, deducted purchased first, then subscription. Subscription tokens reset monthly. Cost: 200 tokens per AI generation.
-- **Payment Processing:** Secure Stripe integration with webhook signature verification for token and subscription purchases, using environment-specific keys.
+- **Payment Processing:** Stripe Checkout (redirect-based) for secure payments. Users are redirected to Stripe-hosted checkout pages for token purchases and subscriptions. Automatically supports Apple Pay, Google Pay, PayPal (when enabled), and credit cards. Webhook signature verification for payment confirmation using `checkout.session.completed` and `customer.subscription.created` events. Environment-specific keys for testing vs production.
 - **AI Integration:** OpenAI gpt-4o-mini for personalized gift recommendations based on profile data, returning structured JSON.
 - **API Endpoints:** Standard RESTful endpoints for profiles and gift lists (create, read, update, delete) with ownership validation.
 - **Pricing Model:** Free tier (5 profiles), one-time token purchases, and tiered subscriptions (Basic, Premium, Enterprise) offering increasing profiles and tokens.
