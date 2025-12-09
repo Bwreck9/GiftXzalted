@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AppHeader } from '@/components/AppHeader';
+import { LoginModal } from '@/components/LoginModal';
 import type { Profile } from '@shared/schema';
 import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus, Moon, Sun, Mail, Download, Smartphone, Share } from 'lucide-react';
 import {
@@ -38,6 +39,7 @@ export default function Landing() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [profileSelectDialogOpen, setProfileSelectDialogOpen] = useState(false);
   const [loginPromptDialogOpen, setLoginPromptDialogOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [newGiftListName, setNewGiftListName] = useState('');
   const { toast} = useToast();
   const { theme, toggleTheme } = useTheme();
@@ -144,7 +146,7 @@ export default function Landing() {
   };
 
   const handleSignIn = () => {
-    window.location.href = '/api/login';
+    setLoginModalOpen(true);
   };
 
   const handleCreateGiftList = () => {
@@ -166,6 +168,7 @@ export default function Landing() {
   if (!isAuthenticated) {
     return (
       <div className="h-screen flex flex-col">
+        <LoginModal open={loginModalOpen} onOpenChange={setLoginModalOpen} />
         <AppHeader />
 
         <main className="flex-1 flex items-center justify-center p-6">

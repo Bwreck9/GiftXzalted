@@ -1,12 +1,12 @@
-// API routes - integrates Replit Auth, Stripe and OpenAI
-import type { Express } from "express";
+// API routes - integrates Firebase Auth, Stripe and OpenAI
+import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { getGiftRecommendations } from "./openai";
 import { insertProfileSchema, insertMessageSchema, insertGiftListSchema } from "@shared/schema";
 import { z } from "zod";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { verifyFirebaseToken } from "./firebaseAdmin";
 
 // Use production keys when deployed, testing keys in development
 // REPLIT_DEPLOYMENT is automatically set to "1" in deployed apps
@@ -175,25 +175,88 @@ async function checkAndResetSubscriptionTokens(userId: string) {
   }
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup Replit Auth
-  await setupAuth(app);
+// Firebase Auth middleware - verifies token and attaches user to request
+const isAuthenticated: RequestHandler = async (req: any, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  const token = authHeader.split('Bearer ')[1];
+  
+  try {
+    const decodedToken = await verifyFirebaseToken(token);
+    if (!decodedToken) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      name: decodedToken.name,
+      picture: decodedToken.picture,
+    };
+    
+    next();
+  } catch (error) {
+    console.error("Auth error:", error);
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+};
 
-  // Get current user (Replit Auth route)
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Firebase Auth - sync user with backend and return user data
+  app.post('/api/auth/firebase', async (req: any, res) => {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const token = authHeader.split('Bearer ')[1];
+    
+    try {
+      const decodedToken = await verifyFirebaseToken(token);
+      if (!decodedToken) {
+        return res.status(401).json({ message: "Invalid token" });
+      }
+      
+      // Upsert user in database
+      const user = await storage.upsertUser({
+        id: decodedToken.uid,
+        email: decodedToken.email || null,
+        firstName: decodedToken.name?.split(' ')[0] || null,
+        lastName: decodedToken.name?.split(' ').slice(1).join(' ') || null,
+        profileImageUrl: decodedToken.picture || null,
+      });
+      
+      // Check and reset subscription tokens if needed
+      await checkAndResetSubscriptionTokens(user.id);
+      
+      // Return fresh user data
+      const freshUser = await storage.getUser(user.id);
+      res.json(freshUser);
+    } catch (error) {
+      console.error("Firebase auth error:", error);
+      res.status(500).json({ message: "Authentication failed" });
+    }
+  });
+
+  // Get current user (requires Firebase token)
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
       let user = await storage.getUser(userId);
       
-      // If user doesn't exist in DB yet, create them from session claims
+      // If user doesn't exist in DB yet, create them
       if (!user) {
-        const claims = req.user.claims;
         user = await storage.upsertUser({
-          id: claims.sub,
-          email: claims.email,
-          firstName: claims.first_name,
-          lastName: claims.last_name,
-          profileImageUrl: claims.profile_image_url,
+          id: req.user.uid,
+          email: req.user.email,
+          firstName: req.user.name?.split(' ')[0] || null,
+          lastName: req.user.name?.split(' ').slice(1).join(' ') || null,
+          profileImageUrl: req.user.picture,
         });
       }
       
@@ -207,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all profiles for current user
   app.get("/api/profiles", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
       const profiles = await storage.getProfilesByUserId(userId);
       res.json(profiles);
     } catch (error: any) {
@@ -220,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/profiles/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
 
       const profile = await storage.getProfile(id);
       
@@ -242,7 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create profile
   app.post("/api/profiles", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
       const { generateResponse, ...profileData } = req.body;
 
       // Get user to check subscription tier and profile limit
@@ -346,7 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/profiles/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
 
       const profile = await storage.getProfile(id);
       
@@ -435,7 +498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/profiles/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
 
       const profile = await storage.getProfile(id);
       
@@ -459,7 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/profiles/:id/clear", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
 
       const profile = await storage.getProfile(id);
       
@@ -489,7 +552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/messages/:profileId", isAuthenticated, async (req: any, res) => {
     try {
       const { profileId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
 
       const profile = await storage.getProfile(profileId);
       
@@ -512,7 +575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send message and get AI response
   app.post("/api/messages", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
       const { profileId, content, giftListId, alreadyGeneratedIdeas } = req.body;
 
       if (!profileId || !content || typeof content !== 'string') {
@@ -681,7 +744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe payment route for one-time payments (referenced from javascript_stripe blueprint)
   app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
       
       // Validate quantity from request body
       const quantitySchema = z.object({
@@ -727,7 +790,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe subscription route for recurring profile plans (referenced from javascript_stripe blueprint)
   app.post("/api/create-subscription", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
       const user = await storage.getUser(userId);
       
       if (!user || !user.email) {
@@ -833,7 +896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe Checkout Session for one-time token purchases
   app.post("/api/create-checkout-session", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
       const user = await storage.getUser(userId);
       
       if (!user || !user.email) {
@@ -916,7 +979,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe Checkout Session for subscription purchases
   app.post("/api/create-subscription-checkout", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
       const user = await storage.getUser(userId);
       
       if (!user || !user.email) {
@@ -1021,7 +1084,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/profiles/:profileId/gift-lists", isAuthenticated, async (req: any, res) => {
     try {
       const { profileId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
 
       // Verify profile ownership
       const profile = await storage.getProfile(profileId);
@@ -1044,7 +1107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/gift-lists/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
 
       const list = await storage.getGiftList(id);
       
@@ -1069,7 +1132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/profiles/:profileId/gift-lists", isAuthenticated, async (req: any, res) => {
     try {
       const { profileId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
 
       // Verify profile ownership
       const profile = await storage.getProfile(profileId);
@@ -1112,7 +1175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/gift-lists/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
 
       const list = await storage.getGiftList(id);
       
@@ -1168,7 +1231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/gift-lists/:id", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.uid;
 
       const list = await storage.getGiftList(id);
       
