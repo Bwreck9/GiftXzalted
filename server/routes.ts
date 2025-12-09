@@ -1267,6 +1267,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Handle Checkout Session completed (for Stripe Checkout flow)
+      else if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        console.log('Checkout session completed:', {
+          id: session.id,
+          mode: session.mode,
+          metadata: session.metadata
+        });
+        
+        const userId = session.metadata?.userId;
+        const type = session.metadata?.type;
+        
+        if (!userId) {
+          console.error(`❌ Missing userId in checkout session metadata`);
+        } else if (type === 'one-time') {
+          // Handle one-time token purchase
+          const tokens = parseInt(session.metadata?.tokens || '0');
+          
+          if (tokens > 0) {
+            const user = await storage.getUser(userId);
+            if (user) {
+              const { db } = await import('./db');
+              const { users } = await import('@shared/schema');
+              const { eq } = await import('drizzle-orm');
+              
+              const oldTokens = user.purchasedTokens || 0;
+              const newTokens = oldTokens + tokens;
+              
+              await db
+                .update(users)
+                .set({
+                  purchasedTokens: newTokens,
+                })
+                .where(eq(users.id, userId));
+              
+              console.log(`✅ Tokens added for user ${userId}: ${oldTokens} -> ${newTokens} (+${tokens}) via Checkout`);
+              
+              // Create transaction record
+              await storage.createTransaction({
+                userId,
+                amount: session.amount_total || 0,
+                tokens: tokens,
+                type: 'one-time',
+                stripePaymentIntentId: session.payment_intent as string || session.id,
+                status: 'completed',
+              });
+            } else {
+              console.error(`❌ User not found for userId: ${userId}`);
+            }
+          }
+        } else if (type === 'subscription') {
+          // Subscription is handled by customer.subscription.created webhook
+          // Just log that checkout was successful
+          console.log(`✅ Subscription checkout completed for user ${userId}, subscription will be activated by subscription webhook`);
+        }
+      }
+      
       // Handle subscription creation
       else if (event.type === 'customer.subscription.created') {
         const subscription = event.data.object;
