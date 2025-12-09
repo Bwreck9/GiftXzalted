@@ -12,11 +12,16 @@ import {
   type User as FirebaseUser
 } from 'firebase/auth';
 
+// Trim whitespace from env vars to prevent URL encoding issues
+const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID?.trim();
+const apiKey = import.meta.env.VITE_FIREBASE_API_KEY?.trim();
+const appId = import.meta.env.VITE_FIREBASE_APP_ID?.trim();
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey,
+  authDomain: `${projectId}.firebaseapp.com`,
+  projectId,
+  appId,
 };
 
 const app = initializeApp(firebaseConfig);
