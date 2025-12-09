@@ -18,6 +18,7 @@ import TermsConditions from "@/pages/TermsConditions";
 import Checkout from "@/pages/Checkout";
 import Subscribe from "@/pages/Subscribe";
 import PaymentSuccess from "@/pages/PaymentSuccess";
+import PaymentCancelled from "@/pages/PaymentCancelled";
 import GiftLists from "@/pages/GiftLists";
 import GiftListDetail from "@/pages/GiftListDetail";
 import Support from "@/pages/Support";
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/checkout" component={Checkout} />
       <Route path="/subscribe" component={Subscribe} />
       <Route path="/payment-success" component={PaymentSuccess} />
+      <Route path="/payment-cancelled" component={PaymentCancelled} />
       <Route path="/support" component={Support} />
       <Route component={NotFound} />
     </Switch>
