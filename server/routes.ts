@@ -830,6 +830,191 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stripe Checkout Session for one-time token purchases
+  app.post("/api/create-checkout-session", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.email) {
+        return res.status(400).json({ error: "User email not found" });
+      }
+      
+      // Validate quantity from request body
+      const quantitySchema = z.object({
+        quantity: z.number().int().min(1).max(20)
+      });
+      
+      const { quantity } = quantitySchema.parse(req.body);
+      
+      // Calculate total amount and tokens based on quantity
+      const amount = ONETIME_PURCHASE_AMOUNT * quantity;
+      const tokens = TOKENS_PER_ONETIME_PURCHASE * quantity;
+      
+      // Create or retrieve Stripe customer
+      let customerId = user.stripeCustomerId;
+      
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.firstName && user.lastName 
+            ? `${user.firstName} ${user.lastName}` 
+            : user.email,
+          metadata: { userId },
+        });
+        customerId = customer.id;
+        
+        // Update user with Stripe customer ID
+        const { db } = await import('./db');
+        const { users } = await import('@shared/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        await db
+          .update(users)
+          .set({ stripeCustomerId: customerId })
+          .where(eq(users.id, userId));
+      }
+      
+      // Create Stripe Checkout Session
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        mode: 'payment',
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `${tokens.toLocaleString()} Gift Xzalted Tokens`,
+                description: `One-time purchase of ${tokens.toLocaleString()} AI tokens`,
+              },
+              unit_amount: Math.round(amount * 100),
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          userId,
+          tokens: tokens.toString(),
+          quantity: quantity.toString(),
+          type: 'one-time',
+        },
+        success_url: `${req.headers.origin || 'https://gift.xzalted.com'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.origin || 'https://gift.xzalted.com'}/payment-cancelled`,
+      });
+      
+      res.json({ url: session.url });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid quantity", details: error.errors });
+      }
+      console.error("Error creating checkout session:", error);
+      res.status(500).json({ error: "Error creating checkout session: " + error.message });
+    }
+  });
+
+  // Stripe Checkout Session for subscription purchases
+  app.post("/api/create-subscription-checkout", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.email) {
+        return res.status(400).json({ error: "User email not found" });
+      }
+      
+      // Validate plan selection
+      const planSchema = z.object({
+        planId: z.enum(['basic', 'premium', 'enterprise'])
+      });
+      
+      const { planId } = planSchema.parse(req.body);
+      
+      // Define plan details
+      const planDetails = {
+        basic: { price: 5, tokens: 10000, profiles: 10, name: 'Basic Plan' },
+        premium: { price: 20, tokens: 50000, profiles: 20, name: 'Premium Plan' },
+        enterprise: { price: 100, tokens: 200000, profiles: 100, name: 'Enterprise Plan' },
+      };
+      
+      const plan = planDetails[planId];
+      
+      // Create or retrieve Stripe customer
+      let customerId = user.stripeCustomerId;
+      
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.firstName && user.lastName 
+            ? `${user.firstName} ${user.lastName}` 
+            : user.email,
+          metadata: { userId },
+        });
+        customerId = customer.id;
+        
+        // Update user with Stripe customer ID
+        const { db } = await import('./db');
+        const { users } = await import('@shared/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        await db
+          .update(users)
+          .set({ stripeCustomerId: customerId })
+          .where(eq(users.id, userId));
+      }
+      
+      // Create a price for the subscription
+      const price = await stripe.prices.create({
+        currency: 'usd',
+        unit_amount: plan.price * 100,
+        recurring: { interval: 'month' },
+        product_data: {
+          name: `Gift Xzalted ${plan.name}`,
+          metadata: {
+            tier: planId,
+            tokens: plan.tokens.toString(),
+            profiles: plan.profiles.toString(),
+          },
+        },
+      });
+      
+      // Create Stripe Checkout Session for subscription
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        mode: 'subscription',
+        line_items: [
+          {
+            price: price.id,
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          userId,
+          tier: planId,
+          tokens: plan.tokens.toString(),
+          type: 'subscription',
+        },
+        subscription_data: {
+          metadata: {
+            userId,
+            tier: planId,
+          },
+        },
+        success_url: `${req.headers.origin || 'https://gift.xzalted.com'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.origin || 'https://gift.xzalted.com'}/payment-cancelled`,
+      });
+      
+      res.json({ url: session.url });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid plan selection", details: error.errors });
+      }
+      console.error("Error creating subscription checkout:", error);
+      res.status(500).json({ error: "Error creating subscription checkout: " + error.message });
+    }
+  });
+
   // Gift Lists - occasions within a profile
   
   // Get all gift lists for a profile
