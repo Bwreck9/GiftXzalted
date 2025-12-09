@@ -3,8 +3,9 @@ import admin from 'firebase-admin';
 // Initialize Firebase Admin SDK with service account credentials
 // Credentials are loaded from environment variables for security
 if (!admin.apps.length) {
-  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  // Trim whitespace from all credentials to prevent mismatch errors
+  const projectId = (process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID)?.trim();
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
   if (clientEmail && privateKey) {
