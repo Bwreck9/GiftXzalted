@@ -133,7 +133,7 @@ export async function setupAuth(app: Express) {
     (req.session as any).returnTo = returnTo;
     
     passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "select_account",
+      prompt: "login",
       scope: ["openid", "email", "profile", "offline_access"],
     })(req, res, next);
   });
