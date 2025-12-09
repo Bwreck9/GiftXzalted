@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { Gift, User, Settings, Coins, Moon, Sun, LogOut, LogIn, Mail } from 'lucide-react';
@@ -10,11 +11,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/contexts/ThemeContext';
+import { LoginModal } from '@/components/LoginModal';
+import { queryClient } from '@/lib/queryClient';
 
 export function AppHeader() {
   const [, setLocation] = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    queryClient.clear();
+    setLocation('/');
+  };
 
   return (
     <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-10 shadow-sm">
@@ -99,7 +109,7 @@ export function AppHeader() {
               )}
               {isAuthenticated ? (
                 <DropdownMenuItem 
-                  onClick={() => window.location.href = '/api/logout'}
+                  onClick={handleSignOut}
                   data-testid="menu-item-sign-out"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
@@ -107,7 +117,7 @@ export function AppHeader() {
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem 
-                  onClick={() => window.location.href = '/api/login'}
+                  onClick={() => setLoginModalOpen(true)}
                   data-testid="menu-item-sign-in"
                 >
                   <LogIn className="h-4 w-4 mr-2" />
@@ -118,6 +128,7 @@ export function AppHeader() {
           </DropdownMenu>
         </div>
       </div>
+      <LoginModal open={loginModalOpen} onOpenChange={setLoginModalOpen} />
     </header>
   );
 }

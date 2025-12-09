@@ -9,10 +9,11 @@ import type { User } from '@shared/schema';
 import { ArrowLeft, Coins, LogOut, CreditCard, Smartphone, Share } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
 
 export default function Settings() {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
   const { isInstallable, isInstalled, isIOS, promptInstall } = usePWAInstall();
   
@@ -20,8 +21,10 @@ export default function Settings() {
     queryKey: ['/api/auth/user'],
   });
 
-  const handleSignOut = () => {
-    window.location.href = '/api/logout';
+  const handleSignOut = async () => {
+    await signOut();
+    queryClient.clear();
+    setLocation('/');
   };
 
   const handleBuyCredits = () => {
