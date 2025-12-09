@@ -30,8 +30,12 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signInWithGoogle();
-      onOpenChange(false);
+      const user = await signInWithGoogle();
+      // If user is null, redirect flow is being used - don't close modal yet
+      if (user) {
+        onOpenChange(false);
+      }
+      // If null, redirect is happening, page will reload
     } catch (error: any) {
       console.error('Google sign-in error:', error);
       toast({
@@ -39,7 +43,6 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         description: error.message || 'Unable to sign in with Google',
         variant: 'destructive',
       });
-    } finally {
       setIsLoading(false);
     }
   };

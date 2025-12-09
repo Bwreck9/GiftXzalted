@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { auth, onAuthChange, signOut as firebaseSignOut, getIdToken, type FirebaseUser } from '@/lib/firebase';
+import { auth, onAuthChange, signOut as firebaseSignOut, getIdToken, checkRedirectResult, type FirebaseUser } from '@/lib/firebase';
 import type { User } from '@shared/schema';
 
 interface AuthContextType {
@@ -54,6 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Check for redirect result on mount
+    checkRedirectResult().then((user) => {
+      if (user) {
+        setFirebaseUser(user);
+        syncUserWithBackend(user);
+      }
+    });
+
     const unsubscribe = onAuthChange(async (fbUser) => {
       setFirebaseUser(fbUser);
       await syncUserWithBackend(fbUser);
