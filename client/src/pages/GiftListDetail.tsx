@@ -29,6 +29,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const TOKENS_PER_10_IDEAS = 200;
 
 export default function GiftListDetail() {
   const { id } = useParams<{ id: string }>();
@@ -47,6 +56,7 @@ export default function GiftListDetail() {
     return urlParams.get('trigger') === 'generate';
   });
   const [clearGeneratedDialogOpen, setClearGeneratedDialogOpen] = useState(false);
+  const [numIdeas, setNumIdeas] = useState(10);
   
   // Session-based tracking of generated ideas to prevent duplicates
   // This state resets when user navigates away (component unmounts)
@@ -130,20 +140,19 @@ export default function GiftListDetail() {
 
   const generateMutation = useMutation({
     mutationFn: async () => {
-      // Clear existing generated ideas first
-      await apiRequest('PATCH', `/api/gift-lists/${id}`, { premiumResults: null });
-      await queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
-
-      // Optimistically deduct 200 tokens from the user's token count
+      // Calculate token cost based on number of ideas
+      const tokenCost = (numIdeas / 10) * TOKENS_PER_10_IDEAS;
+      
+      // Optimistically deduct tokens from the user's token count
       if (user) {
         queryClient.setQueryData(['/api/auth/user'], (oldData: any) => {
           if (!oldData) return oldData;
           const totalTokens = (oldData.tokens ?? 0) + (oldData.purchasedTokens ?? 0);
-          if (totalTokens < 200) return oldData;
+          if (totalTokens < tokenCost) return oldData;
           
           // Deduct from purchased tokens first, then subscription tokens
-          const newPurchasedTokens = Math.max(0, (oldData.purchasedTokens ?? 0) - 200);
-          const remainingToDeduct = 200 - ((oldData.purchasedTokens ?? 0) - newPurchasedTokens);
+          const newPurchasedTokens = Math.max(0, (oldData.purchasedTokens ?? 0) - tokenCost);
+          const remainingToDeduct = tokenCost - ((oldData.purchasedTokens ?? 0) - newPurchasedTokens);
           const newTokens = remainingToDeduct > 0 ? Math.max(0, (oldData.tokens ?? 0) - remainingToDeduct) : oldData.tokens;
           
           return {
@@ -159,7 +168,8 @@ export default function GiftListDetail() {
         giftListId: id,
         content: 'Generate gift recommendations',
         isUser: true,
-        alreadyGeneratedIdeas: sessionGeneratedIdeas,
+        alreadyGeneratedIdeas: sessionGeneratedIdeas || [],
+        numIdeas,
       });
       return await res.json();
     },
@@ -325,8 +335,9 @@ export default function GiftListDetail() {
       return;
     }
 
+    const tokenCost = (numIdeas / 10) * TOKENS_PER_10_IDEAS;
     const totalTokens = (user?.tokens ?? 0) + (user?.purchasedTokens ?? 0);
-    if (!user || totalTokens < 500) {
+    if (!user || totalTokens < tokenCost) {
       setNeedTokensDialogOpen(true);
       return;
     }
@@ -359,6 +370,20 @@ export default function GiftListDetail() {
     }
   };
 
+  const removeGeneratedIdeaMutation = useMutation({
+    mutationFn: async (titleToRemove: string) => {
+      if (!giftList?.premiumResults) return;
+      const currentResults = JSON.parse(giftList.premiumResults);
+      const updatedResults = currentResults.filter((r: any) => r.title !== titleToRemove);
+      return apiRequest('PATCH', `/api/gift-lists/${id}`, { 
+        premiumResults: JSON.stringify(updatedResults) 
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/gift-lists', id] });
+    },
+  });
+
   const handleAddToList = (title: string) => {
     const currentIdeas = manualIdeas.filter(idea => idea.trim() !== '');
     
@@ -375,6 +400,10 @@ export default function GiftListDetail() {
     const newIdeas = [...manualIdeas, title];
     setManualIdeas(newIdeas);
     updateIdeasMutation.mutate(newIdeas.filter(idea => idea.trim() !== ''));
+    
+    // Remove from generated ideas
+    removeGeneratedIdeaMutation.mutate(title);
+    toast({ title: 'Added to your list!' });
   };
 
   if (isLoading) {
@@ -443,12 +472,27 @@ export default function GiftListDetail() {
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select
+              value={numIdeas.toString()}
+              onValueChange={(value) => setNumIdeas(parseInt(value))}
+            >
+              <SelectTrigger className="w-24" data-testid="select-num-ideas">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 ideas</SelectItem>
+                <SelectItem value="20">20 ideas</SelectItem>
+                <SelectItem value="30">30 ideas</SelectItem>
+                <SelectItem value="40">40 ideas</SelectItem>
+                <SelectItem value="50">50 ideas</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
               onClick={handleGenerate}
               disabled={generateMutation.isPending}
               className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
-                !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < 200 ? 'opacity-60' : ''
+                !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < (numIdeas / 10) * TOKENS_PER_10_IDEAS ? 'opacity-60' : ''
               }`}
               data-testid="button-generate-ideas"
             >
@@ -460,7 +504,7 @@ export default function GiftListDetail() {
               ) : (
                 <>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Generate ideas
+                  Generate ({(numIdeas / 10) * TOKENS_PER_10_IDEAS} tokens)
                 </>
               )}
             </Button>

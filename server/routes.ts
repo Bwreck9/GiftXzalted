@@ -576,11 +576,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/messages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.uid;
-      const { profileId, content, giftListId, alreadyGeneratedIdeas } = req.body;
+      const { profileId, content, giftListId, alreadyGeneratedIdeas, numIdeas = 10 } = req.body;
 
       if (!profileId || !content || typeof content !== 'string') {
         return res.status(400).json({ error: "Missing required fields" });
       }
+
+      // Validate numIdeas (must be 10, 20, 30, etc. up to 50)
+      const validNumIdeas = Math.min(Math.max(Math.round(numIdeas / 10) * 10, 10), 50);
+      
+      // Calculate token cost (200 tokens per 10 ideas)
+      const tokenCost = (validNumIdeas / 10) * TOKENS_PER_GENERATION;
 
       // Validate message length (5000 character limit)
       if (content.length > 5000) {
@@ -610,8 +616,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check tokens
       const user = await storage.getUser(userId);
       
-      if (!user || getTotalTokens(user) < TOKENS_PER_GENERATION) {
-        return res.status(402).json({ error: "Insufficient tokens" });
+      if (!user || getTotalTokens(user) < tokenCost) {
+        return res.status(402).json({ error: "Insufficient tokens", required: tokenCost });
       }
 
       // Save user message
@@ -664,18 +670,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } as any,
         content,
         conversationHistory,
-        alreadyGeneratedIdeas || []
+        alreadyGeneratedIdeas || [],
+        validNumIdeas
       );
 
       // Deduct tokens FIRST (uses purchased tokens first, then subscription tokens)
       // This prevents saving the AI response if token deduction fails
       let deductionResult;
       try {
-        deductionResult = await deductTokens(userId, TOKENS_PER_GENERATION);
+        deductionResult = await deductTokens(userId, tokenCost);
       } catch (error: any) {
         // If insufficient tokens, return 402 Payment Required
         if (error.message?.includes('Insufficient tokens')) {
-          return res.status(402).json({ error: "Insufficient tokens", required: TOKENS_PER_GENERATION });
+          return res.status(402).json({ error: "Insufficient tokens", required: tokenCost });
         }
         throw error;
       }
@@ -704,16 +711,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 cleanedResponse = cleanedResponse.replace(/^```(?:json|JSON)?\s*/i, '').replace(/\s*```$/i, '');
               }
               
-              const recommendations = JSON.parse(cleanedResponse);
+              const newRecommendations = JSON.parse(cleanedResponse);
               
               // Validate it's an array
-              if (Array.isArray(recommendations)) {
+              if (Array.isArray(newRecommendations)) {
+                // Get existing recommendations and merge (new ideas at top)
+                const existingResults = giftList.premiumResults 
+                  ? JSON.parse(giftList.premiumResults) 
+                  : [];
+                
+                // Add timestamp and generation batch ID to new recommendations
+                const batchId = Date.now();
+                const numberedNewRecommendations = newRecommendations.map((rec: any, idx: number) => ({
+                  ...rec,
+                  batchId,
+                  generatedAt: new Date().toISOString(),
+                }));
+                
+                // Prepend new recommendations to existing (newest at top)
+                const mergedRecommendations = [...numberedNewRecommendations, ...existingResults];
+                
                 await storage.updateGiftList(giftListId, {
-                  premiumResults: JSON.stringify(recommendations),
+                  premiumResults: JSON.stringify(mergedRecommendations),
                 });
-                console.log(`Saved ${recommendations.length} gift recommendations to list ${giftListId}`);
+                console.log(`Added ${newRecommendations.length} new gift recommendations to list ${giftListId} (total: ${mergedRecommendations.length})`);
               } else {
-                console.error("AI response is not an array:", recommendations);
+                console.error("AI response is not an array:", newRecommendations);
               }
             } catch (parseError) {
               console.error("Failed to parse AI response as JSON:", parseError);

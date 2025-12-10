@@ -48,7 +48,7 @@ export default function Checkout() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setLocation('/settings')}
+          onClick={() => setLocation('/')}
           data-testid="button-back"
           className="hover-elevate"
         >

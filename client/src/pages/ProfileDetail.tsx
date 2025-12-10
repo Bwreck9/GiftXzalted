@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Plus, Brain, Calendar, Settings, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Brain, Calendar, Settings, Trash2, ArrowLeft, Pencil } from 'lucide-react';
 import { AppHeader } from '@/components/AppHeader';
 import type { Profile, GiftList } from '@shared/schema';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { QuestionnaireDialog } from '@/components/QuestionnaireDialog';
+import { SettingsModal } from '@/components/SettingsModal';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ export default function ProfileDetail() {
   const { toast } = useToast();
   const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListDate, setNewListDate] = useState<string>('');
   
@@ -99,6 +101,34 @@ export default function ProfileDetail() {
     },
   });
 
+  const deleteProfileMutation = useMutation({
+    mutationFn: async (profileId: string) => {
+      return apiRequest('DELETE', `/api/profiles/${profileId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      toast({ title: 'Profile deleted successfully' });
+      setLocation('/');
+    },
+    onError: () => {
+      toast({ title: 'Failed to delete profile', variant: 'destructive' });
+    },
+  });
+
+  const clearProfileMutation = useMutation({
+    mutationFn: async (profileId: string) => {
+      return apiRequest('POST', `/api/profiles/${profileId}/clear`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id, 'gift-lists'] });
+      toast({ title: 'Profile data cleared successfully' });
+    },
+    onError: () => {
+      toast({ title: 'Failed to clear profile data', variant: 'destructive' });
+    },
+  });
+
   const handleCreateList = () => {
     if (!newListName.trim()) {
       toast({ title: 'Please enter a name', variant: 'destructive' });
@@ -136,6 +166,15 @@ export default function ProfileDetail() {
         existingProfile={profile}
       />
 
+      <SettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        profile={profile}
+        onSave={(updates) => updateProfileMutation.mutate(updates)}
+        onDelete={(profileId) => deleteProfileMutation.mutate(profileId)}
+        onClear={(profileId) => clearProfileMutation.mutate(profileId)}
+      />
+
       <AppHeader />
       
       {/* Profile Info Bar */}
@@ -149,6 +188,41 @@ export default function ProfileDetail() {
             <h1 className="text-xl font-semibold text-foreground">
               {profile.name}
             </h1>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover-elevate"
+                  data-testid="profile-settings-menu"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Rename
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Change Color
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-destructive"
+                  onClick={() => {
+                    if (confirm(`Delete profile "${profile.name}"?`)) {
+                      deleteProfileMutation.mutate(profile.id);
+                    }
+                  }}
+                  data-testid="button-delete-profile"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <Button
             onClick={() => setQuestionnaireOpen(true)}
