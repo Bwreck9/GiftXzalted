@@ -4,6 +4,15 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
+// Development-only: Strip cache headers to prevent 304 responses and reduce hard refresh needs
+if (app.get("env") === "development") {
+  app.use((req, _res, next) => {
+    delete req.headers['if-none-match'];
+    delete req.headers['if-modified-since'];
+    next();
+  });
+}
+
 // Stripe webhook needs raw body for signature verification
 app.use('/api/stripe-webhook', express.raw({ type: 'application/json' }));
 
