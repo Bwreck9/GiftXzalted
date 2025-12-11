@@ -99,7 +99,7 @@ export default function ProfileDetail() {
       return apiRequest('PATCH', `/api/profiles/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
+      queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}`] });
       toast({ title: 'Profile updated successfully' });
       setQuestionnaireOpen(false);
     },
@@ -109,21 +109,11 @@ export default function ProfileDetail() {
   });
 
   const { data: profile, isLoading: profileLoading } = useQuery<Profile>({
-    queryKey: ['/api/profiles', id],
-    queryFn: async () => {
-      const res = await fetch(`/api/profiles/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch profile');
-      return res.json();
-    },
+    queryKey: [`/api/profiles/${id}`],
   });
 
   const { data: giftLists, isLoading: listsLoading } = useQuery<GiftList[]>({
-    queryKey: ['/api/profiles', id, 'gift-lists'],
-    queryFn: async () => {
-      const res = await fetch(`/api/profiles/${id}/gift-lists`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch gift lists');
-      return res.json();
-    },
+    queryKey: [`/api/profiles/${id}/gift-lists`],
     enabled: !!id,
   });
 
@@ -146,8 +136,8 @@ export default function ProfileDetail() {
       return apiRequest('POST', `/api/profiles/${profileId}/clear`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id, 'gift-lists'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
       toast({ title: 'Profile data cleared successfully' });
     },
     onError: () => {
@@ -160,7 +150,7 @@ export default function ProfileDetail() {
       return apiRequest('POST', `/api/profiles/${id}/gift-lists`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id, 'gift-lists'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
     },
   });
 
@@ -169,7 +159,7 @@ export default function ProfileDetail() {
       return apiRequest('PATCH', `/api/gift-lists/${giftListId}`, { manualIdeas: ideas });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id, 'gift-lists'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
       toast({ title: 'Idea added!' });
       setAddIdeaDialogOpen(false);
       setNewIdeaTitle('');
@@ -186,7 +176,7 @@ export default function ProfileDetail() {
       return apiRequest('PATCH', `/api/gift-lists/${giftListId}`, { manualIdeas: ideas });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles', id, 'gift-lists'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
       toast({ title: 'Idea removed' });
     },
     onError: () => {
@@ -242,7 +232,7 @@ export default function ProfileDetail() {
           console.error('Failed to parse AI response for session tracking:', e);
         }
       }
-      await queryClient.invalidateQueries({ queryKey: ['/api/profiles', id, 'gift-lists'] });
+      await queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       toast({ title: 'Gift ideas generated!' });
     },
@@ -334,7 +324,7 @@ export default function ProfileDetail() {
         apiRequest('PATCH', `/api/gift-lists/${list.id}`, { 
           premiumResults: JSON.stringify(updatedResults) 
         }).then(() => {
-          queryClient.invalidateQueries({ queryKey: ['/api/profiles', id, 'gift-lists'] });
+          queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
           toast({ title: 'Idea removed' });
         });
       } catch (e) {
@@ -372,7 +362,7 @@ export default function ProfileDetail() {
       apiRequest('PATCH', `/api/gift-lists/${list.id}`, { 
         premiumResults: JSON.stringify(updatedResults) 
       }).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['/api/profiles', id, 'gift-lists'] });
+        queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
       });
     } catch (e) {
       console.error('Failed to remove from AI ideas:', e);
