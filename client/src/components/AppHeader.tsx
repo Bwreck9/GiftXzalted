@@ -28,23 +28,23 @@ export function AppHeader() {
 
   return (
     <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-10 shadow-sm">
-      <div className="h-16 px-6 flex items-center justify-between">
+      <div className="h-14 px-3 sm:px-6 flex items-center justify-between gap-2">
         {/* Logo */}
         <button 
           onClick={() => setLocation('/')}
-          className="flex items-center gap-1.5 hover-elevate active-elevate-2 p-2 rounded-md shrink-0"
+          className="flex items-center gap-1 sm:gap-1.5 hover-elevate active-elevate-2 p-1.5 sm:p-2 rounded-md shrink-0 min-w-0"
           data-testid="button-logo-home"
         >
-          <div className="bg-gradient-to-br from-primary via-purple-500 to-pink-500 p-1.5 rounded-lg">
+          <div className="bg-gradient-to-br from-primary via-purple-500 to-pink-500 p-1 sm:p-1.5 rounded-lg shrink-0">
             <Gift className="h-4 w-4 text-white" />
           </div>
-          <span className="text-lg font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap">
+          <span className="text-base sm:text-lg font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap">
             Gift Xzalted
           </span>
         </button>
 
         {/* Right Side */}
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
           {/* Nav Links */}
           <Button
             variant="ghost"
@@ -81,12 +81,12 @@ export function AppHeader() {
             <Button
               onClick={() => setLocation('/pricing')}
               variant="outline"
-              size="default"
-              className="hover-elevate active-elevate-2"
+              size="sm"
+              className="hover-elevate active-elevate-2 shrink-0"
               data-testid="button-token-counter"
             >
-              <Coins className="h-4 w-4 mr-2" />
-              {(user.tokens ?? 0) + (user.purchasedTokens ?? 0)} tokens
+              <Coins className="h-4 w-4 mr-1" />
+              {(user.tokens ?? 0) + (user.purchasedTokens ?? 0)}
             </Button>
           )}
 
