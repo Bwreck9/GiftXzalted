@@ -55,6 +55,10 @@ export const profiles = pgTable("profiles", {
   location: text("location"), // City/country
   additionalNotes: text("additional_notes"), // Extra context (2000 char limit)
   
+  // Important dates for this person
+  birthdayDate: text("birthday_date"), // MM-DD format (e.g., "12-25")
+  anniversaryDate: text("anniversary_date"), // MM-DD format (e.g., "06-15")
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -166,6 +170,10 @@ export const insertProfileSchema = createInsertSchema(profiles).omit({
   giftStyle: z.enum(['unique-thoughtful', 'safe-popular']).optional(),
   location: z.string().max(500).optional(), // City/country
   additionalNotes: z.string().max(2000).optional(), // Extra context
+  
+  // Important dates
+  birthdayDate: z.string().regex(/^\d{2}-\d{2}$/).optional(), // MM-DD format
+  anniversaryDate: z.string().regex(/^\d{2}-\d{2}$/).optional(), // MM-DD format
 });
 
 // Premium result type for storing in premiumResults JSON

@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { X } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 import type { Profile } from '@shared/schema';
 
 interface SettingsModalProps {
@@ -26,6 +26,22 @@ const COLOR_PRESETS = [
   { name: 'Indigo', value: '#6366F1' },
 ];
 
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+function parseMMDD(mmdd: string | null | undefined): { month: string; day: string } {
+  if (!mmdd) return { month: '', day: '' };
+  const [month, day] = mmdd.split('-');
+  return { month: month || '', day: day || '' };
+}
+
+function formatMMDD(month: string, day: string): string | undefined {
+  if (!month || !day) return undefined;
+  return `${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
 export function SettingsModal({ 
   open, 
   onOpenChange, 
@@ -37,6 +53,27 @@ export function SettingsModal({
   const [name, setName] = useState(profile?.name || '');
   const [color, setColor] = useState(profile?.color || '#3B82F6');
   const [customColor, setCustomColor] = useState('');
+  
+  const [birthdayMonth, setBirthdayMonth] = useState('');
+  const [birthdayDay, setBirthdayDay] = useState('');
+  const [anniversaryMonth, setAnniversaryMonth] = useState('');
+  const [anniversaryDay, setAnniversaryDay] = useState('');
+
+  useEffect(() => {
+    if (profile) {
+      setName(profile.name || '');
+      setColor(profile.color || '#3B82F6');
+      setCustomColor('');
+      
+      const birthday = parseMMDD(profile.birthdayDate);
+      setBirthdayMonth(birthday.month);
+      setBirthdayDay(birthday.day);
+      
+      const anniversary = parseMMDD(profile.anniversaryDate);
+      setAnniversaryMonth(anniversary.month);
+      setAnniversaryDay(anniversary.day);
+    }
+  }, [profile, open]);
 
   if (!profile) return null;
 
@@ -44,6 +81,8 @@ export function SettingsModal({
     onSave?.({
       name: name || profile.name,
       color: customColor || color,
+      birthdayDate: formatMMDD(birthdayMonth, birthdayDay),
+      anniversaryDate: formatMMDD(anniversaryMonth, anniversaryDay),
     });
     onOpenChange(false);
   };
@@ -64,7 +103,7 @@ export function SettingsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" data-testid="settings-modal">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto" data-testid="settings-modal">
         <DialogHeader className="relative">
           <Button
             onClick={() => onOpenChange(false)}
@@ -138,6 +177,74 @@ export function SettingsModal({
                 className="w-16"
                 data-testid="settings-color-picker"
               />
+            </div>
+          </div>
+
+          {/* Important Dates */}
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <Label className="text-base font-semibold">Important Dates</Label>
+            </div>
+            
+            {/* Birthday */}
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Birthday</Label>
+              <div className="flex gap-2">
+                <select
+                  value={birthdayMonth}
+                  onChange={(e) => setBirthdayMonth(e.target.value)}
+                  className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  data-testid="settings-birthday-month"
+                >
+                  <option value="">Month</option>
+                  {MONTHS.map((month, idx) => (
+                    <option key={month} value={(idx + 1).toString().padStart(2, '0')}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={birthdayDay}
+                  onChange={(e) => setBirthdayDay(e.target.value)}
+                  placeholder="Day"
+                  className="w-20"
+                  data-testid="settings-birthday-day"
+                />
+              </div>
+            </div>
+
+            {/* Anniversary */}
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Anniversary</Label>
+              <div className="flex gap-2">
+                <select
+                  value={anniversaryMonth}
+                  onChange={(e) => setAnniversaryMonth(e.target.value)}
+                  className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  data-testid="settings-anniversary-month"
+                >
+                  <option value="">Month</option>
+                  {MONTHS.map((month, idx) => (
+                    <option key={month} value={(idx + 1).toString().padStart(2, '0')}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={anniversaryDay}
+                  onChange={(e) => setAnniversaryDay(e.target.value)}
+                  placeholder="Day"
+                  className="w-20"
+                  data-testid="settings-anniversary-day"
+                />
+              </div>
             </div>
           </div>
 
