@@ -1,7 +1,7 @@
 # Gift Xzalted - AI-Powered Gift Recommendation App
 
 ### Overview
-Gift Xzalted is an AI-powered application designed to help users find the perfect gift for anyone. It features a hierarchical structure of Profiles (recipients) → Gift Lists (occasions) → Gift Ideas (manual entries and AI recommendations). Users can create unlimited profiles and gift lists for free, with optional token-based AI recommendations. The project aims to provide a streamlined, user-friendly experience for gift discovery, leveraging AI for personalized suggestions and offering flexible pricing models. The business vision is to become a leading platform for personalized gift recommendations, tapping into the vast gift-giving market with a unique AI-driven approach.
+Gift Xzalted is an AI-powered application designed to help users find the perfect gift for anyone. It features a **unified profile view** where users create Profiles (recipients) and see all Gift Ideas directly with occasion tags. Users can create unlimited profiles for free, with optional token-based AI recommendations. The project aims to provide a streamlined, user-friendly experience for gift discovery, leveraging AI for personalized suggestions and offering flexible pricing models.
 
 ### User Preferences
 - Material Design 3 aesthetic
@@ -10,42 +10,60 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 - Fast and simple user experience
 
 ### System Architecture
+
 **UI/UX Decisions:**
 - **Design System:** Material Design 3 with a consistent gradient styling (primary blue → purple → pink), Inter font, 44px minimum touch targets, consistent spacing, and dark mode support.
 - **Navigation:** Hierarchical navigation, clickable logo for homepage, and accessible footer with legal links.
-- **Mobile-First UX:** Condensed layouts for profile cards and gift ideas on mobile, restructured headers, and quick-select occasion buttons in gift list creation.
+- **Mobile-First UX:** Condensed layouts for profile cards and gift ideas on mobile, restructured headers.
+- **Unified Profile View:** Profile page displays all gift ideas directly without navigating to separate gift lists. Ideas are tagged with occasions (Birthday, Anniversary, Christmas, etc.) and can be filtered.
 - **Profile System:** Questionnaire-based profiles for AI training with comprehensive checkbox/dropdown interface covering age, gender, personality, interests, relationship, closeness, budget, gift preferences, dislikes, gift style, location, and additional notes. Includes a "Clear All" button and a preview modal.
-- **Gift List Management:** Separated "Gift Ideas" (manual with auto-save after 1.5 seconds) and "Generated Ideas" (AI). Settings dropdown for list operations. "Add to list" functionality for AI suggestions. "Generate ideas" button triggers AI recommendations (200 tokens per generation, 10 ideas). AI-generated ideas auto-clear before each new generation. "Clear all" button with confirmation dialog for removing generated ideas. Session-based duplicate prevention for AI suggestions.
+- **Important Dates:** Profiles can store birthday and anniversary dates (MM-DD format) for recurring annual reminders, displayed in profile header.
+- **Gift Ideas Management:**
+  - **Saved Ideas:** Manual entries with occasion tags, auto-saved
+  - **Generated Ideas:** AI-powered suggestions (200 tokens per 10 ideas, scalable 10-50)
+  - Add Idea dialog with occasion dropdown (Birthday, Christmas, Anniversary, etc.) + custom option
+  - Filter by occasion dropdown
+  - "Add to list" functionality to save AI suggestions
 - **Landing Page (Non-Authenticated):** Prioritizes sign-in, features compact utility buttons (Install App + Theme Toggle), and four gradient-styled feature cards highlighting app benefits.
 - **Pricing Page:** Displays profile plans (Free, Basic, Premium, Enterprise) and one-time token purchases.
 - **Checkout Page:** Mini-checkout UX with a centered card, gradient quantity display, and prominent total price.
 - **Welcome Experience:** Splash screen on every app open explaining features.
 
 **Technical Implementations & Feature Specifications:**
-- **Authentication:** Replit Auth with Google OAuth (session-based, cookie authentication).
+- **Authentication:** Firebase Authentication with Google OAuth.
 - **Database:** PostgreSQL with Drizzle ORM for users, sessions, profiles, gift_lists, messages, tokens, and transactions.
-- **Core Hierarchy:** Profiles (`profiles` table) represent individuals, Gift Lists (`gift_lists` table) represent occasions and contain both manual and AI-generated gift ideas.
+- **Core Data Model:** 
+  - Profiles (`profiles` table) represent gift recipients with questionnaire data and optional important dates
+  - Gift Lists (`gift_lists` table) represent occasions and contain both manual and AI-generated gift ideas (used internally, hidden from user)
+  - Occasion tags derived from gift list titles for unified view
 - **Demo Profiles:** Four pre-populated demo profiles for new users.
-- **Token System:** Dual-column accounting for subscription (`tokens`) and purchased (`purchasedTokens`) tokens, deducted purchased first, then subscription. Subscription tokens reset monthly. Cost: 200 tokens per AI generation.
-- **Payment Processing:** Stripe Checkout (redirect-based) for secure payments. Users are redirected to Stripe-hosted checkout pages for token purchases and subscriptions. Automatically supports Apple Pay, Google Pay, PayPal (when enabled), and credit cards. Webhook signature verification for payment confirmation using `checkout.session.completed` and `customer.subscription.created` events. Environment-specific keys for testing vs production.
+- **Token System:** Dual-column accounting for subscription (`tokens`) and purchased (`purchasedTokens`) tokens, deducted purchased first, then subscription. Subscription tokens reset monthly. Cost: 200 tokens per 10 AI ideas.
+- **Payment Processing:** Stripe Checkout (redirect-based) for secure payments. Webhook signature verification for payment confirmation.
 - **AI Integration:** OpenAI gpt-4o-mini for personalized gift recommendations based on profile data, returning structured JSON.
 - **API Endpoints:** Standard RESTful endpoints for profiles and gift lists (create, read, update, delete) with ownership validation.
 - **Pricing Model:** Free tier (5 profiles), one-time token purchases, and tiered subscriptions (Basic, Premium, Enterprise) offering increasing profiles and tokens.
 - **Legal Pages:** Dedicated Privacy Policy and Terms & Conditions pages.
 - **Support Page:** Authenticated user support page with email contact form.
 - **Settings Page:** Displays account info, token balance, PWA installation card, and sign-out.
-- **Progressive Web App (PWA):** Full PWA support with web app manifest, service worker (v2) for intelligent caching (network-first for HTML, cache-first for assets), offline functionality, and custom installation UI. Auto-install prompts for Android/Desktop (Chrome/Edge), manual install instructions for iOS (Safari share menu).
+- **Progressive Web App (PWA):** Full PWA support with web app manifest, service worker for intelligent caching, offline functionality, and custom installation UI.
 
 **Deployment & Custom Domain:**
 - **Target Subdomain:** `gift.xzalted.com`
-- **Deployment Process:** Publish on Replit (Autoscale recommended), configure custom domain (`gift.xzalted.com`), update DNS records (A and TXT) at registrar, verification by Replit, automatic SSL.
-- **PWA Installation:** Users can install the PWA from the custom domain on desktop (Chrome/Edge) and mobile (Android Chrome, iOS Safari).
+- **Deployment Process:** Publish on Replit (Autoscale recommended), configure custom domain, update DNS records at registrar.
+- **PWA Installation:** Users can install the PWA from the custom domain on desktop and mobile.
+
+### Key Files
+- `client/src/pages/ProfileDetail.tsx` - Unified profile view with all ideas
+- `client/src/components/SettingsModal.tsx` - Profile settings including important dates
+- `shared/schema.ts` - Database schema including profiles with birthdayDate/anniversaryDate
+- `server/routes.ts` - API endpoints
+- `server/openai.ts` - AI generation logic
 
 ### External Dependencies
 - **Frontend:** React, TypeScript, Tailwind CSS, Shadcn UI
 - **Backend:** Express.js, Node.js
 - **Database:** PostgreSQL (Neon)
-- **Authentication:** Replit Auth (Google OAuth)
+- **Authentication:** Firebase (Google OAuth)
 - **AI:** OpenAI gpt-4o-mini
 - **Payments:** Stripe
 - **ORM:** Drizzle
