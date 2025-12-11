@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
-import { Gift, User, Settings, Coins, Moon, Sun, LogOut, LogIn, Mail } from 'lucide-react';
+import { Gift, User, Settings, Coins, Moon, Sun, LogOut, LogIn, Mail, FileText, DollarSign, Shield, ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -44,7 +44,38 @@ export function AppHeader() {
         </button>
 
         {/* Right Side */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Nav Links */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation('/about')}
+            className="hover-elevate hidden sm:flex"
+            data-testid="nav-about"
+          >
+            <FileText className="h-4 w-4 mr-1" />
+            About
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation('/pricing')}
+            className="hover-elevate hidden sm:flex"
+            data-testid="nav-pricing"
+          >
+            <DollarSign className="h-4 w-4 mr-1" />
+            Pricing
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="hover-elevate"
+            data-testid="nav-theme-toggle"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          
           {/* Token Counter */}
           {user && (
             <Button
@@ -72,23 +103,24 @@ export function AppHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
+              {/* Mobile nav links */}
               <DropdownMenuItem 
-                onClick={toggleTheme}
-                data-testid="menu-item-theme-toggle"
+                onClick={() => setLocation('/about')}
+                className="sm:hidden"
+                data-testid="menu-item-about"
               >
-                {theme === 'dark' ? (
-                  <>
-                    <Sun className="h-4 w-4 mr-2" />
-                    Light Mode
-                  </>
-                ) : (
-                  <>
-                    <Moon className="h-4 w-4 mr-2" />
-                    Dark Mode
-                  </>
-                )}
+                <FileText className="h-4 w-4 mr-2" />
+                About
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => setLocation('/pricing')}
+                className="sm:hidden"
+                data-testid="menu-item-pricing"
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                Pricing
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="sm:hidden" />
               {isAuthenticated && (
                 <>
                   <DropdownMenuItem 
@@ -105,6 +137,22 @@ export function AppHeader() {
                     <Mail className="h-4 w-4 mr-2" />
                     Support
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => setLocation('/privacy')}
+                    data-testid="menu-item-privacy"
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Privacy Policy
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setLocation('/terms')}
+                    data-testid="menu-item-terms"
+                  >
+                    <ScrollText className="h-4 w-4 mr-2" />
+                    Terms & Conditions
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                 </>
               )}
               {isAuthenticated ? (

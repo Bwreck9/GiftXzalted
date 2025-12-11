@@ -79,7 +79,7 @@ interface UnifiedIdea {
 
 export default function ProfileDetail() {
   const { id } = useParams<{ id: string }>();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
@@ -93,6 +93,20 @@ export default function ProfileDetail() {
   const [filterOccasion, setFilterOccasion] = useState('all');
   const [numIdeas, setNumIdeas] = useState(10);
   const [sessionGeneratedIdeas, setSessionGeneratedIdeas] = useState<string[]>([]);
+  const [newInlineIdea, setNewInlineIdea] = useState<{ title: string; occasion: string } | null>(null);
+  const [editingIdea, setEditingIdea] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
+  const newIdeaInputRef = useRef<HTMLInputElement>(null);
+  
+  // Handle ?train=true query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('train') === 'true') {
+      setQuestionnaireDialogOpen(true);
+      // Clear the query param from URL
+      window.history.replaceState({}, '', `/profile/${id}`);
+    }
+  }, [id]);
   
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -415,6 +429,118 @@ export default function ProfileDetail() {
     generateMutation.mutate(targetListId);
   };
 
+  const handleAddInlineIdea = () => {
+    setNewInlineIdea({ title: '', occasion: 'General' });
+    setTimeout(() => newIdeaInputRef.current?.focus(), 50);
+  };
+
+  const handleSaveInlineIdea = async () => {
+    if (!newInlineIdea || !newInlineIdea.title.trim()) {
+      setNewInlineIdea(null);
+      return;
+    }
+
+    const occasion = newInlineIdea.occasion || 'General';
+    let targetList = (giftLists || []).find(list => list.title === occasion);
+    
+    if (!targetList) {
+      const response = await createListMutation.mutateAsync({ title: occasion });
+      const newList = await response.json();
+      targetList = newList;
+    }
+
+    if (targetList) {
+      const currentIdeas = targetList.manualIdeas || [];
+      addIdeaMutation.mutate({ 
+        giftListId: targetList.id, 
+        ideas: [...currentIdeas, newInlineIdea.title.trim()] 
+      });
+    }
+    setNewInlineIdea(null);
+  };
+
+  const handleUpdateIdeaTitle = async (idea: UnifiedIdea, newTitle: string) => {
+    if (newTitle.trim() === idea.title) {
+      setEditingIdea(null);
+      return;
+    }
+    
+    const list = (giftLists || []).find(l => l.id === idea.giftListId);
+    if (!list) return;
+
+    const currentIdeas = list.manualIdeas || [];
+    const updatedIdeas = currentIdeas.map(i => i === idea.title ? newTitle.trim() : i);
+    
+    await apiRequest('PATCH', `/api/gift-lists/${list.id}`, { manualIdeas: updatedIdeas });
+    queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
+    setEditingIdea(null);
+  };
+
+  const handleChangeIdeaOccasion = async (idea: UnifiedIdea, newOccasion: string) => {
+    if (newOccasion === idea.occasion) return;
+    
+    const oldList = (giftLists || []).find(l => l.id === idea.giftListId);
+    if (!oldList) return;
+
+    // Remove from old list
+    const oldIdeas = (oldList.manualIdeas || []).filter(i => i !== idea.title);
+    await apiRequest('PATCH', `/api/gift-lists/${oldList.id}`, { manualIdeas: oldIdeas });
+
+    // Add to new list (create if needed)
+    let newList = (giftLists || []).find(l => l.title === newOccasion);
+    if (!newList) {
+      const response = await createListMutation.mutateAsync({ title: newOccasion });
+      newList = await response.json();
+    }
+
+    if (newList) {
+      const newIdeas = [...(newList.manualIdeas || []), idea.title];
+      await apiRequest('PATCH', `/api/gift-lists/${newList.id}`, { manualIdeas: newIdeas });
+    }
+
+    queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
+  };
+
+  const handleChangeGeneratedIdeaOccasion = async (idea: UnifiedIdea, newOccasion: string) => {
+    if (newOccasion === idea.occasion) return;
+    
+    const oldList = (giftLists || []).find(l => l.id === idea.giftListId);
+    if (!oldList) return;
+
+    // Get current AI results and remove this idea
+    let currentResults = [];
+    try {
+      currentResults = oldList.premiumResults ? JSON.parse(oldList.premiumResults) : [];
+    } catch (e) {}
+    
+    const ideaData = currentResults.find((r: any) => r.title === idea.title);
+    const updatedResults = currentResults.filter((r: any) => r.title !== idea.title);
+    
+    await apiRequest('PATCH', `/api/gift-lists/${oldList.id}`, { 
+      premiumResults: JSON.stringify(updatedResults) 
+    });
+
+    // Add to new list (create if needed)
+    let newList = (giftLists || []).find(l => l.title === newOccasion);
+    if (!newList) {
+      const response = await createListMutation.mutateAsync({ title: newOccasion });
+      newList = await response.json();
+    }
+
+    if (newList && ideaData) {
+      let newResults = [];
+      try {
+        newResults = newList.premiumResults ? JSON.parse(newList.premiumResults) : [];
+      } catch (e) {}
+      newResults.push(ideaData);
+      await apiRequest('PATCH', `/api/gift-lists/${newList.id}`, { 
+        premiumResults: JSON.stringify(newResults) 
+      });
+    }
+
+    queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
+  };
+
   if (profileLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -485,11 +611,6 @@ export default function ProfileDetail() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => setQuestionnaireOpen(true)}>
-                    <Brain className="h-4 w-4 mr-2" />
-                    Train Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
                     <Pencil className="h-4 w-4 mr-2" />
                     Rename / Recolor
@@ -519,9 +640,6 @@ export default function ProfileDetail() {
               <span className="sm:hidden">Train</span>
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-2 ml-12 md:ml-16">
-            Answer a few questions to get personalized gift ideas
-          </p>
         </div>
       </div>
 
@@ -585,7 +703,7 @@ export default function ProfileDetail() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <Button
-                onClick={() => setAddIdeaDialogOpen(true)}
+                onClick={handleAddInlineIdea}
                 variant="outline"
                 className="hover-elevate"
                 data-testid="button-add-idea"
@@ -644,17 +762,95 @@ export default function ProfileDetail() {
                   <div key={i} className="h-16 bg-card animate-pulse rounded-lg" />
                 ))}
               </div>
-            ) : savedIdeas.length > 0 ? (
+            ) : (
               <div className="space-y-2">
+                {/* Inline New Idea Input */}
+                {newInlineIdea && (
+                  <Card className="p-3 md:p-4 border-primary/50" data-testid="new-inline-idea">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Input
+                        ref={newIdeaInputRef}
+                        value={newInlineIdea.title}
+                        onChange={(e) => setNewInlineIdea({ ...newInlineIdea, title: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveInlineIdea();
+                          if (e.key === 'Escape') setNewInlineIdea(null);
+                        }}
+                        onBlur={handleSaveInlineIdea}
+                        placeholder="Type gift idea..."
+                        className="flex-1 min-w-0"
+                        data-testid="input-new-inline-idea"
+                      />
+                      <Select 
+                        value={newInlineIdea.occasion} 
+                        onValueChange={(v) => setNewInlineIdea({ ...newInlineIdea, occasion: v })}
+                      >
+                        <SelectTrigger className="w-32" data-testid="select-new-idea-occasion">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {OCCASION_OPTIONS.map(o => (
+                            <SelectItem key={o} value={o}>{o}</SelectItem>
+                          ))}
+                          <SelectItem value="General">General</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={() => setNewInlineIdea(null)}
+                        variant="ghost"
+                        size="icon"
+                        className="hover-elevate shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                )}
                 {savedIdeas.map(idea => (
                   <Card key={idea.id} className="p-3 md:p-4" data-testid={`saved-idea-${idea.id}`}>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="font-medium text-foreground truncate">{idea.title}</span>
-                        <Badge variant="secondary" className="shrink-0 text-xs">
-                          {idea.occasion}
-                        </Badge>
-                      </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {editingIdea === idea.id ? (
+                        <Input
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          onBlur={() => handleUpdateIdeaTitle(idea, editingText)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleUpdateIdeaTitle(idea, editingText);
+                            if (e.key === 'Escape') setEditingIdea(null);
+                          }}
+                          className="flex-1 min-w-0"
+                          autoFocus
+                          data-testid={`input-edit-idea-${idea.id}`}
+                        />
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setEditingIdea(idea.id);
+                            setEditingText(idea.title);
+                          }}
+                          className="flex-1 min-w-0 text-left font-medium text-foreground truncate hover:underline cursor-text"
+                          data-testid={`text-idea-${idea.id}`}
+                        >
+                          {idea.title}
+                        </button>
+                      )}
+                      <Select 
+                        value={idea.occasion} 
+                        onValueChange={(v) => handleChangeIdeaOccasion(idea, v)}
+                      >
+                        <SelectTrigger className="w-32 shrink-0" data-testid={`select-occasion-${idea.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {OCCASION_OPTIONS.map(o => (
+                            <SelectItem key={o} value={o}>{o}</SelectItem>
+                          ))}
+                          {!OCCASION_OPTIONS.includes(idea.occasion) && (
+                            <SelectItem value={idea.occasion}>{idea.occasion}</SelectItem>
+                          )}
+                          <SelectItem value="General">General</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <Button
                         onClick={() => handleRemoveIdea(idea)}
                         variant="ghost"
@@ -668,7 +864,8 @@ export default function ProfileDetail() {
                   </Card>
                 ))}
               </div>
-            ) : (
+            )}
+            {savedIdeas.length === 0 && !newInlineIdea && (
               <div className="text-center py-8 rounded-lg border bg-card/50">
                 <Gift className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
                 <p className="text-muted-foreground">No saved ideas yet</p>
@@ -684,18 +881,15 @@ export default function ProfileDetail() {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-purple-500" />
-                AI Suggestions ({generatedIdeas.length})
+                Generated Suggestions ({generatedIdeas.length})
               </h2>
               <div className="space-y-2">
                 {generatedIdeas.map(idea => (
                   <Card key={idea.id} className="p-3 md:p-4" data-testid={`generated-idea-${idea.id}`}>
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-foreground">{idea.title}</span>
-                          <Badge variant="secondary" className="text-xs">
-                            {idea.occasion}
-                          </Badge>
                           {idea.reason && (
                             <Popover>
                               <PopoverTrigger asChild>
@@ -717,6 +911,23 @@ export default function ProfileDetail() {
                           )}
                         </div>
                       </div>
+                      <Select 
+                        value={idea.occasion} 
+                        onValueChange={(v) => handleChangeGeneratedIdeaOccasion(idea, v)}
+                      >
+                        <SelectTrigger className="w-32 shrink-0" data-testid={`select-gen-occasion-${idea.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {OCCASION_OPTIONS.map(o => (
+                            <SelectItem key={o} value={o}>{o}</SelectItem>
+                          ))}
+                          {!OCCASION_OPTIONS.includes(idea.occasion) && (
+                            <SelectItem value={idea.occasion}>{idea.occasion}</SelectItem>
+                          )}
+                          <SelectItem value="General">General</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <div className="flex items-center gap-1 shrink-0">
                         <Button
                           onClick={() => handleAddAiIdeaToSaved(idea)}
@@ -750,89 +961,6 @@ export default function ProfileDetail() {
           )}
         </div>
       </main>
-
-      {/* Add Idea Dialog */}
-      <Dialog open={addIdeaDialogOpen} onOpenChange={setAddIdeaDialogOpen}>
-        <DialogContent className="sm:max-w-[450px]" data-testid="dialog-add-idea">
-          <DialogHeader>
-            <DialogTitle>Add Gift Idea</DialogTitle>
-            <DialogDescription>
-              Add a new gift idea for {profile.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="idea-title">Gift Idea</Label>
-              <Input
-                id="idea-title"
-                placeholder="e.g., Bluetooth speaker"
-                value={newIdeaTitle}
-                onChange={(e) => setNewIdeaTitle(e.target.value)}
-                maxLength={100}
-                data-testid="input-idea-title"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Occasion</Label>
-              <Select value={newIdeaOccasion} onValueChange={setNewIdeaOccasion}>
-                <SelectTrigger data-testid="select-idea-occasion">
-                  <SelectValue placeholder="Select an occasion" />
-                </SelectTrigger>
-                <SelectContent>
-                  {OCCASION_OPTIONS.map(occasion => (
-                    <SelectItem key={occasion} value={occasion}>{occasion}</SelectItem>
-                  ))}
-                  <SelectItem value="custom">Custom...</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {newIdeaOccasion === 'custom' && (
-              <div className="space-y-2">
-                <Label htmlFor="custom-occasion">Custom Occasion</Label>
-                <Input
-                  id="custom-occasion"
-                  placeholder="e.g., Promotion"
-                  value={customOccasion}
-                  onChange={(e) => setCustomOccasion(e.target.value)}
-                  maxLength={30}
-                  data-testid="input-custom-occasion"
-                />
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Quick Select</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {OCCASION_OPTIONS.slice(0, 6).map((occasion) => (
-                  <Button
-                    key={occasion}
-                    type="button"
-                    variant={newIdeaOccasion === occasion ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setNewIdeaOccasion(occasion)}
-                    className="hover-elevate text-xs h-8"
-                    data-testid={`button-quick-${occasion.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
-                  >
-                    {occasion}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              onClick={handleAddIdea}
-              disabled={addIdeaMutation.isPending || createListMutation.isPending || !newIdeaTitle.trim()}
-              className="hover-elevate active-elevate-2"
-              data-testid="button-add-idea-submit"
-            >
-              {addIdeaMutation.isPending || createListMutation.isPending ? 'Adding...' : 'Add Idea'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Need Tokens Dialog */}
       <Dialog open={needTokensDialogOpen} onOpenChange={setNeedTokensDialogOpen}>

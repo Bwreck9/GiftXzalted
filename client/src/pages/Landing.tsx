@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { AppHeader } from '@/components/AppHeader';
 import { LoginModal } from '@/components/LoginModal';
 import type { Profile } from '@shared/schema';
-import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus, Moon, Sun, Mail, Download, Smartphone, Share } from 'lucide-react';
+import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus, Moon, Sun, Mail, Download, Smartphone, Share, Brain } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -437,18 +437,17 @@ export default function Landing() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => {
-                            setSelectedProfile(profile);
-                            setSettingsOpen(true);
+                            setLocation(`/profile/${profile.id}?train=true`);
                           }}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Rename
+                            <Brain className="h-4 w-4 mr-2" />
+                            Train Profile
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => {
                             setSelectedProfile(profile);
                             setSettingsOpen(true);
                           }}>
                             <Pencil className="h-4 w-4 mr-2" />
-                            Change Color
+                            Rename / Recolor
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="text-destructive"

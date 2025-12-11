@@ -13,7 +13,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 
 **UI/UX Decisions:**
 - **Design System:** Material Design 3 with a consistent gradient styling (primary blue → purple → pink), Inter font, 44px minimum touch targets, consistent spacing, and dark mode support.
-- **Navigation:** Hierarchical navigation, clickable logo for homepage, and accessible footer with legal links.
+- **Navigation:** Hierarchical navigation with About/Pricing/Theme toggle in top nav bar. Clickable logo for homepage. Privacy/Terms in authenticated user dropdown menu. Train Profile accessible from home page profile card gear menu.
 - **Mobile-First UX:** Condensed layouts for profile cards and gift ideas on mobile, restructured headers.
 - **Unified Profile View:** Profile page displays all gift ideas directly without navigating to separate gift lists. Ideas are tagged with occasions (Birthday, Anniversary, Christmas, etc.) and can be filtered.
 - **Profile System:** Questionnaire-based profiles for AI training with comprehensive checkbox/dropdown interface covering age, gender, personality, interests, relationship, closeness, budget, gift preferences, dislikes, gift style, location, and additional notes. Includes a "Clear All" button and a preview modal.

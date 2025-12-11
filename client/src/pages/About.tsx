@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Gift, ListPlus, Sparkles, Lock, ArrowLeft, Zap } from 'lucide-react';
+import { LoginModal } from '@/components/LoginModal';
 
 export default function About() {
   const [, setLocation] = useLocation();
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -156,7 +159,7 @@ export default function About() {
               View Pricing
             </Button>
             <Button
-              onClick={() => setLocation('/')}
+              onClick={() => setLoginModalOpen(true)}
               variant="outline"
               size="lg"
               className="hover-elevate active-elevate-2"
@@ -165,6 +168,8 @@ export default function About() {
               Get Started Free
             </Button>
           </div>
+
+          <LoginModal open={loginModalOpen} onOpenChange={setLoginModalOpen} />
 
           {/* Bottom Back Button */}
           <div className="flex justify-center pt-8">
