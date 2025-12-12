@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { 
   Plus, Brain, Settings, Trash2, ArrowLeft, Pencil, Sparkles, 
-  Loader2, X, Info, Calendar, ChevronDown, Check, Gift
+  Loader2, X, Info, Calendar, ChevronDown, ChevronUp, Check, Gift
 } from 'lucide-react';
 import { AppHeader } from '@/components/AppHeader';
 import type { Profile, GiftList } from '@shared/schema';
@@ -115,6 +115,9 @@ export default function ProfileDetail() {
   const [numIdeas, setNumIdeas] = useState(10);
   const [sessionGeneratedIdeas, setSessionGeneratedIdeas] = useState<string[]>([]);
   const [newInlineIdea, setNewInlineIdea] = useState<{ title: string; occasion: string } | null>(null);
+  const [savedIdeasCollapsed, setSavedIdeasCollapsed] = useState(false);
+  const [purchasedIdeas, setPurchasedIdeas] = useState<Set<string>>(new Set());
+  const [flashingIdeas, setFlashingIdeas] = useState<Map<string, 'add' | 'remove'>>(new Map());
   const [editingIdea, setEditingIdea] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const newIdeaInputRef = useRef<HTMLInputElement>(null);
@@ -190,16 +193,21 @@ export default function ProfileDetail() {
   });
 
   const addIdeaMutation = useMutation({
-    mutationFn: async ({ giftListId, ideas }: { giftListId: string; ideas: string[] }) => {
+    mutationFn: async ({ giftListId, ideas, newIdeaTitle }: { giftListId: string; ideas: string[]; newIdeaTitle?: string }) => {
       return apiRequest('PATCH', `/api/gift-lists/${giftListId}`, { manualIdeas: ideas });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
       toast({ title: 'Idea added!' });
       setAddIdeaDialogOpen(false);
       setNewIdeaTitle('');
       setNewIdeaOccasion('');
       setCustomOccasion('');
+      // Trigger flash effect for the newly added idea (first item in the list)
+      if (variables.newIdeaTitle) {
+        const flashId = `${variables.giftListId}-manual-0`;
+        triggerFlash(flashId, 'add');
+      }
     },
     onError: () => {
       toast({ title: 'Failed to add idea', variant: 'destructive' });
@@ -352,6 +360,9 @@ export default function ProfileDetail() {
     const list = (giftLists || []).find(l => l.id === idea.giftListId);
     if (!list) return;
 
+    // Flash the idea being removed
+    triggerFlash(idea.id, 'remove');
+
     if (idea.isAiGenerated) {
       try {
         const currentResults = list.premiumResults ? JSON.parse(list.premiumResults) : [];
@@ -372,6 +383,36 @@ export default function ProfileDetail() {
     }
   };
 
+  // Helper to trigger flash effect
+  const triggerFlash = (ideaId: string, type: 'add' | 'remove') => {
+    setFlashingIdeas(prev => {
+      const next = new Map(prev);
+      next.set(ideaId, type);
+      return next;
+    });
+    // Clear flash after animation completes
+    setTimeout(() => {
+      setFlashingIdeas(prev => {
+        const next = new Map(prev);
+        next.delete(ideaId);
+        return next;
+      });
+    }, 600);
+  };
+
+  const togglePurchased = (ideaId: string) => {
+    setPurchasedIdeas(prev => {
+      const next = new Set(prev);
+      if (next.has(ideaId)) {
+        next.delete(ideaId);
+      } else {
+        next.add(ideaId);
+      }
+      return next;
+    });
+    // TODO: Persist to backend using manualIdeasJson when implementing drag-drop
+  };
+
   const handleAddAiIdeaToSaved = (idea: UnifiedIdea) => {
     const list = (giftLists || []).find(l => l.id === idea.giftListId);
     if (!list) return;
@@ -386,9 +427,13 @@ export default function ProfileDetail() {
       return;
     }
 
+    // Flash the AI idea being saved
+    triggerFlash(idea.id, 'add');
+
     addIdeaMutation.mutate({ 
       giftListId: list.id, 
-      ideas: [...currentIdeas, idea.title] 
+      ideas: [...currentIdeas, idea.title],
+      newIdeaTitle: idea.title
     });
 
     try {
@@ -477,9 +522,12 @@ export default function ProfileDetail() {
 
     if (targetList) {
       const currentIdeas = targetList.manualIdeas || [];
+      const newTitle = newInlineIdea.title.trim();
+      // Prepend new idea to appear first in the list
       addIdeaMutation.mutate({ 
         giftListId: targetList.id, 
-        ideas: [...currentIdeas, newInlineIdea.title.trim()] 
+        ideas: [newTitle, ...currentIdeas],
+        newIdeaTitle: newTitle
       });
     }
     setNewInlineIdea(null);
@@ -607,7 +655,7 @@ export default function ProfileDetail() {
       {/* Profile Info Bar - Cleaner mobile layout */}
       <div className="border-b bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 px-3 sm:px-4 md:px-6 py-3">
         <div className="max-w-4xl mx-auto">
-          {/* Row 1: Back + Profile name + Settings */}
+          {/* Row 1: Back + Profile name + Gear + Customize Button */}
           <div className="flex items-center gap-2">
             <Button
               onClick={() => setLocation('/')}
@@ -622,7 +670,7 @@ export default function ProfileDetail() {
               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-md shrink-0"
               style={{ backgroundColor: profile.color || '#3B82F6' }}
             />
-            <h1 className="text-base sm:text-lg font-semibold text-foreground truncate flex-1 min-w-0">
+            <h1 className="text-base sm:text-lg font-semibold text-foreground truncate min-w-0">
               {profile.name}
             </h1>
             <DropdownMenu>
@@ -639,7 +687,7 @@ export default function ProfileDetail() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setQuestionnaireOpen(true)}>
                   <Brain className="h-4 w-4 mr-2" />
-                  Train Profile
+                  Customize Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
                   <Pencil className="h-4 w-4 mr-2" />
@@ -659,6 +707,17 @@ export default function ProfileDetail() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            {/* Customize Profile Button - Far right with gradient */}
+            <Button
+              onClick={() => setQuestionnaireOpen(true)}
+              size="sm"
+              className="ml-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
+              data-testid="button-customize-profile"
+            >
+              <Brain className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Customize Profile</span>
+              <span className="sm:hidden">Customize</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -779,21 +838,32 @@ export default function ProfileDetail() {
 
           {/* Saved Ideas Section */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
+            <button
+              onClick={() => setSavedIdeasCollapsed(!savedIdeasCollapsed)}
+              className="w-full text-left flex items-center gap-2 hover-elevate p-2 -m-2 rounded-md"
+              data-testid="toggle-saved-ideas"
+            >
               <Gift className="h-5 w-5 text-primary" />
-              Saved Ideas ({savedIdeas.length})
-            </h2>
-            {listsLoading ? (
-              <div className="space-y-3">
+              <h2 className="text-xl font-semibold flex-1">
+                Saved Ideas ({savedIdeas.length})
+              </h2>
+              {savedIdeasCollapsed ? (
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+              )}
+            </button>
+            {!savedIdeasCollapsed && (listsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="h-16 bg-card animate-pulse rounded-lg" />
                 ))}
               </div>
             ) : (
-              <div className="space-y-2">
-                {/* Inline New Idea Input */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {/* Inline New Idea Input - spans full width */}
                 {newInlineIdea && (
-                  <Card className="p-3 md:p-4 border-primary/50" data-testid="new-inline-idea">
+                  <Card className="p-3 md:p-4 border-primary/50 md:col-span-2" data-testid="new-inline-idea">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Input
                         ref={newIdeaInputRef}
@@ -833,19 +903,27 @@ export default function ProfileDetail() {
                   </Card>
                 )}
                 {savedIdeas.map(idea => (
-                  <Card key={idea.id} className="p-2 sm:p-3" data-testid={`saved-idea-${idea.id}`}>
+                  <Card 
+                    key={idea.id} 
+                    className={`p-2 sm:p-3 ${
+                      flashingIdeas.get(idea.id) === 'add' ? 'animate-flash-add' : 
+                      flashingIdeas.get(idea.id) === 'remove' ? 'animate-flash-remove' : ''
+                    }`}
+                    data-testid={`saved-idea-${idea.id}`}
+                  >
                     <div className="space-y-1">
-                      {/* Row 1: Occasion tag */}
+                      {/* Row 1: Occasion tag + Purchased toggle */}
                       <div className="flex items-center justify-between gap-2">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <button
-                              className={`text-xs px-2 py-0.5 rounded-full font-medium ${getOccasionColor(idea.occasion)} hover:opacity-80 transition-opacity`}
-                              data-testid={`tag-occasion-${idea.id}`}
-                            >
-                              {idea.occasion}
-                            </button>
-                          </PopoverTrigger>
+                        <div className="flex items-center gap-1.5">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button
+                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${getOccasionColor(idea.occasion)} hover:opacity-80 transition-opacity`}
+                                data-testid={`tag-occasion-${idea.id}`}
+                              >
+                                {idea.occasion}
+                              </button>
+                            </PopoverTrigger>
                           <PopoverContent className="w-40 p-1" align="start">
                             <div className="space-y-0.5">
                               {occasionsList.length > 0 ? occasionsList.map((o: string) => (
@@ -867,7 +945,27 @@ export default function ProfileDetail() {
                               ))}
                             </div>
                           </PopoverContent>
-                        </Popover>
+                          </Popover>
+                          {/* Purchased toggle */}
+                          <button
+                            onClick={() => togglePurchased(idea.id)}
+                            className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium transition-all ${
+                              purchasedIdeas.has(idea.id)
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                            data-testid={`toggle-purchased-${idea.id}`}
+                          >
+                            {purchasedIdeas.has(idea.id) ? (
+                              <>
+                                <Check className="h-3 w-3" />
+                                Purchased
+                              </>
+                            ) : (
+                              <Gift className="h-3 w-3" />
+                            )}
+                          </button>
+                        </div>
                         <Button
                           onClick={() => handleRemoveIdea(idea)}
                           variant="ghost"
@@ -908,8 +1006,8 @@ export default function ProfileDetail() {
                   </Card>
                 ))}
               </div>
-            )}
-            {savedIdeas.length === 0 && !newInlineIdea && (
+            ))}
+            {!savedIdeasCollapsed && savedIdeas.length === 0 && !newInlineIdea && (
               <div className="text-center py-8 rounded-lg border bg-card/50">
                 <Gift className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
                 <p className="text-muted-foreground">No saved ideas yet</p>
@@ -929,7 +1027,14 @@ export default function ProfileDetail() {
               </h2>
               <div className="space-y-2">
                 {generatedIdeas.map(idea => (
-                  <Card key={idea.id} className="p-2 sm:p-3" data-testid={`generated-idea-${idea.id}`}>
+                  <Card 
+                    key={idea.id} 
+                    className={`p-2 sm:p-3 ${
+                      flashingIdeas.get(idea.id) === 'add' ? 'animate-flash-add' : 
+                      flashingIdeas.get(idea.id) === 'remove' ? 'animate-flash-remove' : ''
+                    }`}
+                    data-testid={`generated-idea-${idea.id}`}
+                  >
                     <div className="space-y-1">
                       {/* Row 1: Occasion tag + actions */}
                       <div className="flex items-center justify-between gap-2">
@@ -1057,7 +1162,7 @@ export default function ProfileDetail() {
       <Dialog open={questionnaireDialogOpen} onOpenChange={setQuestionnaireDialogOpen}>
         <DialogContent data-testid="dialog-questionnaire-prompt">
           <DialogHeader>
-            <DialogTitle>Train Profile First</DialogTitle>
+            <DialogTitle>Customize Profile First</DialogTitle>
             <DialogDescription>
               To generate personalized gift ideas, please answer a few questions about {profile.name}.
             </DialogDescription>
@@ -1074,7 +1179,7 @@ export default function ProfileDetail() {
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
             >
               <Brain className="h-4 w-4 mr-2" />
-              Train Profile
+              Customize Profile
             </Button>
           </DialogFooter>
         </DialogContent>

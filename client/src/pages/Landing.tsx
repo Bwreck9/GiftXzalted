@@ -440,7 +440,7 @@ export default function Landing() {
                             setLocation(`/profile/${profile.id}?train=true`);
                           }}>
                             <Brain className="h-4 w-4 mr-2" />
-                            Train Profile
+                            Customize Profile
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => {
                             setSelectedProfile(profile);

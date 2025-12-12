@@ -333,4 +333,37 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+
+  /* Visual feedback animations for adding/removing items */
+  @keyframes flash-add {
+    0% {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+    25% {
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+  }
+
+  @keyframes flash-remove {
+    0% {
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+    25% {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+  }
+
+  .animate-flash-add {
+    animation: flash-add 0.6s ease-out;
+  }
+
+  .animate-flash-remove {
+    animation: flash-remove 0.6s ease-out;
+  }
 }
