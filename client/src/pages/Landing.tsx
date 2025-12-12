@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { AppHeader } from '@/components/AppHeader';
 import { LoginModal } from '@/components/LoginModal';
 import type { Profile } from '@shared/schema';
-import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus, Moon, Sun, Mail, Download, Smartphone, Share, Brain } from 'lucide-react';
+import { Gift, FileText, DollarSign, Sparkles, Settings, MoreVertical, Pencil, Trash2, Plus, LogIn, Coins, Users, ListPlus, Moon, Sun, Mail, Download, Smartphone, Share, Brain, Calendar } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SettingsModal } from '@/components/SettingsModal';
+import { ImportantDatesModal } from '@/components/ImportantDatesModal';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +37,7 @@ export default function Landing() {
   const [, setLocation] = useLocation();
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [importantDatesOpen, setImportantDatesOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [profileSelectDialogOpen, setProfileSelectDialogOpen] = useState(false);
   const [loginPromptDialogOpen, setLoginPromptDialogOpen] = useState(false);
@@ -371,6 +373,17 @@ export default function Landing() {
         onClear={(id) => clearProfileMutation.mutate(id)}
       />
       
+      <ImportantDatesModal
+        open={importantDatesOpen}
+        onOpenChange={setImportantDatesOpen}
+        profile={selectedProfile}
+        onSave={(updates) => {
+          if (selectedProfile) {
+            updateProfileMutation.mutate({ id: selectedProfile.id, updates });
+          }
+        }}
+      />
+      
       <AppHeader />
 
       <main className="flex-1 overflow-auto p-6">
@@ -419,6 +432,41 @@ export default function Landing() {
                         className="flex-1 min-w-0 text-left hover-elevate active-elevate-2 p-2 rounded-md -m-2"
                       >
                         <h3 className="font-medium text-foreground truncate">{profile.name}</h3>
+                        {/* Display Important Dates */}
+                        {(profile.birthdayDate || profile.anniversaryDate || (profile.customDates && profile.customDates.length > 0)) && (
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            {profile.birthdayDate && (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {(() => {
+                                  const [month, day] = profile.birthdayDate.split('-');
+                                  const date = new Date(2000, parseInt(month) - 1, parseInt(day));
+                                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                })()}
+                              </span>
+                            )}
+                            {profile.anniversaryDate && (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Gift className="h-3 w-3" />
+                                {(() => {
+                                  const [month, day] = profile.anniversaryDate.split('-');
+                                  const date = new Date(2000, parseInt(month) - 1, parseInt(day));
+                                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                })()}
+                              </span>
+                            )}
+                            {profile.customDates && profile.customDates.map((cd, idx) => (
+                              <span key={idx} className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {(() => {
+                                  const [month, day] = cd.date.split('-');
+                                  const date = new Date(2000, parseInt(month) - 1, parseInt(day));
+                                  return `${cd.name}: ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                                })()}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </button>
                       
                       {/* Settings Menu */}
@@ -448,6 +496,13 @@ export default function Landing() {
                           }}>
                             <Pencil className="h-4 w-4 mr-2" />
                             Rename / Recolor
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedProfile(profile);
+                            setImportantDatesOpen(true);
+                          }}>
+                            <Calendar className="h-4 w-4 mr-2" />
+                            Important Dates
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="text-destructive"

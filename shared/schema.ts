@@ -58,6 +58,7 @@ export const profiles = pgTable("profiles", {
   // Important dates for this person
   birthdayDate: text("birthday_date"), // MM-DD format (e.g., "12-25")
   anniversaryDate: text("anniversary_date"), // MM-DD format (e.g., "06-15")
+  customDates: jsonb("custom_dates").$type<{ name: string; date: string }[]>().default([]), // Array of {name, date} in MM-DD format
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -187,6 +188,7 @@ export const insertProfileSchema = createInsertSchema(profiles).omit({
   // Important dates
   birthdayDate: z.string().regex(/^\d{2}-\d{2}$/).optional(), // MM-DD format
   anniversaryDate: z.string().regex(/^\d{2}-\d{2}$/).optional(), // MM-DD format
+  customDates: z.array(z.object({ name: z.string(), date: z.string().regex(/^\d{2}-\d{2}$/) })).optional(),
 });
 
 // Premium result type for storing in premiumResults JSON

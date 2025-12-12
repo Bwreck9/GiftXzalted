@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
 import { 
   Plus, Brain, Settings, Trash2, ArrowLeft, Pencil, Sparkles, 
   Loader2, X, Info, Calendar, ChevronDown, ChevronUp, Check, Gift, GripVertical
@@ -30,7 +31,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AppHeader } from '@/components/AppHeader';
@@ -48,6 +49,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -186,6 +197,13 @@ export default function ProfileDetail() {
   const [savedIdeasCollapsed, setSavedIdeasCollapsed] = useState(false);
   const [purchasedIdeas, setPurchasedIdeas] = useState<Set<string>>(new Set());
   const [flashingIdeas, setFlashingIdeas] = useState<Map<string, 'add' | 'remove'>>(new Map());
+  const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false);
+  const [occasionManagerOpen, setOccasionManagerOpen] = useState(false);
+  const [occasionToEdit, setOccasionToEdit] = useState<string | null>(null);
+  const [occasionEditName, setOccasionEditName] = useState('');
+  const [newOccasionName, setNewOccasionName] = useState('');
+  const [occasionToDelete, setOccasionToDelete] = useState<string | null>(null);
+  const [deleteReassignTo, setDeleteReassignTo] = useState<string>('');
   const [editingIdea, setEditingIdea] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const [orderedSavedIdeas, setOrderedSavedIdeas] = useState<UnifiedIdea[]>([]);
@@ -408,8 +426,25 @@ export default function ProfileDetail() {
 
   // Sync ordered saved ideas with data (preserve user order if possible)
   useEffect(() => {
-    setOrderedSavedIdeas(savedIdeasFromData);
-  }, [JSON.stringify(savedIdeasFromData.map(i => i.id))]);
+    // Only reset order if this looks like fresh data (e.g., initial load or filter change)
+    // When deleting, orderedSavedIdeas will already have the item removed
+    if (orderedSavedIdeas.length === 0) {
+      setOrderedSavedIdeas(savedIdeasFromData);
+    } else {
+      // Update existing order with new data, matching by title since IDs change on delete
+      const dataByTitle = new Map(savedIdeasFromData.map(i => [i.title + '|' + i.occasion, i]));
+      const updatedOrder = orderedSavedIdeas
+        .map(ordered => dataByTitle.get(ordered.title + '|' + ordered.occasion))
+        .filter((i): i is UnifiedIdea => i !== undefined);
+      
+      // Add any new ideas that weren't in our order (newly added)
+      const orderedTitles = new Set(updatedOrder.map(i => i.title + '|' + i.occasion));
+      const newIdeas = savedIdeasFromData.filter(i => !orderedTitles.has(i.title + '|' + i.occasion));
+      
+      // New manually added ideas go to the top
+      setOrderedSavedIdeas([...newIdeas, ...updatedOrder]);
+    }
+  }, [JSON.stringify(savedIdeasFromData.map(i => i.title + '|' + i.occasion))]);
   
   // Use ordered ideas for display, falling back to data if order state is empty
   const savedIdeas = orderedSavedIdeas.length > 0 ? orderedSavedIdeas : savedIdeasFromData;
@@ -506,10 +541,6 @@ export default function ProfileDetail() {
   };
 
   const handleClearAllGeneratedIdeas = async () => {
-    if (!confirm('Are you sure you want to clear all generated ideas? This cannot be undone.')) {
-      return;
-    }
-    
     // Clear all premiumResults from all gift lists
     const lists = giftLists || [];
     await Promise.all(
@@ -519,7 +550,111 @@ export default function ProfileDetail() {
     );
     
     queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
+    setClearAllDialogOpen(false);
     toast({ title: 'All generated ideas cleared' });
+  };
+
+  // Occasion Manager handlers
+  const handleAddOccasion = async () => {
+    if (!newOccasionName.trim()) {
+      toast({ title: 'Please enter an occasion name', variant: 'destructive' });
+      return;
+    }
+    
+    // Check if occasion already exists
+    if (occasionsList.includes(newOccasionName.trim())) {
+      toast({ title: 'This occasion already exists', variant: 'destructive' });
+      return;
+    }
+    
+    // Create a new gift list for this occasion
+    await createListMutation.mutateAsync({ title: newOccasionName.trim() });
+    setNewOccasionName('');
+    toast({ title: 'Occasion added' });
+  };
+
+  const handleRenameOccasion = async (oldName: string, newName: string) => {
+    if (!newName.trim() || newName.trim() === oldName) {
+      setOccasionToEdit(null);
+      return;
+    }
+    
+    // Check if new name already exists
+    if (occasionsList.includes(newName.trim()) && newName.trim() !== oldName) {
+      toast({ title: 'This occasion already exists', variant: 'destructive' });
+      return;
+    }
+    
+    // Find the list with this occasion and rename it
+    const list = (giftLists || []).find(l => l.title === oldName);
+    if (list) {
+      await apiRequest('PATCH', `/api/gift-lists/${list.id}`, { title: newName.trim() });
+      queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
+      
+      // Update filter if we were filtering by the renamed occasion
+      if (filterOccasion === oldName) {
+        setFilterOccasion(newName.trim());
+      }
+      
+      toast({ title: 'Occasion renamed' });
+    }
+    setOccasionToEdit(null);
+  };
+
+  const handleDeleteOccasion = async () => {
+    if (!occasionToDelete) return;
+    
+    const list = (giftLists || []).find(l => l.title === occasionToDelete);
+    if (!list) return;
+    
+    const hasIdeas = (list.manualIdeas?.length || 0) > 0 || 
+                     (list.premiumResults && JSON.parse(list.premiumResults).length > 0);
+    
+    if (hasIdeas && deleteReassignTo) {
+      // Move ideas to new occasion
+      const targetList = (giftLists || []).find(l => l.title === deleteReassignTo);
+      if (targetList) {
+        // Move manual ideas
+        const combinedManual = [...(targetList.manualIdeas || []), ...(list.manualIdeas || [])];
+        await apiRequest('PATCH', `/api/gift-lists/${targetList.id}`, { manualIdeas: combinedManual });
+        
+        // Move AI ideas
+        try {
+          const sourceAi = list.premiumResults ? JSON.parse(list.premiumResults) : [];
+          const targetAi = targetList.premiumResults ? JSON.parse(targetList.premiumResults) : [];
+          const combinedAi = [...targetAi, ...sourceAi];
+          await apiRequest('PATCH', `/api/gift-lists/${targetList.id}`, { premiumResults: JSON.stringify(combinedAi) });
+        } catch (e) {
+          console.error('Failed to move AI ideas:', e);
+        }
+      }
+    }
+    
+    // Delete the list
+    await apiRequest('DELETE', `/api/gift-lists/${list.id}`);
+    queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
+    
+    // Reset filter if we were filtering by the deleted occasion
+    if (filterOccasion === occasionToDelete) {
+      setFilterOccasion('all');
+    }
+    
+    setOccasionToDelete(null);
+    setDeleteReassignTo('');
+    toast({ title: 'Occasion deleted' });
+  };
+
+  const getOccasionIdeaCount = (occasion: string) => {
+    const list = (giftLists || []).find(l => l.title === occasion);
+    if (!list) return 0;
+    const manualCount = list.manualIdeas?.length || 0;
+    let aiCount = 0;
+    try {
+      if (list.premiumResults) {
+        aiCount = JSON.parse(list.premiumResults).length;
+      }
+    } catch (e) {}
+    return manualCount + aiCount;
   };
 
   // Helper to trigger flash effect
@@ -883,18 +1018,29 @@ export default function ProfileDetail() {
 
           {/* Actions Row - Mobile friendly stacked layout */}
           <div className="space-y-3">
-            {/* Occasion Filter */}
-            <Select value={filterOccasion} onValueChange={setFilterOccasion}>
-              <SelectTrigger className="w-44" data-testid="select-filter-occasion">
-                <SelectValue placeholder="All occasions" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All occasions</SelectItem>
-                {occasionsList.map((occasion: string) => (
-                  <SelectItem key={occasion} value={occasion}>{occasion}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Occasion Filter with Manager */}
+            <div className="flex items-center gap-2">
+              <Select value={filterOccasion} onValueChange={setFilterOccasion}>
+                <SelectTrigger className="w-44" data-testid="select-filter-occasion">
+                  <SelectValue placeholder="All occasions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All occasions</SelectItem>
+                  {occasionsList.map((occasion: string) => (
+                    <SelectItem key={occasion} value={occasion}>{occasion}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setOccasionManagerOpen(true)}
+                className="hover-elevate"
+                data-testid="button-occasion-manager"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
             
             {/* Row 2: Add + Generate */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -908,22 +1054,22 @@ export default function ProfileDetail() {
                 <Plus className="h-4 w-4 mr-1" />
                 Add
               </Button>
-              <div className="flex items-center gap-1 ml-auto">
-                <Select
-                  value={numIdeas.toString()}
-                  onValueChange={(value) => setNumIdeas(parseInt(value))}
-                >
-                  <SelectTrigger className="w-40 h-8 text-xs" data-testid="select-num-ideas">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10 ideas (200 tokens)</SelectItem>
-                    <SelectItem value="20">20 ideas (400 tokens)</SelectItem>
-                    <SelectItem value="30">30 ideas (600 tokens)</SelectItem>
-                    <SelectItem value="40">40 ideas (800 tokens)</SelectItem>
-                    <SelectItem value="50">50 ideas (1000 tokens)</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-3 ml-auto flex-1 sm:flex-none">
+                <div className="flex items-center gap-3 flex-1 max-w-48">
+                  <span className="text-sm font-medium w-6 text-center" data-testid="display-num-ideas">{numIdeas}</span>
+                  <Slider
+                    value={[numIdeas]}
+                    onValueChange={([value]) => setNumIdeas(value)}
+                    min={10}
+                    max={50}
+                    step={10}
+                    className="flex-1"
+                    data-testid="slider-num-ideas"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground whitespace-nowrap" data-testid="display-token-cost">
+                  {(numIdeas / 10) * TOKENS_PER_10_IDEAS} tokens
+                </span>
                 <Button
                   onClick={handleGenerate}
                   disabled={generateMutation.isPending}
@@ -981,7 +1127,7 @@ export default function ProfileDetail() {
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
               >
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {/* Inline New Idea Input */}
                   {newInlineIdea && (
                     <Card className="p-3 md:p-4 border-primary/50" data-testid="new-inline-idea">
@@ -1026,7 +1172,7 @@ export default function ProfileDetail() {
                   )}
                   <SortableContext
                     items={savedIdeas.map(idea => idea.id)}
-                    strategy={verticalListSortingStrategy}
+                    strategy={rectSortingStrategy}
                   >
                     {savedIdeas.map(idea => (
                       <SortableIdeaCard 
@@ -1153,7 +1299,7 @@ export default function ProfileDetail() {
                   Generated Ideas ({generatedIdeas.length})
                 </h2>
                 <Button
-                  onClick={handleClearAllGeneratedIdeas}
+                  onClick={() => setClearAllDialogOpen(true)}
                   variant="ghost"
                   size="sm"
                   className="hover-elevate text-muted-foreground"
@@ -1321,6 +1467,203 @@ export default function ProfileDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Clear All Generated Ideas Confirmation */}
+      <AlertDialog open={clearAllDialogOpen} onOpenChange={setClearAllDialogOpen}>
+        <AlertDialogContent data-testid="dialog-clear-all">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All Generated Ideas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove all {generatedIdeas.length} AI-generated ideas. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-clear-all">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleClearAllGeneratedIdeas}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-clear-all"
+            >
+              Clear All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Occasion Manager Dialog */}
+      <Dialog open={occasionManagerOpen} onOpenChange={setOccasionManagerOpen}>
+        <DialogContent className="max-w-md" data-testid="dialog-occasion-manager">
+          <DialogHeader>
+            <DialogTitle>Manage Occasions</DialogTitle>
+            <DialogDescription>
+              Add, rename, or delete occasions for organizing gift ideas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* Add New Occasion */}
+            <div className="flex items-center gap-2">
+              <Input
+                value={newOccasionName}
+                onChange={(e) => setNewOccasionName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddOccasion()}
+                placeholder="New occasion name..."
+                className="flex-1"
+                data-testid="input-new-occasion"
+              />
+              <Button
+                onClick={handleAddOccasion}
+                size="sm"
+                className="hover-elevate"
+                data-testid="button-add-occasion"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
+            </div>
+            
+            {/* Occasions List */}
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {occasionsList.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No occasions yet. Add one above.
+                </p>
+              ) : (
+                occasionsList.map((occasion: string) => (
+                  <div 
+                    key={occasion} 
+                    className="flex items-center gap-2 p-2 rounded-lg border bg-card"
+                    data-testid={`occasion-item-${occasion}`}
+                  >
+                    {occasionToEdit === occasion ? (
+                      <Input
+                        value={occasionEditName}
+                        onChange={(e) => setOccasionEditName(e.target.value)}
+                        onBlur={() => handleRenameOccasion(occasion, occasionEditName)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleRenameOccasion(occasion, occasionEditName);
+                          if (e.key === 'Escape') setOccasionToEdit(null);
+                        }}
+                        className="flex-1"
+                        autoFocus
+                        data-testid={`input-edit-occasion-${occasion}`}
+                      />
+                    ) : (
+                      <>
+                        <span className="flex-1 font-medium">{occasion}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {getOccasionIdeaCount(occasion)} ideas
+                        </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7 hover-elevate"
+                              data-testid={`button-occasion-menu-${occasion}`}
+                            >
+                              <Settings className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setOccasionToEdit(occasion);
+                                setOccasionEditName(occasion);
+                              }}
+                              data-testid={`button-rename-occasion-${occasion}`}
+                            >
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setOccasionToDelete(occasion);
+                                setDeleteReassignTo('');
+                              }}
+                              className="text-destructive focus:text-destructive"
+                              data-testid={`button-delete-occasion-${occasion}`}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOccasionManagerOpen(false)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Occasion Confirmation with Reassignment */}
+      <AlertDialog open={!!occasionToDelete} onOpenChange={(open) => !open && setOccasionToDelete(null)}>
+        <AlertDialogContent data-testid="dialog-delete-occasion">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{occasionToDelete}"?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              {getOccasionIdeaCount(occasionToDelete || '') > 0 ? (
+                <>
+                  <p>This occasion has {getOccasionIdeaCount(occasionToDelete || '')} ideas. Choose what to do with them:</p>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="deleteAction"
+                        checked={deleteReassignTo === ''}
+                        onChange={() => setDeleteReassignTo('')}
+                        className="accent-primary"
+                      />
+                      <span>Delete all ideas</span>
+                    </label>
+                    <label className="flex items-start gap-2">
+                      <input
+                        type="radio"
+                        name="deleteAction"
+                        checked={deleteReassignTo !== ''}
+                        onChange={() => setDeleteReassignTo(occasionsList.find(o => o !== occasionToDelete) || '')}
+                        className="accent-primary mt-1"
+                      />
+                      <span>Move ideas to another occasion:</span>
+                    </label>
+                    {deleteReassignTo !== '' && (
+                      <Select value={deleteReassignTo} onValueChange={setDeleteReassignTo}>
+                        <SelectTrigger className="w-full ml-6" data-testid="select-reassign-occasion">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {occasionsList.filter(o => o !== occasionToDelete).map((o: string) => (
+                            <SelectItem key={o} value={o}>{o}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p>This occasion has no ideas. Are you sure you want to delete it?</p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-occasion">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteOccasion}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-occasion"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
