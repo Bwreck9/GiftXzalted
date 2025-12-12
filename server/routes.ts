@@ -1101,6 +1101,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cancel subscription - uses Stripe's default behavior (cancel at end of period)
+  app.post("/api/stripe/cancel-subscription", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.uid;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      if (!user.stripeSubscriptionId) {
+        return res.status(400).json({ error: "No active subscription found" });
+      }
+      
+      // Cancel at end of period (Stripe default)
+      const subscription = await stripe.subscriptions.update(user.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+      
+      // Update user status
+      const { db } = await import('./db');
+      const { users } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      
+      await db.update(users).set({
+        subscriptionStatus: 'canceled',
+      }).where(eq(users.id, userId));
+      
+      res.json({ 
+        success: true, 
+        message: 'Subscription will be cancelled at the end of the billing period',
+        cancelAt: subscription.cancel_at,
+      });
+    } catch (error: any) {
+      console.error("Error canceling subscription:", error);
+      res.status(500).json({ error: "Failed to cancel subscription: " + error.message });
+    }
+  });
+
   // Gift Lists - occasions within a profile
   
   // Get all gift lists for a profile

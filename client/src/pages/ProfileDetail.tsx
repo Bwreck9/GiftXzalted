@@ -14,8 +14,25 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { 
   Plus, Brain, Settings, Trash2, ArrowLeft, Pencil, Sparkles, 
-  Loader2, X, Info, Calendar, ChevronDown, ChevronUp, Check, Gift
+  Loader2, X, Info, Calendar, ChevronDown, ChevronUp, Check, Gift, GripVertical
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { AppHeader } from '@/components/AppHeader';
 import type { Profile, GiftList } from '@shared/schema';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -98,6 +115,57 @@ interface UnifiedIdea {
   giftListId: string;
 }
 
+// Sortable idea card component for drag and drop
+interface SortableIdeaCardProps {
+  idea: UnifiedIdea;
+  children: React.ReactNode;
+  flashType?: 'add' | 'remove';
+}
+
+function SortableIdeaCard({ idea, children, flashType }: SortableIdeaCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: idea.id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : 1,
+  };
+  
+  return (
+    <Card 
+      ref={setNodeRef}
+      style={style}
+      className={`p-2 sm:p-3 ${
+        flashType === 'add' ? 'animate-flash-add' : 
+        flashType === 'remove' ? 'animate-flash-remove' : ''
+      }`}
+      data-testid={`saved-idea-${idea.id}`}
+    >
+      <div className="flex gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground shrink-0 mt-1"
+          data-testid={`drag-handle-${idea.id}`}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div className="flex-1 min-w-0">
+          {children}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function ProfileDetail() {
   const { id } = useParams<{ id: string }>();
   const [location, setLocation] = useLocation();
@@ -120,13 +188,26 @@ export default function ProfileDetail() {
   const [flashingIdeas, setFlashingIdeas] = useState<Map<string, 'add' | 'remove'>>(new Map());
   const [editingIdea, setEditingIdea] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
+  const [orderedSavedIdeas, setOrderedSavedIdeas] = useState<UnifiedIdea[]>([]);
   const newIdeaInputRef = useRef<HTMLInputElement>(null);
   
-  // Handle ?train=true query parameter
+  // DnD sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  
+  // Handle ?train=true query parameter - open questionnaire directly
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('train') === 'true') {
-      setQuestionnaireDialogOpen(true);
+      setQuestionnaireOpen(true);
       // Clear the query param from URL
       window.history.replaceState({}, '', `/profile/${id}`);
     }
@@ -322,10 +403,51 @@ export default function ProfileDetail() {
     ? unifiedIdeas 
     : unifiedIdeas.filter(idea => idea.occasion === filterOccasion);
 
-  const savedIdeas = filteredIdeas.filter(idea => !idea.isAiGenerated);
+  const savedIdeasFromData = filteredIdeas.filter(idea => !idea.isAiGenerated);
   const generatedIdeas = filteredIdeas.filter(idea => idea.isAiGenerated);
 
+  // Sync ordered saved ideas with data (preserve user order if possible)
+  useEffect(() => {
+    setOrderedSavedIdeas(savedIdeasFromData);
+  }, [JSON.stringify(savedIdeasFromData.map(i => i.id))]);
+  
+  // Use ordered ideas for display, falling back to data if order state is empty
+  const savedIdeas = orderedSavedIdeas.length > 0 ? orderedSavedIdeas : savedIdeasFromData;
+
   const occasionsList = Array.from(new Set((giftLists || []).map(list => list.title)));
+
+  // Handle drag end for reordering saved ideas
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+    
+    const oldIndex = savedIdeas.findIndex(idea => idea.id === active.id);
+    const newIndex = savedIdeas.findIndex(idea => idea.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+    
+    // Update local state immediately for smooth UX
+    const reorderedIdeas = arrayMove(savedIdeas, oldIndex, newIndex);
+    setOrderedSavedIdeas(reorderedIdeas);
+    
+    // Group by gift list and persist new order
+    const listIdToIdeas = new Map<string, string[]>();
+    reorderedIdeas.forEach(idea => {
+      const ideas = listIdToIdeas.get(idea.giftListId) || [];
+      ideas.push(idea.title);
+      listIdToIdeas.set(idea.giftListId, ideas);
+    });
+    
+    // Persist to each list
+    await Promise.all(
+      Array.from(listIdToIdeas.entries()).map(([listId, ideas]) =>
+        apiRequest('PATCH', `/api/gift-lists/${listId}`, { manualIdeas: ideas })
+      )
+    );
+    
+    queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
+  };
 
   const handleAddIdea = async () => {
     if (!newIdeaTitle.trim()) {
@@ -381,6 +503,23 @@ export default function ProfileDetail() {
       const updatedIdeas = currentIdeas.filter(i => i !== idea.title);
       removeIdeaMutation.mutate({ giftListId: list.id, ideas: updatedIdeas });
     }
+  };
+
+  const handleClearAllGeneratedIdeas = async () => {
+    if (!confirm('Are you sure you want to clear all generated ideas? This cannot be undone.')) {
+      return;
+    }
+    
+    // Clear all premiumResults from all gift lists
+    const lists = giftLists || [];
+    await Promise.all(
+      lists.map(list => 
+        apiRequest('PATCH', `/api/gift-lists/${list.id}`, { premiumResults: JSON.stringify([]) })
+      )
+    );
+    
+    queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
+    toast({ title: 'All generated ideas cleared' });
   };
 
   // Helper to trigger flash effect
@@ -556,9 +695,13 @@ export default function ProfileDetail() {
     const oldList = (giftLists || []).find(l => l.id === idea.giftListId);
     if (!oldList) return;
 
+    // Find the index position of this idea in the old list
+    const oldIdeas = oldList.manualIdeas || [];
+    const ideaIndex = oldIdeas.indexOf(idea.title);
+    
     // Remove from old list
-    const oldIdeas = (oldList.manualIdeas || []).filter(i => i !== idea.title);
-    await apiRequest('PATCH', `/api/gift-lists/${oldList.id}`, { manualIdeas: oldIdeas });
+    const updatedOldIdeas = oldIdeas.filter(i => i !== idea.title);
+    await apiRequest('PATCH', `/api/gift-lists/${oldList.id}`, { manualIdeas: updatedOldIdeas });
 
     // Add to new list (create if needed)
     let newList = (giftLists || []).find(l => l.title === newOccasion);
@@ -568,7 +711,14 @@ export default function ProfileDetail() {
     }
 
     if (newList) {
-      const newIdeas = [...(newList.manualIdeas || []), idea.title];
+      const existingNewIdeas = newList.manualIdeas || [];
+      // Insert at the same position (or beginning) to minimize movement
+      const insertIndex = Math.min(ideaIndex, existingNewIdeas.length);
+      const newIdeas = [
+        ...existingNewIdeas.slice(0, insertIndex),
+        idea.title,
+        ...existingNewIdeas.slice(insertIndex)
+      ];
       await apiRequest('PATCH', `/api/gift-lists/${newList.id}`, { manualIdeas: newIdeas });
     }
 
@@ -673,40 +823,6 @@ export default function ProfileDetail() {
             <h1 className="text-base sm:text-lg font-semibold text-foreground truncate min-w-0">
               {profile.name}
             </h1>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hover-elevate shrink-0 h-8 w-8"
-                  data-testid="profile-settings-menu"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setQuestionnaireOpen(true)}>
-                  <Brain className="h-4 w-4 mr-2" />
-                  Customize Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Rename / Recolor
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="text-destructive"
-                  onClick={() => {
-                    if (confirm(`Delete profile "${profile.name}"?`)) {
-                      deleteProfileMutation.mutate(profile.id);
-                    }
-                  }}
-                  data-testid="button-delete-profile"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             {/* Customize Profile Button - Far right with gradient */}
             <Button
               onClick={() => setQuestionnaireOpen(true)}
@@ -797,15 +913,15 @@ export default function ProfileDetail() {
                   value={numIdeas.toString()}
                   onValueChange={(value) => setNumIdeas(parseInt(value))}
                 >
-                  <SelectTrigger className="w-16 h-8 text-xs" data-testid="select-num-ideas">
+                  <SelectTrigger className="w-40 h-8 text-xs" data-testid="select-num-ideas">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="30">30</SelectItem>
-                    <SelectItem value="40">40</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="10">10 ideas (200 tokens)</SelectItem>
+                    <SelectItem value="20">20 ideas (400 tokens)</SelectItem>
+                    <SelectItem value="30">30 ideas (600 tokens)</SelectItem>
+                    <SelectItem value="40">40 ideas (800 tokens)</SelectItem>
+                    <SelectItem value="50">50 ideas (1000 tokens)</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button
@@ -860,152 +976,162 @@ export default function ProfileDetail() {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {/* Inline New Idea Input - spans full width */}
-                {newInlineIdea && (
-                  <Card className="p-3 md:p-4 border-primary/50 md:col-span-2" data-testid="new-inline-idea">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Input
-                        ref={newIdeaInputRef}
-                        value={newInlineIdea.title}
-                        onChange={(e) => setNewInlineIdea({ ...newInlineIdea, title: e.target.value })}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveInlineIdea();
-                          if (e.key === 'Escape') setNewInlineIdea(null);
-                        }}
-                        onBlur={handleSaveInlineIdea}
-                        placeholder="Type gift idea..."
-                        className="flex-1 min-w-0"
-                        data-testid="input-new-inline-idea"
-                      />
-                      <Select 
-                        value={newInlineIdea.occasion} 
-                        onValueChange={(v) => setNewInlineIdea({ ...newInlineIdea, occasion: v })}
-                      >
-                        <SelectTrigger className="w-32" data-testid="select-new-idea-occasion">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DEFAULT_OCCASIONS.map((o: string) => (
-                            <SelectItem key={o} value={o}>{o}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        onClick={() => setNewInlineIdea(null)}
-                        variant="ghost"
-                        size="icon"
-                        className="hover-elevate shrink-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </Card>
-                )}
-                {savedIdeas.map(idea => (
-                  <Card 
-                    key={idea.id} 
-                    className={`p-2 sm:p-3 ${
-                      flashingIdeas.get(idea.id) === 'add' ? 'animate-flash-add' : 
-                      flashingIdeas.get(idea.id) === 'remove' ? 'animate-flash-remove' : ''
-                    }`}
-                    data-testid={`saved-idea-${idea.id}`}
-                  >
-                    <div className="space-y-1">
-                      {/* Row 1: Occasion tag + Purchased toggle */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <button
-                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${getOccasionColor(idea.occasion)} hover:opacity-80 transition-opacity`}
-                                data-testid={`tag-occasion-${idea.id}`}
-                              >
-                                {idea.occasion}
-                              </button>
-                            </PopoverTrigger>
-                          <PopoverContent className="w-40 p-1" align="start">
-                            <div className="space-y-0.5">
-                              {occasionsList.length > 0 ? occasionsList.map((o: string) => (
-                                <button
-                                  key={o}
-                                  onClick={() => handleChangeIdeaOccasion(idea, o)}
-                                  className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
-                                >
-                                  {o}
-                                </button>
-                              )) : DEFAULT_OCCASIONS.slice(0, 6).map((o: string) => (
-                                <button
-                                  key={o}
-                                  onClick={() => handleChangeIdeaOccasion(idea, o)}
-                                  className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
-                                >
-                                  {o}
-                                </button>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                          </Popover>
-                          {/* Purchased toggle */}
-                          <button
-                            onClick={() => togglePurchased(idea.id)}
-                            className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium transition-all ${
-                              purchasedIdeas.has(idea.id)
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                            }`}
-                            data-testid={`toggle-purchased-${idea.id}`}
-                          >
-                            {purchasedIdeas.has(idea.id) ? (
-                              <>
-                                <Check className="h-3 w-3" />
-                                Purchased
-                              </>
-                            ) : (
-                              <Gift className="h-3 w-3" />
-                            )}
-                          </button>
-                        </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <div className="space-y-2">
+                  {/* Inline New Idea Input */}
+                  {newInlineIdea && (
+                    <Card className="p-3 md:p-4 border-primary/50" data-testid="new-inline-idea">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Input
+                          ref={newIdeaInputRef}
+                          value={newInlineIdea.title}
+                          onChange={(e) => setNewInlineIdea({ ...newInlineIdea, title: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveInlineIdea();
+                            if (e.key === 'Escape') setNewInlineIdea(null);
+                          }}
+                          onBlur={handleSaveInlineIdea}
+                          placeholder="Type gift idea..."
+                          className="flex-1 min-w-0"
+                          maxLength={100}
+                          data-testid="input-new-inline-idea"
+                        />
+                        <Select 
+                          value={newInlineIdea.occasion} 
+                          onValueChange={(v) => setNewInlineIdea({ ...newInlineIdea, occasion: v })}
+                        >
+                          <SelectTrigger className="w-32" data-testid="select-new-idea-occasion">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DEFAULT_OCCASIONS.map((o: string) => (
+                              <SelectItem key={o} value={o}>{o}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <Button
-                          onClick={() => handleRemoveIdea(idea)}
+                          onClick={() => setNewInlineIdea(null)}
                           variant="ghost"
                           size="icon"
-                          className="hover-elevate shrink-0 h-6 w-6"
-                          data-testid={`button-remove-idea-${idea.id}`}
+                          className="hover-elevate shrink-0"
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-4 w-4" />
                         </Button>
                       </div>
-                      {/* Row 2: Idea text */}
-                      {editingIdea === idea.id ? (
-                        <Input
-                          value={editingText}
-                          onChange={(e) => setEditingText(e.target.value)}
-                          onBlur={() => handleUpdateIdeaTitle(idea, editingText)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleUpdateIdeaTitle(idea, editingText);
-                            if (e.key === 'Escape') setEditingIdea(null);
-                          }}
-                          className="w-full text-sm"
-                          autoFocus
-                          data-testid={`input-edit-idea-${idea.id}`}
-                        />
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setEditingIdea(idea.id);
-                            setEditingText(idea.title);
-                          }}
-                          className="w-full text-left text-sm font-medium text-foreground hover:underline cursor-text"
-                          data-testid={`text-idea-${idea.id}`}
-                        >
-                          {idea.title}
-                        </button>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
+                    </Card>
+                  )}
+                  <SortableContext
+                    items={savedIdeas.map(idea => idea.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {savedIdeas.map(idea => (
+                      <SortableIdeaCard 
+                        key={idea.id} 
+                        idea={idea}
+                        flashType={flashingIdeas.get(idea.id)}
+                      >
+                        <div className="space-y-1">
+                          {/* Row 1: Occasion tag + Purchased toggle */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${getOccasionColor(idea.occasion)} hover:opacity-80 transition-opacity`}
+                                    data-testid={`tag-occasion-${idea.id}`}
+                                  >
+                                    {idea.occasion}
+                                  </button>
+                                </PopoverTrigger>
+                              <PopoverContent className="w-40 p-1" align="start">
+                                <div className="space-y-0.5">
+                                  {occasionsList.length > 0 ? occasionsList.map((o: string) => (
+                                    <button
+                                      key={o}
+                                      onClick={() => handleChangeIdeaOccasion(idea, o)}
+                                      className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
+                                    >
+                                      {o}
+                                    </button>
+                                  )) : DEFAULT_OCCASIONS.slice(0, 6).map((o: string) => (
+                                    <button
+                                      key={o}
+                                      onClick={() => handleChangeIdeaOccasion(idea, o)}
+                                      className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
+                                    >
+                                      {o}
+                                    </button>
+                                  ))}
+                                </div>
+                              </PopoverContent>
+                              </Popover>
+                              {/* Purchased toggle */}
+                              <button
+                                onClick={() => togglePurchased(idea.id)}
+                                className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium transition-all ${
+                                  purchasedIdeas.has(idea.id)
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                }`}
+                                data-testid={`toggle-purchased-${idea.id}`}
+                              >
+                                {purchasedIdeas.has(idea.id) ? (
+                                  <>
+                                    <Check className="h-3 w-3" />
+                                    Purchased
+                                  </>
+                                ) : (
+                                  <Gift className="h-3 w-3" />
+                                )}
+                              </button>
+                            </div>
+                            <Button
+                              onClick={() => handleRemoveIdea(idea)}
+                              variant="ghost"
+                              size="icon"
+                              className="hover-elevate shrink-0 h-6 w-6"
+                              data-testid={`button-remove-idea-${idea.id}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          {/* Row 2: Idea text */}
+                          {editingIdea === idea.id ? (
+                            <Input
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              onBlur={() => handleUpdateIdeaTitle(idea, editingText)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleUpdateIdeaTitle(idea, editingText);
+                                if (e.key === 'Escape') setEditingIdea(null);
+                              }}
+                              className="w-full text-sm"
+                              maxLength={100}
+                              autoFocus
+                              data-testid={`input-edit-idea-${idea.id}`}
+                            />
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setEditingIdea(idea.id);
+                                setEditingText(idea.title);
+                              }}
+                              className="w-full text-left text-sm font-medium text-foreground hover:underline cursor-text break-words overflow-hidden"
+                              data-testid={`text-idea-${idea.id}`}
+                            >
+                              {idea.title}
+                            </button>
+                          )}
+                        </div>
+                      </SortableIdeaCard>
+                    ))}
+                  </SortableContext>
+                </div>
+              </DndContext>
             ))}
             {!savedIdeasCollapsed && savedIdeas.length === 0 && !newInlineIdea && (
               <div className="text-center py-8 rounded-lg border bg-card/50">
@@ -1021,10 +1147,21 @@ export default function ProfileDetail() {
           {/* Generated Ideas Section */}
           {generatedIdeas.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-purple-500" />
-                Generated Ideas ({generatedIdeas.length})
-              </h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-500" />
+                  Generated Ideas ({generatedIdeas.length})
+                </h2>
+                <Button
+                  onClick={handleClearAllGeneratedIdeas}
+                  variant="ghost"
+                  size="sm"
+                  className="hover-elevate text-muted-foreground"
+                  data-testid="button-clear-all-generated"
+                >
+                  Clear all
+                </Button>
+              </div>
               <div className="space-y-2">
                 {generatedIdeas.map(idea => (
                   <Card 
@@ -1092,7 +1229,7 @@ export default function ProfileDetail() {
                       </div>
                       {/* Row 2: Idea text + info */}
                       <div className="flex items-start gap-1">
-                        <span className="text-sm font-medium text-foreground flex-1">{idea.title}</span>
+                        <span className="text-sm font-medium text-foreground flex-1 break-words overflow-hidden">{idea.title}</span>
                         {idea.reason && (
                           <Popover>
                             <PopoverTrigger asChild>

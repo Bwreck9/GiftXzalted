@@ -6,10 +6,23 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { User } from '@shared/schema';
-import { ArrowLeft, Coins, LogOut, CreditCard, Smartphone, Share } from 'lucide-react';
+import { ArrowLeft, Coins, LogOut, CreditCard, Smartphone, Share, Crown, AlertTriangle } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useToast } from '@/hooks/use-toast';
-import { queryClient } from '@/lib/queryClient';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Settings() {
   const [, setLocation] = useLocation();
@@ -37,6 +50,49 @@ export default function Settings() {
       toast({ title: 'App installed successfully!', description: 'Gift Xzalted is now on your home screen.' });
     }
   };
+
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', '/api/stripe/cancel-subscription');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      toast({ 
+        title: 'Subscription cancelled', 
+        description: 'Your subscription will remain active until the end of the billing period.' 
+      });
+    },
+    onError: () => {
+      toast({ 
+        title: 'Failed to cancel subscription', 
+        description: 'Please try again or contact support.',
+        variant: 'destructive' 
+      });
+    },
+  });
+
+  // Plan display logic
+  const getPlanDisplayName = () => {
+    if (!userData?.subscriptionTier) return 'Free';
+    switch (userData.subscriptionTier) {
+      case 'basic': return 'Basic';
+      case 'premium': return 'Premium';
+      case 'enterprise': return 'Enterprise';
+      default: return 'Free';
+    }
+  };
+
+  const getPlanBadgeColor = () => {
+    if (!userData?.subscriptionTier) return 'bg-muted text-muted-foreground';
+    switch (userData.subscriptionTier) {
+      case 'basic': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'premium': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
+      case 'enterprise': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const isSubscribed = userData?.subscriptionTier && userData?.subscriptionStatus === 'active';
 
   const userName = userData?.firstName 
     ? `${userData.firstName}${userData.lastName ? ' ' + userData.lastName : ''}`
@@ -76,6 +132,84 @@ export default function Settings() {
                 <p className="text-sm text-muted-foreground" data-testid="text-user-email">{userData?.email}</p>
               </div>
             </div>
+          </Card>
+
+          {/* Plan Section */}
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Your Plan</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Crown className="h-6 w-6 text-primary" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-bold" data-testid="text-plan-name">{getPlanDisplayName()}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getPlanBadgeColor()}`}>
+                      {isSubscribed ? 'Active' : getPlanDisplayName() === 'Free' ? '' : 'Inactive'}
+                    </span>
+                  </div>
+                  {isSubscribed && (
+                    <p className="text-sm text-muted-foreground">
+                      Subscription tokens: {userData?.tokens ?? 0}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation('/pricing')}
+                className="hover-elevate"
+                data-testid="button-view-plans"
+              >
+                View Plans
+              </Button>
+            </div>
+            
+            {/* Cancel Subscription - Only shown for active subscribers */}
+            {isSubscribed && (
+              <div className="pt-4 border-t">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full text-destructive border-destructive/50 hover:bg-destructive/10 hover-elevate"
+                      data-testid="button-cancel-subscription"
+                    >
+                      Cancel Subscription
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                        Cancel Subscription
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-3">
+                        <p>Are you sure you want to cancel your subscription?</p>
+                        <div className="p-3 bg-muted rounded-lg text-sm">
+                          <p className="font-medium text-foreground mb-2">What happens when you cancel:</p>
+                          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                            <li>Your subscription will remain active until the end of your billing period</li>
+                            <li>Your <strong>subscription tokens will be removed</strong> at the end of the period</li>
+                            <li>Any <strong>one-time purchased tokens will be kept</strong> and remain usable</li>
+                          </ul>
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => cancelSubscriptionMutation.mutate()}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        disabled={cancelSubscriptionMutation.isPending}
+                      >
+                        {cancelSubscriptionMutation.isPending ? 'Cancelling...' : 'Yes, Cancel'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
           </Card>
 
           <Card className="p-6">

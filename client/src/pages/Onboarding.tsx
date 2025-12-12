@@ -25,7 +25,7 @@ export default function Onboarding() {
     },
     onSuccess: (newProfile) => {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
-      toast({ title: 'Gift list created successfully' });
+      toast({ title: 'Profile created successfully' });
       setLocation(`/profile/${newProfile.id}`);
     },
     onError: () => {

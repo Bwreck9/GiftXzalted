@@ -97,7 +97,7 @@ export default function Landing() {
     },
     onSuccess: (newProfile) => {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
-      toast({ title: 'Gift list created successfully' });
+      toast({ title: 'Profile created successfully' });
       setCreateDialogOpen(false);
       setNewGiftListName('');
       // Navigate to the new gift list
