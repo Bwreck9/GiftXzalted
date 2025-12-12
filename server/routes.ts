@@ -1215,7 +1215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Don't allow changing profileId
       const { profileId: _, eventDate, ...updates } = req.body;
       
-      // Check manual ideas limit if manualIdeas are being updated
+      // Check manual ideas limit if manualIdeas are being updated (legacy string array)
       if (updates.manualIdeas !== undefined) {
         // Filter out empty strings and trim
         const cleanedIdeas = updates.manualIdeas
@@ -1231,6 +1231,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Use the cleaned ideas
         updates.manualIdeas = cleanedIdeas;
+      }
+      
+      // Check manual ideas limit if manualIdeasJson are being updated (new JSON format)
+      if (updates.manualIdeasJson !== undefined) {
+        if (updates.manualIdeasJson.length > MANUAL_IDEA_LIMIT) {
+          return res.status(400).json({ 
+            error: `Gift idea limit reached. You can have up to ${MANUAL_IDEA_LIMIT} ideas per list. Delete some ideas to add new ones.`,
+            code: 'MANUAL_IDEA_LIMIT'
+          });
+        }
       }
       
       // Convert eventDate string to Date object if provided

@@ -85,14 +85,27 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Manual idea structure for storing in manualIdeasJson
+export const manualIdeaSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  order: z.number(),
+  purchased: z.boolean().default(false),
+  createdAt: z.string(),
+});
+
+export type ManualIdea = z.infer<typeof manualIdeaSchema>;
+
 // Gift lists - represents an OCCASION for a person (Birthday, Christmas, General, etc.)
 export const giftLists = pgTable("gift_lists", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   profileId: varchar("profile_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
   title: text("title").notNull(), // Occasion name (e.g., "Birthday", "Christmas", "General")
   eventDate: timestamp("event_date"), // Optional date of the event/occasion
-  // Manual gift ideas (free feature)
+  // Manual gift ideas (free feature) - legacy string array
   manualIdeas: text("manual_ideas").array().notNull().default(sql`ARRAY[]::text[]`),
+  // Manual gift ideas as JSON with order and purchased status
+  manualIdeasJson: jsonb("manual_ideas_json").$type<ManualIdea[]>().default([]),
   // AI-generated gift ideas (premium feature)
   premiumResults: text("premium_results"), // JSON string of premium AI results: Array<{id, title, reason, createdAt}>
   createdAt: timestamp("created_at").notNull().defaultNow(),
