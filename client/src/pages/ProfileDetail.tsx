@@ -708,21 +708,18 @@ export default function ProfileDetail() {
 
           {/* Actions Row - Mobile friendly stacked layout */}
           <div className="space-y-3">
-            {/* Row 1: Occasion Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground shrink-0">Filter:</span>
-              <Select value={filterOccasion} onValueChange={setFilterOccasion}>
-                <SelectTrigger className="flex-1 max-w-48" data-testid="select-filter-occasion">
-                  <SelectValue placeholder="All occasions" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All occasions</SelectItem>
-                  {occasionsList.map((occasion: string) => (
-                    <SelectItem key={occasion} value={occasion}>{occasion}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Occasion Filter */}
+            <Select value={filterOccasion} onValueChange={setFilterOccasion}>
+              <SelectTrigger className="w-44" data-testid="select-filter-occasion">
+                <SelectValue placeholder="All occasions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All occasions</SelectItem>
+                {occasionsList.map((occasion: string) => (
+                  <SelectItem key={occasion} value={occasion}>{occasion}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
             {/* Row 2: Add + Generate */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -766,8 +763,7 @@ export default function ProfileDetail() {
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-1" />
-                      <span className="hidden sm:inline">Generate</span>
-                      <span className="sm:hidden">AI</span>
+                      Generate
                     </>
                   )}
                 </Button>
@@ -823,7 +819,6 @@ export default function ProfileDetail() {
                           {DEFAULT_OCCASIONS.map((o: string) => (
                             <SelectItem key={o} value={o}>{o}</SelectItem>
                           ))}
-                          <SelectItem value="General">General</SelectItem>
                         </SelectContent>
                       </Select>
                       <Button
@@ -930,7 +925,7 @@ export default function ProfileDetail() {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-purple-500" />
-                Generated Suggestions ({generatedIdeas.length})
+                Generated Ideas ({generatedIdeas.length})
               </h2>
               <div className="space-y-2">
                 {generatedIdeas.map(idea => (
