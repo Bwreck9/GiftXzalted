@@ -53,7 +53,8 @@ import {
 
 const TOKENS_PER_10_IDEAS = 200;
 
-const OCCASION_OPTIONS = [
+const DEFAULT_OCCASIONS = [
+  'General',
   'Birthday',
   'Christmas',
   'Anniversary',
@@ -67,6 +68,26 @@ const OCCASION_OPTIONS = [
   'Thank You',
   'Just Because',
 ];
+
+// Color mapping for occasion badges
+const OCCASION_COLORS: Record<string, string> = {
+  'Birthday': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
+  'Christmas': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+  'Anniversary': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+  "Mother's Day": 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  "Father's Day": 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  "Valentine's Day": 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+  'Graduation': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+  'Wedding': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  'Baby Shower': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
+  'Housewarming': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+  'Thank You': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+  'Just Because': 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+  'General': 'bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-300',
+};
+
+const getOccasionColor = (occasion: string) => 
+  OCCASION_COLORS[occasion] || 'bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-300';
 
 interface UnifiedIdea {
   id: string;
@@ -410,14 +431,17 @@ export default function ProfileDetail() {
       return;
     }
 
-    let targetListId: string;
-    const existingGeneralList = (giftLists || []).find(l => l.title === 'General');
+    // Use the currently selected filter occasion, or 'General' if showing all
+    const targetOccasion = filterOccasion === 'all' ? 'General' : filterOccasion;
     
-    if (existingGeneralList) {
-      targetListId = existingGeneralList.id;
+    let targetListId: string;
+    const existingList = (giftLists || []).find(l => l.title === targetOccasion);
+    
+    if (existingList) {
+      targetListId = existingList.id;
     } else {
       try {
-        const response = await createListMutation.mutateAsync({ title: 'General' });
+        const response = await createListMutation.mutateAsync({ title: targetOccasion });
         const newList = await response.json();
         targetListId = newList.id;
       } catch (error) {
@@ -430,7 +454,9 @@ export default function ProfileDetail() {
   };
 
   const handleAddInlineIdea = () => {
-    setNewInlineIdea({ title: '', occasion: 'General' });
+    // Use filtered occasion or General as default
+    const defaultOccasion = filterOccasion === 'all' ? 'General' : filterOccasion;
+    setNewInlineIdea({ title: '', occasion: defaultOccasion });
     setTimeout(() => newIdeaInputRef.current?.focus(), 50);
   };
 
@@ -578,67 +604,61 @@ export default function ProfileDetail() {
 
       <AppHeader />
       
-      {/* Profile Info Bar */}
-      <div className="border-b bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 px-4 md:px-6 py-4">
+      {/* Profile Info Bar - Cleaner mobile layout */}
+      <div className="border-b bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 px-3 sm:px-4 md:px-6 py-3">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={() => setLocation('/')}
-                variant="ghost"
-                size="icon"
-                className="hover-elevate shrink-0"
-                data-testid="button-back-to-profiles"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div
-                className="w-10 h-10 md:w-12 md:h-12 rounded-lg shadow-md shrink-0"
-                style={{ backgroundColor: profile.color || '#3B82F6' }}
-              />
-              <h1 className="text-lg md:text-xl font-semibold text-foreground truncate">
-                {profile.name}
-              </h1>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="hover-elevate shrink-0"
-                    data-testid="profile-settings-menu"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Rename / Recolor
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="text-destructive"
-                    onClick={() => {
-                      if (confirm(`Delete profile "${profile.name}"?`)) {
-                        deleteProfileMutation.mutate(profile.id);
-                      }
-                    }}
-                    data-testid="button-delete-profile"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+          {/* Row 1: Back + Profile name + Settings */}
+          <div className="flex items-center gap-2">
             <Button
-              onClick={() => setQuestionnaireOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2"
-              data-testid="button-train-agent"
+              onClick={() => setLocation('/')}
+              variant="ghost"
+              size="icon"
+              className="hover-elevate shrink-0 h-8 w-8"
+              data-testid="button-back-to-profiles"
             >
-              <Brain className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Train Profile</span>
-              <span className="sm:hidden">Train</span>
+              <ArrowLeft className="h-4 w-4" />
             </Button>
+            <div
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-md shrink-0"
+              style={{ backgroundColor: profile.color || '#3B82F6' }}
+            />
+            <h1 className="text-base sm:text-lg font-semibold text-foreground truncate flex-1 min-w-0">
+              {profile.name}
+            </h1>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover-elevate shrink-0 h-8 w-8"
+                  data-testid="profile-settings-menu"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setQuestionnaireOpen(true)}>
+                  <Brain className="h-4 w-4 mr-2" />
+                  Train Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Rename / Recolor
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-destructive"
+                  onClick={() => {
+                    if (confirm(`Delete profile "${profile.name}"?`)) {
+                      deleteProfileMutation.mutate(profile.id);
+                    }
+                  }}
+                  data-testid="button-delete-profile"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -686,68 +706,79 @@ export default function ProfileDetail() {
             </div>
           )}
 
-          {/* Actions Row */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap">
+          {/* Actions Row - Mobile friendly stacked layout */}
+          <div className="space-y-3">
+            {/* Row 1: Occasion Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground shrink-0">Filter:</span>
               <Select value={filterOccasion} onValueChange={setFilterOccasion}>
-                <SelectTrigger className="w-36" data-testid="select-filter-occasion">
+                <SelectTrigger className="flex-1 max-w-48" data-testid="select-filter-occasion">
                   <SelectValue placeholder="All occasions" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All occasions</SelectItem>
-                  {occasionsList.map(occasion => (
+                  {occasionsList.map((occasion: string) => (
                     <SelectItem key={occasion} value={occasion}>{occasion}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* Row 2: Add + Generate */}
             <div className="flex items-center gap-2 flex-wrap">
               <Button
                 onClick={handleAddInlineIdea}
                 variant="outline"
+                size="sm"
                 className="hover-elevate"
                 data-testid="button-add-idea"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Idea
+                <Plus className="h-4 w-4 mr-1" />
+                Add
               </Button>
-              <Select
-                value={numIdeas.toString()}
-                onValueChange={(value) => setNumIdeas(parseInt(value))}
-              >
-                <SelectTrigger className="w-24" data-testid="select-num-ideas">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10 ideas</SelectItem>
-                  <SelectItem value="20">20 ideas</SelectItem>
-                  <SelectItem value="30">30 ideas</SelectItem>
-                  <SelectItem value="40">40 ideas</SelectItem>
-                  <SelectItem value="50">50 ideas</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                onClick={handleGenerate}
-                disabled={generateMutation.isPending}
-                className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
-                  !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < (numIdeas / 10) * TOKENS_PER_10_IDEAS ? 'opacity-60' : ''
-                }`}
-                data-testid="button-generate-ideas"
-              >
-                {generateMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    <span className="hidden sm:inline">Generating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Generate ({(numIdeas / 10) * TOKENS_PER_10_IDEAS} tokens)</span>
-                    <span className="sm:hidden">Generate</span>
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center gap-1 ml-auto">
+                <Select
+                  value={numIdeas.toString()}
+                  onValueChange={(value) => setNumIdeas(parseInt(value))}
+                >
+                  <SelectTrigger className="w-16 h-8 text-xs" data-testid="select-num-ideas">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="30">30</SelectItem>
+                    <SelectItem value="40">40</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={generateMutation.isPending}
+                  size="sm"
+                  className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
+                    !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < (numIdeas / 10) * TOKENS_PER_10_IDEAS ? 'opacity-60' : ''
+                  }`}
+                  data-testid="button-generate-ideas"
+                >
+                  {generateMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-1" />
+                      <span className="hidden sm:inline">Generate</span>
+                      <span className="sm:hidden">AI</span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
+            {/* Hint: show which occasion will be used for generation */}
+            {filterOccasion !== 'all' && (
+              <p className="text-xs text-muted-foreground">
+                AI ideas will be tagged as "{filterOccasion}"
+              </p>
+            )}
           </div>
 
           {/* Saved Ideas Section */}
@@ -789,7 +820,7 @@ export default function ProfileDetail() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {OCCASION_OPTIONS.map(o => (
+                          {DEFAULT_OCCASIONS.map((o: string) => (
                             <SelectItem key={o} value={o}>{o}</SelectItem>
                           ))}
                           <SelectItem value="General">General</SelectItem>
@@ -807,8 +838,52 @@ export default function ProfileDetail() {
                   </Card>
                 )}
                 {savedIdeas.map(idea => (
-                  <Card key={idea.id} className="p-3 md:p-4" data-testid={`saved-idea-${idea.id}`}>
-                    <div className="flex items-center gap-2 flex-wrap">
+                  <Card key={idea.id} className="p-2 sm:p-3" data-testid={`saved-idea-${idea.id}`}>
+                    <div className="space-y-1">
+                      {/* Row 1: Occasion tag */}
+                      <div className="flex items-center justify-between gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              className={`text-xs px-2 py-0.5 rounded-full font-medium ${getOccasionColor(idea.occasion)} hover:opacity-80 transition-opacity`}
+                              data-testid={`tag-occasion-${idea.id}`}
+                            >
+                              {idea.occasion}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-40 p-1" align="start">
+                            <div className="space-y-0.5">
+                              {occasionsList.length > 0 ? occasionsList.map((o: string) => (
+                                <button
+                                  key={o}
+                                  onClick={() => handleChangeIdeaOccasion(idea, o)}
+                                  className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
+                                >
+                                  {o}
+                                </button>
+                              )) : DEFAULT_OCCASIONS.slice(0, 6).map((o: string) => (
+                                <button
+                                  key={o}
+                                  onClick={() => handleChangeIdeaOccasion(idea, o)}
+                                  className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
+                                >
+                                  {o}
+                                </button>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <Button
+                          onClick={() => handleRemoveIdea(idea)}
+                          variant="ghost"
+                          size="icon"
+                          className="hover-elevate shrink-0 h-6 w-6"
+                          data-testid={`button-remove-idea-${idea.id}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      {/* Row 2: Idea text */}
                       {editingIdea === idea.id ? (
                         <Input
                           value={editingText}
@@ -818,7 +893,7 @@ export default function ProfileDetail() {
                             if (e.key === 'Enter') handleUpdateIdeaTitle(idea, editingText);
                             if (e.key === 'Escape') setEditingIdea(null);
                           }}
-                          className="flex-1 min-w-0"
+                          className="w-full text-sm"
                           autoFocus
                           data-testid={`input-edit-idea-${idea.id}`}
                         />
@@ -828,38 +903,12 @@ export default function ProfileDetail() {
                             setEditingIdea(idea.id);
                             setEditingText(idea.title);
                           }}
-                          className="flex-1 min-w-0 text-left font-medium text-foreground truncate hover:underline cursor-text"
+                          className="w-full text-left text-sm font-medium text-foreground hover:underline cursor-text"
                           data-testid={`text-idea-${idea.id}`}
                         >
                           {idea.title}
                         </button>
                       )}
-                      <Select 
-                        value={idea.occasion} 
-                        onValueChange={(v) => handleChangeIdeaOccasion(idea, v)}
-                      >
-                        <SelectTrigger className="w-32 shrink-0" data-testid={`select-occasion-${idea.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {OCCASION_OPTIONS.map(o => (
-                            <SelectItem key={o} value={o}>{o}</SelectItem>
-                          ))}
-                          {!OCCASION_OPTIONS.includes(idea.occasion) && (
-                            <SelectItem value={idea.occasion}>{idea.occasion}</SelectItem>
-                          )}
-                          <SelectItem value="General">General</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        onClick={() => handleRemoveIdea(idea)}
-                        variant="ghost"
-                        size="icon"
-                        className="hover-elevate shrink-0"
-                        data-testid={`button-remove-idea-${idea.id}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
                     </div>
                   </Card>
                 ))}
@@ -885,68 +934,84 @@ export default function ProfileDetail() {
               </h2>
               <div className="space-y-2">
                 {generatedIdeas.map(idea => (
-                  <Card key={idea.id} className="p-3 md:p-4" data-testid={`generated-idea-${idea.id}`}>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-foreground">{idea.title}</span>
-                          {idea.reason && (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 rounded-full hover-elevate shrink-0"
+                  <Card key={idea.id} className="p-2 sm:p-3" data-testid={`generated-idea-${idea.id}`}>
+                    <div className="space-y-1">
+                      {/* Row 1: Occasion tag + actions */}
+                      <div className="flex items-center justify-between gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              className={`text-xs px-2 py-0.5 rounded-full font-medium ${getOccasionColor(idea.occasion)} hover:opacity-80 transition-opacity`}
+                              data-testid={`tag-gen-occasion-${idea.id}`}
+                            >
+                              {idea.occasion}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-40 p-1" align="start">
+                            <div className="space-y-0.5">
+                              {occasionsList.length > 0 ? occasionsList.map((o: string) => (
+                                <button
+                                  key={o}
+                                  onClick={() => handleChangeGeneratedIdeaOccasion(idea, o)}
+                                  className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
                                 >
-                                  <Info className="h-4 w-4 text-muted-foreground" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-72">
-                                <div className="space-y-2">
-                                  <h4 className="font-medium">Why this gift?</h4>
-                                  <p className="text-sm text-muted-foreground">{idea.reason}</p>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                          )}
+                                  {o}
+                                </button>
+                              )) : DEFAULT_OCCASIONS.slice(0, 6).map((o: string) => (
+                                <button
+                                  key={o}
+                                  onClick={() => handleChangeGeneratedIdeaOccasion(idea, o)}
+                                  className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
+                                >
+                                  {o}
+                                </button>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            onClick={() => handleAddAiIdeaToSaved(idea)}
+                            variant="outline"
+                            size="sm"
+                            className="hover-elevate h-6 text-xs px-2"
+                            data-testid={`button-add-ai-idea-${idea.id}`}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Save
+                          </Button>
+                          <Button
+                            onClick={() => handleRemoveIdea(idea)}
+                            variant="ghost"
+                            size="icon"
+                            className="hover-elevate h-6 w-6"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
                         </div>
                       </div>
-                      <Select 
-                        value={idea.occasion} 
-                        onValueChange={(v) => handleChangeGeneratedIdeaOccasion(idea, v)}
-                      >
-                        <SelectTrigger className="w-32 shrink-0" data-testid={`select-gen-occasion-${idea.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {OCCASION_OPTIONS.map(o => (
-                            <SelectItem key={o} value={o}>{o}</SelectItem>
-                          ))}
-                          {!OCCASION_OPTIONS.includes(idea.occasion) && (
-                            <SelectItem value={idea.occasion}>{idea.occasion}</SelectItem>
-                          )}
-                          <SelectItem value="General">General</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          onClick={() => handleAddAiIdeaToSaved(idea)}
-                          variant="outline"
-                          size="sm"
-                          className="hover-elevate"
-                          data-testid={`button-add-ai-idea-${idea.id}`}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Save
-                        </Button>
-                        <Button
-                          onClick={() => handleRemoveIdea(idea)}
-                          variant="ghost"
-                          size="icon"
-                          className="hover-elevate"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                      {/* Row 2: Idea text + info */}
+                      <div className="flex items-start gap-1">
+                        <span className="text-sm font-medium text-foreground flex-1">{idea.title}</span>
+                        {idea.reason && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5 rounded-full hover-elevate shrink-0"
+                              >
+                                <Info className="h-3 w-3 text-muted-foreground" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-72">
+                              <div className="space-y-2">
+                                <h4 className="font-medium">Why this gift?</h4>
+                                <p className="text-sm text-muted-foreground">{idea.reason}</p>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
                       </div>
                     </div>
                   </Card>
