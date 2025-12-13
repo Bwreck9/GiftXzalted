@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { X, Calendar, Plus, Trash2 } from 'lucide-react';
 import type { Profile } from '@shared/schema';
 
@@ -29,10 +30,12 @@ function formatMMDD(month: string, day: string): string | undefined {
   return `${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 }
 
-interface CustomDate {
+interface CustomDateState {
   name: string;
   month: string;
   day: string;
+  year: string;
+  showOnCard: boolean;
 }
 
 export function ImportantDatesModal({ 
@@ -43,24 +46,50 @@ export function ImportantDatesModal({
 }: ImportantDatesModalProps) {
   const [birthdayMonth, setBirthdayMonth] = useState('');
   const [birthdayDay, setBirthdayDay] = useState('');
+  const [birthdayYear, setBirthdayYear] = useState('');
+  const [birthdayShowOnCard, setBirthdayShowOnCard] = useState(false);
+  
   const [anniversaryMonth, setAnniversaryMonth] = useState('');
   const [anniversaryDay, setAnniversaryDay] = useState('');
-  const [customDates, setCustomDates] = useState<CustomDate[]>([]);
+  const [anniversaryYear, setAnniversaryYear] = useState('');
+  const [anniversaryShowOnCard, setAnniversaryShowOnCard] = useState(false);
+  
+  const [customDates, setCustomDates] = useState<CustomDateState[]>([]);
   const [newDateName, setNewDateName] = useState('');
+
+  const countShowOnCard = () => {
+    let count = 0;
+    if (birthdayShowOnCard && birthdayMonth && birthdayDay) count++;
+    if (anniversaryShowOnCard && anniversaryMonth && anniversaryDay) count++;
+    count += customDates.filter(cd => cd.showOnCard && cd.month && cd.day).length;
+    return count;
+  };
+
+  const canAddShowOnCard = countShowOnCard() < 3;
 
   useEffect(() => {
     if (profile && open) {
       const birthday = parseMMDD(profile.birthdayDate);
       setBirthdayMonth(birthday.month);
       setBirthdayDay(birthday.day);
+      setBirthdayYear(profile.birthdayYear || '');
+      setBirthdayShowOnCard(profile.birthdayShowOnCard || false);
       
       const anniversary = parseMMDD(profile.anniversaryDate);
       setAnniversaryMonth(anniversary.month);
       setAnniversaryDay(anniversary.day);
+      setAnniversaryYear(profile.anniversaryYear || '');
+      setAnniversaryShowOnCard(profile.anniversaryShowOnCard || false);
       
       const existingCustomDates = (profile.customDates || []).map(cd => {
         const parsed = parseMMDD(cd.date);
-        return { name: cd.name, month: parsed.month, day: parsed.day };
+        return { 
+          name: cd.name, 
+          month: parsed.month, 
+          day: parsed.day,
+          year: cd.year || '',
+          showOnCard: cd.showOnCard || false
+        };
       });
       setCustomDates(existingCustomDates);
       setNewDateName('');
@@ -71,7 +100,7 @@ export function ImportantDatesModal({
 
   const handleAddCustomDate = () => {
     if (!newDateName.trim()) return;
-    setCustomDates([...customDates, { name: newDateName.trim(), month: '', day: '' }]);
+    setCustomDates([...customDates, { name: newDateName.trim(), month: '', day: '', year: '', showOnCard: false }]);
     setNewDateName('');
   };
 
@@ -79,7 +108,7 @@ export function ImportantDatesModal({
     setCustomDates(customDates.filter((_, i) => i !== index));
   };
 
-  const handleUpdateCustomDate = (index: number, field: 'name' | 'month' | 'day', value: string) => {
+  const handleUpdateCustomDate = (index: number, field: keyof CustomDateState, value: string | boolean) => {
     const updated = [...customDates];
     updated[index] = { ...updated[index], [field]: value };
     setCustomDates(updated);
@@ -90,16 +119,24 @@ export function ImportantDatesModal({
       .filter(cd => cd.month && cd.day)
       .map(cd => ({
         name: cd.name,
-        date: formatMMDD(cd.month, cd.day)!
+        date: formatMMDD(cd.month, cd.day)!,
+        year: cd.year || undefined,
+        showOnCard: cd.showOnCard || undefined
       }));
 
     onSave?.({
       birthdayDate: formatMMDD(birthdayMonth, birthdayDay),
+      birthdayYear: birthdayYear || undefined,
+      birthdayShowOnCard: birthdayShowOnCard,
       anniversaryDate: formatMMDD(anniversaryMonth, anniversaryDay),
+      anniversaryYear: anniversaryYear || undefined,
+      anniversaryShowOnCard: anniversaryShowOnCard,
       customDates: formattedCustomDates.length > 0 ? formattedCustomDates : undefined,
     });
     onOpenChange(false);
   };
+
+  const currentYear = new Date().getFullYear();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,19 +147,36 @@ export function ImportantDatesModal({
             Important Dates
           </DialogTitle>
           <DialogDescription>
-            Track special dates for {profile.name}
+            Track special dates for {profile.name}. Check up to 3 dates to display on the profile card.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {/* Birthday */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Birthday</Label>
-            <div className="flex gap-2">
+          <div className="space-y-2 p-3 rounded-md border border-border">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Birthday</Label>
+              {birthdayMonth && birthdayDay && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="birthday-show"
+                    checked={birthdayShowOnCard}
+                    onCheckedChange={(checked) => {
+                      if (checked && !canAddShowOnCard) return;
+                      setBirthdayShowOnCard(checked as boolean);
+                    }}
+                    disabled={!birthdayShowOnCard && !canAddShowOnCard}
+                    data-testid="dates-birthday-show"
+                  />
+                  <Label htmlFor="birthday-show" className="text-xs text-muted-foreground">Show on card</Label>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 flex-wrap">
               <select
                 value={birthdayMonth}
                 onChange={(e) => setBirthdayMonth(e.target.value)}
-                className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="flex-1 min-w-[100px] h-9 rounded-md border border-input bg-background px-3 text-sm"
                 data-testid="dates-birthday-month"
               >
                 <option value="">Month</option>
@@ -142,11 +196,21 @@ export function ImportantDatesModal({
                 className="w-20"
                 data-testid="dates-birthday-day"
               />
+              <Input
+                type="number"
+                min="1900"
+                max={currentYear}
+                value={birthdayYear}
+                onChange={(e) => setBirthdayYear(e.target.value)}
+                placeholder="Year (optional)"
+                className="w-32"
+                data-testid="dates-birthday-year"
+              />
               {(birthdayMonth || birthdayDay) && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => { setBirthdayMonth(''); setBirthdayDay(''); }}
+                  onClick={() => { setBirthdayMonth(''); setBirthdayDay(''); setBirthdayYear(''); setBirthdayShowOnCard(false); }}
                   className="hover-elevate h-9 w-9"
                 >
                   <X className="h-4 w-4" />
@@ -156,13 +220,30 @@ export function ImportantDatesModal({
           </div>
 
           {/* Anniversary */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Anniversary</Label>
-            <div className="flex gap-2">
+          <div className="space-y-2 p-3 rounded-md border border-border">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Anniversary</Label>
+              {anniversaryMonth && anniversaryDay && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="anniversary-show"
+                    checked={anniversaryShowOnCard}
+                    onCheckedChange={(checked) => {
+                      if (checked && !canAddShowOnCard) return;
+                      setAnniversaryShowOnCard(checked as boolean);
+                    }}
+                    disabled={!anniversaryShowOnCard && !canAddShowOnCard}
+                    data-testid="dates-anniversary-show"
+                  />
+                  <Label htmlFor="anniversary-show" className="text-xs text-muted-foreground">Show on card</Label>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 flex-wrap">
               <select
                 value={anniversaryMonth}
                 onChange={(e) => setAnniversaryMonth(e.target.value)}
-                className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="flex-1 min-w-[100px] h-9 rounded-md border border-input bg-background px-3 text-sm"
                 data-testid="dates-anniversary-month"
               >
                 <option value="">Month</option>
@@ -182,11 +263,21 @@ export function ImportantDatesModal({
                 className="w-20"
                 data-testid="dates-anniversary-day"
               />
+              <Input
+                type="number"
+                min="1900"
+                max={currentYear}
+                value={anniversaryYear}
+                onChange={(e) => setAnniversaryYear(e.target.value)}
+                placeholder="Year (optional)"
+                className="w-32"
+                data-testid="dates-anniversary-year"
+              />
               {(anniversaryMonth || anniversaryDay) && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => { setAnniversaryMonth(''); setAnniversaryDay(''); }}
+                  onClick={() => { setAnniversaryMonth(''); setAnniversaryDay(''); setAnniversaryYear(''); setAnniversaryShowOnCard(false); }}
                   className="hover-elevate h-9 w-9"
                 >
                   <X className="h-4 w-4" />
@@ -195,14 +286,13 @@ export function ImportantDatesModal({
             </div>
           </div>
 
-          {/* Divider */}
+          {/* Custom Dates */}
           <div className="border-t pt-4">
             <Label className="text-sm font-medium">Custom Dates</Label>
           </div>
 
-          {/* Custom Dates List */}
           {customDates.map((cd, index) => (
-            <div key={index} className="space-y-1">
+            <div key={index} className="space-y-2 p-3 rounded-md border border-border">
               <div className="flex items-center gap-2">
                 <Input
                   value={cd.name}
@@ -211,6 +301,21 @@ export function ImportantDatesModal({
                   className="flex-1"
                   data-testid={`dates-custom-name-${index}`}
                 />
+                {cd.month && cd.day && (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`custom-show-${index}`}
+                      checked={cd.showOnCard}
+                      onCheckedChange={(checked) => {
+                        if (checked && !canAddShowOnCard) return;
+                        handleUpdateCustomDate(index, 'showOnCard', checked as boolean);
+                      }}
+                      disabled={!cd.showOnCard && !canAddShowOnCard}
+                      data-testid={`dates-custom-show-${index}`}
+                    />
+                    <Label htmlFor={`custom-show-${index}`} className="text-xs text-muted-foreground whitespace-nowrap">Show</Label>
+                  </div>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -221,11 +326,11 @@ export function ImportantDatesModal({
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="flex gap-2 ml-0">
+              <div className="flex gap-2 flex-wrap">
                 <select
                   value={cd.month}
                   onChange={(e) => handleUpdateCustomDate(index, 'month', e.target.value)}
-                  className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  className="flex-1 min-w-[100px] h-9 rounded-md border border-input bg-background px-3 text-sm"
                   data-testid={`dates-custom-month-${index}`}
                 >
                   <option value="">Month</option>
@@ -244,6 +349,16 @@ export function ImportantDatesModal({
                   placeholder="Day"
                   className="w-20"
                   data-testid={`dates-custom-day-${index}`}
+                />
+                <Input
+                  type="number"
+                  min="1900"
+                  max={currentYear + 10}
+                  value={cd.year}
+                  onChange={(e) => handleUpdateCustomDate(index, 'year', e.target.value)}
+                  placeholder="Year (optional)"
+                  className="w-32"
+                  data-testid={`dates-custom-year-${index}`}
                 />
               </div>
             </div>
@@ -271,6 +386,11 @@ export function ImportantDatesModal({
               Add
             </Button>
           </div>
+
+          {/* Show on card counter */}
+          <p className="text-xs text-muted-foreground text-center">
+            {countShowOnCard()}/3 dates selected to show on profile card
+          </p>
         </div>
 
         <DialogFooter className="gap-2">

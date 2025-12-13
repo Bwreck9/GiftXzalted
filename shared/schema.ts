@@ -57,8 +57,12 @@ export const profiles = pgTable("profiles", {
   
   // Important dates for this person
   birthdayDate: text("birthday_date"), // MM-DD format (e.g., "12-25")
+  birthdayYear: text("birthday_year"), // Optional year (e.g., "1990")
+  birthdayShowOnCard: boolean("birthday_show_on_card").default(false),
   anniversaryDate: text("anniversary_date"), // MM-DD format (e.g., "06-15")
-  customDates: jsonb("custom_dates").$type<{ name: string; date: string }[]>().default([]), // Array of {name, date} in MM-DD format
+  anniversaryYear: text("anniversary_year"), // Optional year
+  anniversaryShowOnCard: boolean("anniversary_show_on_card").default(false),
+  customDates: jsonb("custom_dates").$type<{ name: string; date: string; year?: string; showOnCard?: boolean }[]>().default([]), // Array with optional year and showOnCard
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -187,8 +191,17 @@ export const insertProfileSchema = createInsertSchema(profiles).omit({
   
   // Important dates
   birthdayDate: z.string().regex(/^\d{2}-\d{2}$/).optional(), // MM-DD format
+  birthdayYear: z.string().regex(/^\d{4}$/).optional(), // Optional year (YYYY)
+  birthdayShowOnCard: z.boolean().optional(),
   anniversaryDate: z.string().regex(/^\d{2}-\d{2}$/).optional(), // MM-DD format
-  customDates: z.array(z.object({ name: z.string(), date: z.string().regex(/^\d{2}-\d{2}$/) })).optional(),
+  anniversaryYear: z.string().regex(/^\d{4}$/).optional(), // Optional year
+  anniversaryShowOnCard: z.boolean().optional(),
+  customDates: z.array(z.object({ 
+    name: z.string(), 
+    date: z.string().regex(/^\d{2}-\d{2}$/),
+    year: z.string().regex(/^\d{4}$/).optional(),
+    showOnCard: z.boolean().optional()
+  })).optional(),
 });
 
 // Premium result type for storing in premiumResults JSON
