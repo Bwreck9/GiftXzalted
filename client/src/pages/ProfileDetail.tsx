@@ -1463,7 +1463,7 @@ export default function ProfileDetail() {
 
       {/* Questionnaire Prompt Dialog */}
       <Dialog open={questionnaireDialogOpen} onOpenChange={setQuestionnaireDialogOpen}>
-        <DialogContent data-testid="dialog-questionnaire-prompt">
+        <DialogContent hideCloseButton data-testid="dialog-questionnaire-prompt">
           <DialogHeader>
             <DialogTitle>Customize Profile First</DialogTitle>
             <DialogDescription>
