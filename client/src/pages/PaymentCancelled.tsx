@@ -1,10 +1,26 @@
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { XCircle, ArrowLeft } from 'lucide-react';
+import { XCircle } from 'lucide-react';
 
 export default function PaymentCancelled() {
   const [, setLocation] = useLocation();
+  const [countdown, setCountdown] = useState(3);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setLocation('/pricing');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [setLocation]);
 
   return (
     <div className="h-screen flex items-center justify-center p-4 bg-background">
@@ -22,25 +38,9 @@ export default function PaymentCancelled() {
           </p>
         </div>
 
-        <div className="space-y-3">
-          <Button
-            onClick={() => setLocation('/pricing')}
-            className="w-full hover-elevate active-elevate-2"
-            data-testid="button-view-pricing"
-          >
-            View Pricing Options
-          </Button>
-          
-          <Button
-            onClick={() => setLocation('/')}
-            variant="outline"
-            className="w-full hover-elevate active-elevate-2"
-            data-testid="button-back-home"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Button>
-        </div>
+        <p className="text-sm text-muted-foreground" data-testid="text-redirect-countdown">
+          Redirecting to pricing in {countdown}...
+        </p>
       </Card>
     </div>
   );
