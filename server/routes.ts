@@ -395,6 +395,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw error;
       }
       
+      // Create default occasions (Birthday, Anniversary, Christmas) for the new profile
+      const defaultOccasions = ['Birthday', 'Anniversary', 'Christmas'];
+      try {
+        for (const title of defaultOccasions) {
+          await storage.createGiftList({
+            profileId: profile.id,
+            title,
+            manualIdeas: [],
+            premiumResults: null,
+          });
+        }
+      } catch (occasionError) {
+        console.error('Failed to create default occasions:', occasionError);
+        // Don't fail the profile creation if occasion creation fails
+      }
+      
       res.json(profile);
     } catch (error: any) {
       if (error instanceof z.ZodError) {

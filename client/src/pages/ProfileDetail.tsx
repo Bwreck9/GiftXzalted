@@ -41,6 +41,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { QuestionnaireDialog } from '@/components/QuestionnaireDialog';
 import { SettingsModal } from '@/components/SettingsModal';
+import { ImportantDatesModal } from '@/components/ImportantDatesModal';
 import {
   Dialog,
   DialogContent,
@@ -204,6 +205,8 @@ export default function ProfileDetail() {
   const [newOccasionName, setNewOccasionName] = useState('');
   const [occasionToDelete, setOccasionToDelete] = useState<string | null>(null);
   const [deleteReassignTo, setDeleteReassignTo] = useState<string>('');
+  const [importantDatesOpen, setImportantDatesOpen] = useState(false);
+  const [importantDatesCollapsed, setImportantDatesCollapsed] = useState(true);
   const [editingIdea, setEditingIdea] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const [orderedSavedIdeas, setOrderedSavedIdeas] = useState<UnifiedIdea[]>([]);
@@ -935,6 +938,13 @@ export default function ProfileDetail() {
         onClear={(profileId) => clearProfileMutation.mutate(profileId)}
       />
 
+      <ImportantDatesModal
+        open={importantDatesOpen}
+        onOpenChange={setImportantDatesOpen}
+        profile={profile}
+        onSave={(updates) => updateProfileMutation.mutate(updates)}
+      />
+
       <AppHeader />
       
       {/* Profile Info Bar - Cleaner mobile layout */}
@@ -975,44 +985,80 @@ export default function ProfileDetail() {
 
       <main className="flex-1 overflow-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Important Dates Section */}
-          {(profile.birthdayDate || profile.anniversaryDate) && (
-            <div className="flex items-center gap-4 flex-wrap p-3 rounded-lg bg-muted/30 border">
-              {profile.birthdayDate && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  <span className="text-muted-foreground">Birthday:</span>
-                  <span className="font-medium">
-                    {(() => {
-                      const [month, day] = profile.birthdayDate.split('-');
-                      const date = new Date(2000, parseInt(month) - 1, parseInt(day));
-                      return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-                    })()}
-                  </span>
-                </div>
-              )}
-              {profile.anniversaryDate && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-pink-500" />
-                  <span className="text-muted-foreground">Anniversary:</span>
-                  <span className="font-medium">
-                    {(() => {
-                      const [month, day] = profile.anniversaryDate.split('-');
-                      const date = new Date(2000, parseInt(month) - 1, parseInt(day));
-                      return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-                    })()}
-                  </span>
-                </div>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSettingsOpen(true)}
-                className="hover-elevate ml-auto"
+          {/* Important Dates Section - Collapsible, only show if dates exist */}
+          {(profile.birthdayDate || profile.anniversaryDate || (profile.customDates && (profile.customDates as any[]).length > 0)) && (
+            <div className="rounded-lg bg-muted/30 border">
+              <button
+                onClick={() => setImportantDatesCollapsed(!importantDatesCollapsed)}
+                className="flex items-center justify-between w-full p-3 hover-elevate rounded-lg"
+                data-testid="button-toggle-important-dates"
               >
-                <Pencil className="h-3 w-3 mr-1" />
-                Edit
-              </Button>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-sm">Important Dates</span>
+                </div>
+                {importantDatesCollapsed ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+              {!importantDatesCollapsed && (
+                <div className="px-3 pb-3 space-y-2">
+                  {profile.birthdayDate && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Gift className="h-3.5 w-3.5 text-pink-500" />
+                      <span className="text-muted-foreground">Birthday:</span>
+                      <span className="font-medium">
+                        {(() => {
+                          const [month, day] = profile.birthdayDate.split('-');
+                          const date = new Date(2000, parseInt(month) - 1, parseInt(day));
+                          const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+                          return profile.birthdayYear ? `${formatted}, ${profile.birthdayYear}` : formatted;
+                        })()}
+                      </span>
+                    </div>
+                  )}
+                  {profile.anniversaryDate && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Gift className="h-3.5 w-3.5 text-purple-500" />
+                      <span className="text-muted-foreground">Anniversary:</span>
+                      <span className="font-medium">
+                        {(() => {
+                          const [month, day] = profile.anniversaryDate.split('-');
+                          const date = new Date(2000, parseInt(month) - 1, parseInt(day));
+                          const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+                          return profile.anniversaryYear ? `${formatted}, ${profile.anniversaryYear}` : formatted;
+                        })()}
+                      </span>
+                    </div>
+                  )}
+                  {profile.customDates && (profile.customDates as any[]).map((customDate: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      <Gift className="h-3.5 w-3.5 text-blue-500" />
+                      <span className="text-muted-foreground">{customDate.label || customDate.name}:</span>
+                      <span className="font-medium">
+                        {(() => {
+                          const [month, day] = customDate.date.split('-');
+                          const date = new Date(2000, parseInt(month) - 1, parseInt(day));
+                          const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+                          return customDate.year ? `${formatted}, ${customDate.year}` : formatted;
+                        })()}
+                      </span>
+                    </div>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setImportantDatesOpen(true)}
+                    className="hover-elevate mt-2"
+                    data-testid="button-edit-important-dates"
+                  >
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Edit Dates
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
@@ -1597,7 +1643,7 @@ export default function ProfileDetail() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOccasionManagerOpen(false)}>
-              Done
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>
