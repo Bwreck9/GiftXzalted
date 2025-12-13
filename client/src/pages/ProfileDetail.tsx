@@ -1072,9 +1072,9 @@ export default function ProfileDetail() {
                 <Plus className="h-4 w-4 mr-1" />
                 Add
               </Button>
-              <div className="flex flex-col gap-1 ml-auto">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 flex-1 min-w-32 max-w-40">
+              <div className="flex items-center gap-2 ml-auto">
+                <div className="flex flex-col gap-1 items-center">
+                  <div className="flex items-center gap-2 min-w-32 max-w-40">
                     <span className="text-sm font-medium w-6 text-center" data-testid="display-num-ideas">{numIdeas}</span>
                     <Slider
                       value={[numIdeas]}
@@ -1086,28 +1086,28 @@ export default function ProfileDetail() {
                       data-testid="slider-num-ideas"
                     />
                   </div>
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={generateMutation.isPending}
-                    size="sm"
-                    className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
-                      !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < (numIdeas / 10) * TOKENS_PER_10_IDEAS ? 'opacity-60' : ''
-                    }`}
-                    data-testid="button-generate-ideas"
-                  >
-                    {generateMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 mr-1" />
-                        Generate
-                      </>
-                    )}
-                  </Button>
+                  <span className="text-xs text-muted-foreground" data-testid="display-token-cost">
+                    {(numIdeas / 10) * TOKENS_PER_10_IDEAS} tokens
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground text-center" data-testid="display-token-cost">
-                  {(numIdeas / 10) * TOKENS_PER_10_IDEAS} tokens
-                </span>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={generateMutation.isPending}
+                  size="sm"
+                  className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
+                    !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < (numIdeas / 10) * TOKENS_PER_10_IDEAS ? 'opacity-60' : ''
+                  }`}
+                  data-testid="button-generate-ideas"
+                >
+                  {generateMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-1" />
+                      Generate
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
             {/* Hint: show which occasion will be used for generation */}
@@ -1122,11 +1122,11 @@ export default function ProfileDetail() {
           <div className="space-y-4">
             <button
               onClick={() => setSavedIdeasCollapsed(!savedIdeasCollapsed)}
-              className="w-full text-left flex items-center gap-2 hover-elevate p-2 -m-2 rounded-md"
+              className="text-left flex items-center gap-2 hover-elevate p-2 -m-2 rounded-md"
               data-testid="toggle-saved-ideas"
             >
               <Gift className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold flex-1">
+              <h2 className="text-xl font-semibold">
                 Saved Ideas ({savedIdeas.length})
               </h2>
               {savedIdeasCollapsed ? (
