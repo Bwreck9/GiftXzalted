@@ -99,7 +99,7 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-questionnaire">
+      <DialogContent hideCloseButton className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-questionnaire">
         <DialogHeader>
           <DialogTitle>Train Agent</DialogTitle>
           <DialogDescription>
