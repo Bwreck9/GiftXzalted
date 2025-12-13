@@ -1060,8 +1060,26 @@ export default function ProfileDetail() {
               </Button>
             </div>
             
-            {/* Row 2: Add + Generate */}
+          </div>
+
+          {/* Saved Ideas Section */}
+          <div className="space-y-4">
             <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setSavedIdeasCollapsed(!savedIdeasCollapsed)}
+                className="text-left flex items-center gap-2 hover-elevate p-2 -m-2 rounded-md"
+                data-testid="toggle-saved-ideas"
+              >
+                <Gift className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold">
+                  Saved Ideas ({savedIdeas.filter(i => !purchasedIdeas.has(i.id)).length})
+                </h2>
+                {savedIdeasCollapsed ? (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                )}
+              </button>
               <Button
                 onClick={handleAddInlineIdea}
                 variant="outline"
@@ -1072,69 +1090,7 @@ export default function ProfileDetail() {
                 <Plus className="h-4 w-4 mr-1" />
                 Add
               </Button>
-              <div className="flex items-center gap-2 ml-auto">
-                <div className="flex flex-col gap-1 items-center">
-                  <div className="flex items-center gap-2 min-w-32 max-w-40">
-                    <span className="text-sm font-medium w-6 text-center" data-testid="display-num-ideas">{numIdeas}</span>
-                    <Slider
-                      value={[numIdeas]}
-                      onValueChange={([value]) => setNumIdeas(value)}
-                      min={10}
-                      max={50}
-                      step={10}
-                      className="flex-1"
-                      data-testid="slider-num-ideas"
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground" data-testid="display-token-cost">
-                    {(numIdeas / 10) * TOKENS_PER_10_IDEAS} tokens
-                  </span>
-                </div>
-                <Button
-                  onClick={handleGenerate}
-                  disabled={generateMutation.isPending}
-                  size="sm"
-                  className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
-                    !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < (numIdeas / 10) * TOKENS_PER_10_IDEAS ? 'opacity-60' : ''
-                  }`}
-                  data-testid="button-generate-ideas"
-                >
-                  {generateMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-1" />
-                      Generate
-                    </>
-                  )}
-                </Button>
-              </div>
             </div>
-            {/* Hint: show which occasion will be used for generation */}
-            {filterOccasion !== 'all' && (
-              <p className="text-xs text-muted-foreground">
-                AI ideas will be tagged as "{filterOccasion}"
-              </p>
-            )}
-          </div>
-
-          {/* Saved Ideas Section */}
-          <div className="space-y-4">
-            <button
-              onClick={() => setSavedIdeasCollapsed(!savedIdeasCollapsed)}
-              className="text-left flex items-center gap-2 hover-elevate p-2 -m-2 rounded-md"
-              data-testid="toggle-saved-ideas"
-            >
-              <Gift className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">
-                Saved Ideas ({savedIdeas.length})
-              </h2>
-              {savedIdeasCollapsed ? (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-              )}
-            </button>
             {!savedIdeasCollapsed && (listsLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {[1, 2, 3].map(i => (
@@ -1191,10 +1147,10 @@ export default function ProfileDetail() {
                     </Card>
                   )}
                   <SortableContext
-                    items={savedIdeas.map(idea => idea.id)}
+                    items={savedIdeas.filter(i => !purchasedIdeas.has(i.id)).map(idea => idea.id)}
                     strategy={rectSortingStrategy}
                   >
-                    {savedIdeas.map(idea => (
+                    {savedIdeas.filter(idea => !purchasedIdeas.has(idea.id)).map(idea => (
                       <SortableIdeaCard 
                         key={idea.id} 
                         idea={idea}
@@ -1235,24 +1191,14 @@ export default function ProfileDetail() {
                                 </div>
                               </PopoverContent>
                               </Popover>
-                              {/* Purchased toggle */}
+                              {/* Mark as Purchased button */}
                               <button
                                 onClick={() => togglePurchased(idea.id)}
-                                className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium transition-all ${
-                                  purchasedIdeas.has(idea.id)
-                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
+                                className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium transition-all bg-muted text-muted-foreground hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900/30 dark:hover:text-green-300"
+                                title="Mark as purchased"
                                 data-testid={`toggle-purchased-${idea.id}`}
                               >
-                                {purchasedIdeas.has(idea.id) ? (
-                                  <>
-                                    <Check className="h-3 w-3" />
-                                    Purchased
-                                  </>
-                                ) : (
-                                  <Gift className="h-3 w-3" />
-                                )}
+                                <Gift className="h-3 w-3" />
                               </button>
                             </div>
                             <Button
@@ -1299,7 +1245,7 @@ export default function ProfileDetail() {
                 </div>
               </DndContext>
             ))}
-            {!savedIdeasCollapsed && savedIdeas.length === 0 && !newInlineIdea && (
+            {!savedIdeasCollapsed && savedIdeas.filter(i => !purchasedIdeas.has(i.id)).length === 0 && !newInlineIdea && (
               <div className="text-center py-8 rounded-lg border bg-card/50">
                 <Gift className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
                 <p className="text-muted-foreground">No saved ideas yet</p>
@@ -1312,23 +1258,65 @@ export default function ProfileDetail() {
 
           {/* Generated Ideas Section - Always visible */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <h2 className="text-xl font-semibold flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-purple-500" />
                 Generated Ideas ({generatedIdeas.length})
               </h2>
-              {generatedIdeas.length > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-1 items-center">
+                  <div className="flex items-center gap-2 min-w-32 max-w-40">
+                    <span className="text-sm font-medium w-6 text-center" data-testid="display-num-ideas">{numIdeas}</span>
+                    <Slider
+                      value={[numIdeas]}
+                      onValueChange={([value]) => setNumIdeas(value)}
+                      min={10}
+                      max={50}
+                      step={10}
+                      className="flex-1"
+                      data-testid="slider-num-ideas"
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground" data-testid="display-token-cost">
+                    {(numIdeas / 10) * TOKENS_PER_10_IDEAS} tokens
+                  </span>
+                </div>
                 <Button
-                  onClick={() => setClearAllDialogOpen(true)}
-                  variant="ghost"
+                  onClick={handleGenerate}
+                  disabled={generateMutation.isPending}
                   size="sm"
-                  className="hover-elevate text-muted-foreground"
-                  data-testid="button-clear-all-generated"
+                  className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
+                    !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < (numIdeas / 10) * TOKENS_PER_10_IDEAS ? 'opacity-60' : ''
+                  }`}
+                  data-testid="button-generate-ideas"
                 >
-                  Clear all
+                  {generateMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-1" />
+                      Generate
+                    </>
+                  )}
                 </Button>
-              )}
+                {generatedIdeas.length > 0 && (
+                  <Button
+                    onClick={() => setClearAllDialogOpen(true)}
+                    variant="ghost"
+                    size="sm"
+                    className="hover-elevate text-muted-foreground"
+                    data-testid="button-clear-all-generated"
+                  >
+                    Clear all
+                  </Button>
+                )}
+              </div>
             </div>
+            {filterOccasion !== 'all' && (
+              <p className="text-xs text-muted-foreground">
+                AI ideas will be tagged as "{filterOccasion}"
+              </p>
+            )}
             {generatedIdeas.length > 0 ? (
               <>
                 <div className="space-y-2">
@@ -1434,7 +1422,66 @@ export default function ProfileDetail() {
                 <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
                 <p className="text-muted-foreground">No generated ideas yet</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Use the Generate button above to get AI recommendations
+                  Use the Generate button to get AI recommendations
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Purchased Section */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Check className="h-5 w-5 text-green-500" />
+              Purchased ({savedIdeas.filter(i => purchasedIdeas.has(i.id)).length})
+            </h2>
+            {savedIdeas.filter(i => purchasedIdeas.has(i.id)).length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {savedIdeas.filter(idea => purchasedIdeas.has(idea.id)).map(idea => (
+                  <Card 
+                    key={idea.id}
+                    className="p-2 sm:p-3 animate-in fade-in slide-in-from-top-2 duration-300"
+                    data-testid={`purchased-idea-${idea.id}`}
+                  >
+                    <div className="flex gap-2">
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getOccasionColor(idea.occasion)}`}>
+                              {idea.occasion}
+                            </span>
+                            <button
+                              onClick={() => togglePurchased(idea.id)}
+                              className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 hover:opacity-80 transition-opacity"
+                              data-testid={`unpurchase-${idea.id}`}
+                            >
+                              <Check className="h-3 w-3" />
+                              Purchased
+                            </button>
+                          </div>
+                          <Button
+                            onClick={() => handleRemoveIdea(idea)}
+                            variant="ghost"
+                            size="icon"
+                            className="hover-elevate shrink-0 h-6 w-6"
+                            data-testid={`button-remove-purchased-${idea.id}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <span className="text-sm font-medium text-foreground block break-words overflow-hidden">
+                          {idea.title}
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 rounded-lg border bg-card/50">
+                <Check className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                <p className="text-muted-foreground">No purchased items yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Click the gift icon on saved ideas to mark them as purchased
                 </p>
               </div>
             )}
