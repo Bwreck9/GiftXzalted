@@ -55,14 +55,16 @@ export const profiles = pgTable("profiles", {
   location: text("location"), // City/country
   additionalNotes: text("additional_notes"), // Extra context (2000 char limit)
   
-  // Important dates for this person
-  birthdayDate: text("birthday_date"), // MM-DD format (e.g., "12-25")
-  birthdayYear: text("birthday_year"), // Optional year (e.g., "1990")
-  birthdayShowOnCard: boolean("birthday_show_on_card").default(false),
-  anniversaryDate: text("anniversary_date"), // MM-DD format (e.g., "06-15")
-  anniversaryYear: text("anniversary_year"), // Optional year
-  anniversaryShowOnCard: boolean("anniversary_show_on_card").default(false),
-  customDates: jsonb("custom_dates").$type<{ name: string; date: string; year?: string; showOnCard?: boolean }[]>().default([]), // Array with optional year and showOnCard
+  // Important dates for this person - unified array for all dates
+  birthdayDate: text("birthday_date"), // Legacy - MM-DD format
+  birthdayYear: text("birthday_year"), // Legacy - Optional year
+  birthdayShowOnCard: boolean("birthday_show_on_card").default(false), // Legacy
+  anniversaryDate: text("anniversary_date"), // Legacy - MM-DD format
+  anniversaryYear: text("anniversary_year"), // Legacy - Optional year
+  anniversaryShowOnCard: boolean("anniversary_show_on_card").default(false), // Legacy
+  customDates: jsonb("custom_dates").$type<{ name: string; date: string; year?: string; showOnCard?: boolean }[]>().default([]), // Legacy
+  // New unified important dates array - all dates treated equally
+  importantDates: jsonb("important_dates").$type<{ name: string; date: string; year?: string; showOnCard?: boolean }[]>().default([]),
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
