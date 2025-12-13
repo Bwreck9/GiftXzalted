@@ -432,41 +432,37 @@ export default function Landing() {
                         className="flex-1 min-w-0 text-left hover-elevate active-elevate-2 p-2 rounded-md -m-2"
                       >
                         <h3 className="font-medium text-foreground truncate">{profile.name}</h3>
-                        {/* Display Important Dates */}
-                        {(profile.birthdayDate || profile.anniversaryDate || (profile.customDates && profile.customDates.length > 0)) && (
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            {profile.birthdayDate && (
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {(() => {
-                                  const [month, day] = profile.birthdayDate.split('-');
-                                  const date = new Date(2000, parseInt(month) - 1, parseInt(day));
-                                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                                })()}
-                              </span>
-                            )}
-                            {profile.anniversaryDate && (
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Gift className="h-3 w-3" />
-                                {(() => {
-                                  const [month, day] = profile.anniversaryDate.split('-');
-                                  const date = new Date(2000, parseInt(month) - 1, parseInt(day));
-                                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                                })()}
-                              </span>
-                            )}
-                            {profile.customDates && profile.customDates.map((cd, idx) => (
-                              <span key={idx} className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {(() => {
-                                  const [month, day] = cd.date.split('-');
-                                  const date = new Date(2000, parseInt(month) - 1, parseInt(day));
-                                  return `${cd.name}: ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-                                })()}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                        {/* Display Important Dates - only those marked showOnCard */}
+                        {(() => {
+                          const datesToShow: { label: string; date: string; year?: string; icon: 'calendar' | 'gift' }[] = [];
+                          if (profile.birthdayShowOnCard && profile.birthdayDate) {
+                            datesToShow.push({ label: 'Birthday', date: profile.birthdayDate, year: profile.birthdayYear || undefined, icon: 'calendar' });
+                          }
+                          if (profile.anniversaryShowOnCard && profile.anniversaryDate) {
+                            datesToShow.push({ label: 'Anniversary', date: profile.anniversaryDate, year: profile.anniversaryYear || undefined, icon: 'gift' });
+                          }
+                          if (profile.customDates) {
+                            profile.customDates.filter(cd => cd.showOnCard).forEach(cd => {
+                              datesToShow.push({ label: cd.name, date: cd.date, year: cd.year, icon: 'calendar' });
+                            });
+                          }
+                          if (datesToShow.length === 0) return null;
+                          return (
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              {datesToShow.slice(0, 3).map((dt, idx) => (
+                                <span key={idx} className="text-xs text-muted-foreground flex items-center gap-1">
+                                  {dt.icon === 'gift' ? <Gift className="h-3 w-3" /> : <Calendar className="h-3 w-3" />}
+                                  {(() => {
+                                    const [month, day] = dt.date.split('-');
+                                    const dateObj = new Date(2000, parseInt(month) - 1, parseInt(day));
+                                    const formatted = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                    return dt.year ? `${formatted}, ${dt.year}` : formatted;
+                                  })()}
+                                </span>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </button>
                       
                       {/* Settings Menu */}

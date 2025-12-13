@@ -74,17 +74,7 @@ export function SettingsModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto" data-testid="settings-modal">
-        <DialogHeader className="relative">
-          <Button
-            onClick={() => onOpenChange(false)}
-            variant="ghost"
-            size="icon"
-            className="absolute right-0 top-0 hover-elevate"
-            data-testid="settings-close-top"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+        <DialogHeader>
           <DialogTitle>Profile Settings</DialogTitle>
           <DialogDescription>
             Manage settings for {profile.name}
@@ -178,10 +168,9 @@ export function SettingsModal({
             <Button
               onClick={() => onOpenChange(false)}
               variant="outline"
-              className="w-full border-2 border-foreground/20 font-semibold hover-elevate active-elevate-2"
+              className="w-full hover-elevate active-elevate-2"
               data-testid="settings-close-bottom"
             >
-              <X className="h-4 w-4 mr-2" />
               Close
             </Button>
           </div>
