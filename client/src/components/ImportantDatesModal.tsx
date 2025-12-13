@@ -140,20 +140,22 @@ export function ImportantDatesModal({
           {dates.map((date, index) => (
             <div key={index} className="space-y-2 p-3 rounded-md border border-border">
               <div className="flex items-center gap-2">
-                {/* Show on card checkbox */}
-                {date.month && date.day && (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Checkbox
-                      id={`show-${index}`}
-                      checked={date.showOnCard}
-                      onCheckedChange={(checked) => handleToggleShowOnCard(index, checked as boolean)}
-                      data-testid={`dates-show-${index}`}
-                    />
-                    <label htmlFor={`show-${index}`} className="text-xs text-muted-foreground whitespace-nowrap">
-                      Show
-                    </label>
-                  </div>
-                )}
+                {/* Show on card checkbox - always visible, disabled if date not filled */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Checkbox
+                    id={`show-${index}`}
+                    checked={date.showOnCard}
+                    onCheckedChange={(checked) => handleToggleShowOnCard(index, checked as boolean)}
+                    disabled={!date.month || !date.day}
+                    data-testid={`dates-show-${index}`}
+                  />
+                  <label 
+                    htmlFor={`show-${index}`} 
+                    className={`text-xs whitespace-nowrap ${!date.month || !date.day ? 'text-muted-foreground/50' : 'text-muted-foreground'}`}
+                  >
+                    Show
+                  </label>
+                </div>
                 
                 {/* Name input */}
                 <Input
