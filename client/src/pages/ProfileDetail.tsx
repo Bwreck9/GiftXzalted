@@ -1310,14 +1310,14 @@ export default function ProfileDetail() {
             )}
           </div>
 
-          {/* Generated Ideas Section */}
-          {generatedIdeas.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-500" />
-                  Generated Ideas ({generatedIdeas.length})
-                </h2>
+          {/* Generated Ideas Section - Always visible */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-500" />
+                Generated Ideas ({generatedIdeas.length})
+              </h2>
+              {generatedIdeas.length > 0 && (
                 <Button
                   onClick={() => setClearAllDialogOpen(true)}
                   variant="ghost"
@@ -1327,106 +1327,118 @@ export default function ProfileDetail() {
                 >
                   Clear all
                 </Button>
-              </div>
-              <div className="space-y-2">
-                {generatedIdeas.map(idea => (
-                  <Card 
-                    key={idea.id} 
-                    className={`p-2 sm:p-3 ${
-                      flashingIdeas.get(idea.id) === 'add' ? 'animate-flash-add' : 
-                      flashingIdeas.get(idea.id) === 'remove' ? 'animate-flash-remove' : ''
-                    }`}
-                    data-testid={`generated-idea-${idea.id}`}
-                  >
-                    <div className="space-y-1">
-                      {/* Row 1: Occasion tag + actions */}
-                      <div className="flex items-center justify-between gap-2">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <button
-                              className={`text-xs px-2 py-0.5 rounded-full font-medium ${getOccasionColor(idea.occasion)} hover:opacity-80 transition-opacity`}
-                              data-testid={`tag-gen-occasion-${idea.id}`}
-                            >
-                              {idea.occasion}
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-40 p-1" align="start">
-                            <div className="space-y-0.5">
-                              {occasionsList.length > 0 ? occasionsList.map((o: string) => (
-                                <button
-                                  key={o}
-                                  onClick={() => handleChangeGeneratedIdeaOccasion(idea, o)}
-                                  className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
-                                >
-                                  {o}
-                                </button>
-                              )) : DEFAULT_OCCASIONS.slice(0, 6).map((o: string) => (
-                                <button
-                                  key={o}
-                                  onClick={() => handleChangeGeneratedIdeaOccasion(idea, o)}
-                                  className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
-                                >
-                                  {o}
-                                </button>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Button
-                            onClick={() => handleAddAiIdeaToSaved(idea)}
-                            variant="outline"
-                            size="sm"
-                            className="hover-elevate h-6 text-xs px-2"
-                            data-testid={`button-add-ai-idea-${idea.id}`}
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Save
-                          </Button>
-                          <Button
-                            onClick={() => handleRemoveIdea(idea)}
-                            variant="ghost"
-                            size="icon"
-                            className="hover-elevate h-6 w-6"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      {/* Row 2: Idea text + info */}
-                      <div className="flex items-start gap-1">
-                        <span className="text-sm font-medium text-foreground flex-1 break-words overflow-hidden">{idea.title}</span>
-                        {idea.reason && (
+              )}
+            </div>
+            {generatedIdeas.length > 0 ? (
+              <>
+                <div className="space-y-2">
+                  {generatedIdeas.map(idea => (
+                    <Card 
+                      key={idea.id} 
+                      className={`p-2 sm:p-3 ${
+                        flashingIdeas.get(idea.id) === 'add' ? 'animate-flash-add' : 
+                        flashingIdeas.get(idea.id) === 'remove' ? 'animate-flash-remove' : ''
+                      }`}
+                      data-testid={`generated-idea-${idea.id}`}
+                    >
+                      <div className="space-y-1">
+                        {/* Row 1: Occasion tag + actions */}
+                        <div className="flex items-center justify-between gap-2">
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-5 w-5 rounded-full hover-elevate shrink-0"
+                              <button
+                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${getOccasionColor(idea.occasion)} hover:opacity-80 transition-opacity`}
+                                data-testid={`tag-gen-occasion-${idea.id}`}
                               >
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                              </Button>
+                                {idea.occasion}
+                              </button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-72">
-                              <div className="space-y-2">
-                                <h4 className="font-medium">Why this gift?</h4>
-                                <p className="text-sm text-muted-foreground">{idea.reason}</p>
+                            <PopoverContent className="w-40 p-1" align="start">
+                              <div className="space-y-0.5">
+                                {occasionsList.length > 0 ? occasionsList.map((o: string) => (
+                                  <button
+                                    key={o}
+                                    onClick={() => handleChangeGeneratedIdeaOccasion(idea, o)}
+                                    className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
+                                  >
+                                    {o}
+                                  </button>
+                                )) : DEFAULT_OCCASIONS.slice(0, 6).map((o: string) => (
+                                  <button
+                                    key={o}
+                                    onClick={() => handleChangeGeneratedIdeaOccasion(idea, o)}
+                                    className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${o === idea.occasion ? 'bg-muted font-medium' : ''}`}
+                                  >
+                                    {o}
+                                  </button>
+                                ))}
                               </div>
                             </PopoverContent>
                           </Popover>
-                        )}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              onClick={() => handleAddAiIdeaToSaved(idea)}
+                              variant="outline"
+                              size="sm"
+                              className="hover-elevate h-6 text-xs px-2"
+                              data-testid={`button-add-ai-idea-${idea.id}`}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Save
+                            </Button>
+                            <Button
+                              onClick={() => handleRemoveIdea(idea)}
+                              variant="ghost"
+                              size="icon"
+                              className="hover-elevate h-6 w-6"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        {/* Row 2: Idea text + info */}
+                        <div className="flex items-start gap-1">
+                          <span className="text-sm font-medium text-foreground flex-1 break-words overflow-hidden">{idea.title}</span>
+                          {idea.reason && (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5 rounded-full hover-elevate shrink-0"
+                                >
+                                  <Info className="h-3 w-3 text-muted-foreground" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-72">
+                                <div className="space-y-2">
+                                  <h4 className="font-medium">Why this gift?</h4>
+                                  <p className="text-sm text-muted-foreground">{idea.reason}</p>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-              <div className="p-3 rounded-lg bg-muted/50 border border-muted">
-                <p className="text-sm text-muted-foreground">
-                  These AI suggestions are temporary. Save your favorites to keep them permanently.
+                    </Card>
+                  ))}
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 border border-muted">
+                  <p className="text-sm text-muted-foreground">
+                    These AI suggestions are temporary. Save your favorites to keep them permanently.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 rounded-lg border bg-card/50">
+                <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                <p className="text-muted-foreground">No generated ideas yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Use the Generate button above to get AI recommendations
                 </p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </main>
 
