@@ -986,7 +986,7 @@ export default function ProfileDetail() {
       <main className="flex-1 overflow-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Important Dates Section - Collapsible, only show if dates exist */}
-          {(profile.birthdayDate || profile.anniversaryDate || (profile.customDates && (profile.customDates as any[]).length > 0)) && (
+          {profile.importantDates && (profile.importantDates as any[]).length > 0 && (profile.importantDates as any[]).some((d: any) => d.date) && (
             <div className="rounded-lg bg-muted/30 border">
               <button
                 onClick={() => setImportantDatesCollapsed(!importantDatesCollapsed)}
@@ -1005,44 +1005,16 @@ export default function ProfileDetail() {
               </button>
               {!importantDatesCollapsed && (
                 <div className="px-3 pb-3 space-y-2">
-                  {profile.birthdayDate && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Gift className="h-3.5 w-3.5 text-pink-500" />
-                      <span className="text-muted-foreground">Birthday:</span>
-                      <span className="font-medium">
-                        {(() => {
-                          const [month, day] = profile.birthdayDate.split('-');
-                          const date = new Date(2000, parseInt(month) - 1, parseInt(day));
-                          const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-                          return profile.birthdayYear ? `${formatted}, ${profile.birthdayYear}` : formatted;
-                        })()}
-                      </span>
-                    </div>
-                  )}
-                  {profile.anniversaryDate && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Gift className="h-3.5 w-3.5 text-purple-500" />
-                      <span className="text-muted-foreground">Anniversary:</span>
-                      <span className="font-medium">
-                        {(() => {
-                          const [month, day] = profile.anniversaryDate.split('-');
-                          const date = new Date(2000, parseInt(month) - 1, parseInt(day));
-                          const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-                          return profile.anniversaryYear ? `${formatted}, ${profile.anniversaryYear}` : formatted;
-                        })()}
-                      </span>
-                    </div>
-                  )}
-                  {profile.customDates && (profile.customDates as any[]).map((customDate: any, idx: number) => (
+                  {(profile.importantDates as any[]).filter((d: any) => d.date).map((importantDate: any, idx: number) => (
                     <div key={idx} className="flex items-center gap-2 text-sm">
-                      <Gift className="h-3.5 w-3.5 text-blue-500" />
-                      <span className="text-muted-foreground">{customDate.label || customDate.name}:</span>
+                      <Gift className="h-3.5 w-3.5 text-pink-500" />
+                      <span className="text-muted-foreground">{importantDate.name}:</span>
                       <span className="font-medium">
                         {(() => {
-                          const [month, day] = customDate.date.split('-');
+                          const [month, day] = importantDate.date.split('-');
                           const date = new Date(2000, parseInt(month) - 1, parseInt(day));
                           const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-                          return customDate.year ? `${formatted}, ${customDate.year}` : formatted;
+                          return importantDate.year ? `${formatted}, ${importantDate.year}` : formatted;
                         })()}
                       </span>
                     </div>

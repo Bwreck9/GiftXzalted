@@ -434,24 +434,15 @@ export default function Landing() {
                         <h3 className="font-medium text-foreground truncate">{profile.name}</h3>
                         {/* Display Important Dates - only those marked showOnCard */}
                         {(() => {
-                          const datesToShow: { label: string; date: string; year?: string; icon: 'calendar' | 'gift' }[] = [];
-                          if (profile.birthdayShowOnCard && profile.birthdayDate) {
-                            datesToShow.push({ label: 'Birthday', date: profile.birthdayDate, year: profile.birthdayYear || undefined, icon: 'calendar' });
-                          }
-                          if (profile.anniversaryShowOnCard && profile.anniversaryDate) {
-                            datesToShow.push({ label: 'Anniversary', date: profile.anniversaryDate, year: profile.anniversaryYear || undefined, icon: 'gift' });
-                          }
-                          if (profile.customDates) {
-                            profile.customDates.filter(cd => cd.showOnCard).forEach(cd => {
-                              datesToShow.push({ label: cd.name, date: cd.date, year: cd.year, icon: 'calendar' });
-                            });
-                          }
+                          const datesToShow = (profile.importantDates || [])
+                            .filter((d: any) => d.showOnCard && d.date)
+                            .slice(0, 3);
                           if (datesToShow.length === 0) return null;
                           return (
                             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                              {datesToShow.slice(0, 3).map((dt, idx) => (
+                              {datesToShow.map((dt: any, idx: number) => (
                                 <span key={idx} className="text-xs text-muted-foreground flex items-center gap-1">
-                                  {dt.icon === 'gift' ? <Gift className="h-3 w-3" /> : <Calendar className="h-3 w-3" />}
+                                  <Calendar className="h-3 w-3" />
                                   {(() => {
                                     const [month, day] = dt.date.split('-');
                                     const dateObj = new Date(2000, parseInt(month) - 1, parseInt(day));

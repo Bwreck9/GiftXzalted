@@ -384,9 +384,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create profile - refund tokens if this fails after AI generation
+      // Pre-populate with default important dates (Birthday and Anniversary)
+      const profileDataWithDates = {
+        ...validated,
+        importantDates: validated.importantDates || [
+          { name: 'Birthday', date: '', showOnCard: false },
+          { name: 'Anniversary', date: '', showOnCard: false }
+        ]
+      };
+      
       let profile;
       try {
-        profile = await storage.createProfile(validated);
+        profile = await storage.createProfile(profileDataWithDates);
       } catch (error) {
         // Refund tokens if profile creation fails after AI generation consumed tokens
         if (tokensDeducted && deductionResult) {
