@@ -17,7 +17,7 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 - **Mobile-First UX:** Condensed layouts for profile cards and gift ideas on mobile, restructured headers.
 - **Unified Profile View:** Profile page displays all gift ideas directly without navigating to separate gift lists. Ideas are tagged with occasions (Birthday, Anniversary, Christmas, etc.) and can be filtered.
 - **Profile System:** Questionnaire-based profiles for AI training with comprehensive checkbox/dropdown interface covering age, gender, personality, interests, relationship, closeness, budget, gift preferences, dislikes, gift style, location, and additional notes. Includes a "Clear All" button and a preview modal.
-- **Important Dates:** Profiles can store birthday and anniversary dates (MM-DD format) for recurring annual reminders, displayed in profile header.
+- **Important Dates:** Profiles store a unified `importantDates` array with flexible date entries (name, date in MM-DD format, optional year, showOnCard flag). Users can add custom dates beyond Birthday/Anniversary. Up to 3 dates can be marked to display on profile cards.
 - **Gift Ideas Management:**
   - **Saved Ideas:** Manual entries with occasion tags, auto-saved
   - **Generated Ideas:** AI-powered suggestions (200 tokens per 10 ideas, scalable 10-50)
@@ -54,8 +54,9 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
 
 ### Key Files
 - `client/src/pages/ProfileDetail.tsx` - Unified profile view with all ideas
-- `client/src/components/SettingsModal.tsx` - Profile settings including important dates
-- `shared/schema.ts` - Database schema including profiles with birthdayDate/anniversaryDate
+- `client/src/components/ImportantDatesModal.tsx` - Unified important dates editor with add/remove/show-on-card
+- `client/src/components/SettingsModal.tsx` - Profile settings (rename/recolor)
+- `shared/schema.ts` - Database schema including profiles with importantDates array
 - `server/routes.ts` - API endpoints
 - `server/openai.ts` - AI generation logic
 
