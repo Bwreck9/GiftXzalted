@@ -118,6 +118,22 @@ const OCCASION_COLORS: Record<string, string> = {
 const getOccasionColor = (occasion: string) => 
   OCCASION_COLORS[occasion] || 'bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-300';
 
+// Reorder items for column-first display in 2-column grid
+// Transforms [1,2,3,4,5,6,7,8] → [1,5,2,6,3,7,4,8] for column-first appearance
+function reorderForColumns<T>(items: T[]): T[] {
+  const len = items.length;
+  if (len <= 1) return items;
+  const half = Math.ceil(len / 2);
+  const result: T[] = [];
+  for (let i = 0; i < half; i++) {
+    result.push(items[i]);
+    if (i + half < len) {
+      result.push(items[i + half]);
+    }
+  }
+  return result;
+}
+
 interface UnifiedIdea {
   id: string;
   title: string;
@@ -1116,7 +1132,6 @@ export default function ProfileDetail() {
                             if (e.key === 'Enter') handleSaveInlineIdea();
                             if (e.key === 'Escape') setNewInlineIdea(null);
                           }}
-                          onBlur={handleSaveInlineIdea}
                           placeholder="Type gift idea..."
                           className="flex-1 min-w-0"
                           maxLength={100}
@@ -1147,10 +1162,10 @@ export default function ProfileDetail() {
                     </Card>
                   )}
                   <SortableContext
-                    items={savedIdeas.filter(i => !purchasedIdeas.has(i.id)).map(idea => idea.id)}
+                    items={reorderForColumns(savedIdeas.filter(i => !purchasedIdeas.has(i.id))).map(idea => idea.id)}
                     strategy={rectSortingStrategy}
                   >
-                    {savedIdeas.filter(idea => !purchasedIdeas.has(idea.id)).map(idea => (
+                    {reorderForColumns(savedIdeas.filter(idea => !purchasedIdeas.has(idea.id))).map(idea => (
                       <SortableIdeaCard 
                         key={idea.id} 
                         idea={idea}
