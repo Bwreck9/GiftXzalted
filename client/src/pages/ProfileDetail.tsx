@@ -1162,10 +1162,10 @@ export default function ProfileDetail() {
                     </Card>
                   )}
                   <SortableContext
-                    items={reorderForColumns(savedIdeas.filter(i => !purchasedIdeas.has(i.id))).map(idea => idea.id)}
+                    items={savedIdeas.filter(i => !purchasedIdeas.has(i.id)).map(idea => idea.id)}
                     strategy={rectSortingStrategy}
                   >
-                    {reorderForColumns(savedIdeas.filter(idea => !purchasedIdeas.has(idea.id))).map(idea => (
+                    {savedIdeas.filter(idea => !purchasedIdeas.has(idea.id)).map(idea => (
                       <SortableIdeaCard 
                         key={idea.id} 
                         idea={idea}
