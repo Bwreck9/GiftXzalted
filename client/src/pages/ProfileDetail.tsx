@@ -1063,6 +1063,18 @@ export default function ProfileDetail() {
                   {occasionsList.map((occasion: string) => (
                     <SelectItem key={occasion} value={occasion}>{occasion}</SelectItem>
                   ))}
+                  <div className="border-t my-1" />
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOccasionManagerOpen(true);
+                    }}
+                    className="w-full text-left text-sm px-2 py-1.5 text-primary hover:bg-muted rounded-sm flex items-center gap-1"
+                    data-testid="button-add-occasion-filter"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add occasion
+                  </button>
                 </SelectContent>
               </Select>
               <Button
@@ -1104,7 +1116,7 @@ export default function ProfileDetail() {
                 data-testid="button-add-idea"
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Add
+                Add Idea
               </Button>
             </div>
             {!savedIdeasCollapsed && (listsLoading ? (
@@ -1148,6 +1160,18 @@ export default function ProfileDetail() {
                             {(occasionsList.length > 0 ? occasionsList : DEFAULT_OCCASIONS.slice(0, 6)).map((o: string) => (
                               <SelectItem key={o} value={o}>{o}</SelectItem>
                             ))}
+                            <div className="border-t my-1" />
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setOccasionManagerOpen(true);
+                              }}
+                              className="w-full text-left text-sm px-2 py-1.5 text-primary hover:bg-muted rounded-sm flex items-center gap-1"
+                              data-testid="button-add-occasion-inline"
+                            >
+                              <Plus className="h-3 w-3" />
+                              Add occasion
+                            </button>
                           </SelectContent>
                         </Select>
                         <Button
