@@ -1130,7 +1130,7 @@ export default function ProfileDetail() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {DEFAULT_OCCASIONS.map((o: string) => (
+                            {(occasionsList.length > 0 ? occasionsList : DEFAULT_OCCASIONS.slice(0, 6)).map((o: string) => (
                               <SelectItem key={o} value={o}>{o}</SelectItem>
                             ))}
                           </SelectContent>
