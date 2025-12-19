@@ -538,6 +538,28 @@ export default function ProfileDetail() {
 
     // Flash the idea being removed
     triggerFlash(idea.id, 'remove');
+    
+    // Remove from purchased set - since IDs are index-based, we need to clear
+    // both this ID and all IDs from this list that come after it (they will shift)
+    setPurchasedIdeas(prev => {
+      const next = new Set(prev);
+      // Remove the deleted item's ID
+      next.delete(idea.id);
+      // Also remove any IDs from the same list with higher indices (they will shift)
+      const idPrefix = `${list.id}-manual-`;
+      const deletedIndex = parseInt(idea.id.split('-manual-')[1] || '-1');
+      if (deletedIndex >= 0) {
+        prev.forEach(purchasedId => {
+          if (purchasedId.startsWith(idPrefix)) {
+            const idx = parseInt(purchasedId.split('-manual-')[1] || '-1');
+            if (idx > deletedIndex) {
+              next.delete(purchasedId);
+            }
+          }
+        });
+      }
+      return next;
+    });
 
     if (idea.isAiGenerated) {
       try {
