@@ -1610,7 +1610,7 @@ export default function ProfileDetail() {
 
       {/* Occasion Manager Dialog */}
       <Dialog open={occasionManagerOpen} onOpenChange={setOccasionManagerOpen}>
-        <DialogContent className="max-w-md" data-testid="dialog-occasion-manager">
+        <DialogContent className="max-w-md" hideCloseButton data-testid="dialog-occasion-manager">
           <DialogHeader>
             <DialogTitle>Manage Occasions</DialogTitle>
             <DialogDescription>
@@ -1714,8 +1714,8 @@ export default function ProfileDetail() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOccasionManagerOpen(false)}>
-              Save
+            <Button variant="outline" onClick={() => setOccasionManagerOpen(false)} data-testid="button-cancel-occasion-manager">
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>
