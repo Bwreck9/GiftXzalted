@@ -1439,19 +1439,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userId = session.metadata?.userId;
         const type = session.metadata?.type;
         
-        if (!userId) {
-          console.error(`❌ Missing userId in checkout session metadata`);
-        } else if (type === 'one-time') {
+        if (type === 'one-time') {
           // Handle one-time token purchase
           const tokens = parseInt(session.metadata?.tokens || '0');
+          const customerId = session.customer as string;
           
           if (tokens > 0) {
-            const user = await storage.getUser(userId);
+            const { db } = await import('./db');
+            const { users } = await import('@shared/schema');
+            const { eq } = await import('drizzle-orm');
+            
+            // Try to find user by userId first, then fall back to stripeCustomerId
+            let user = userId ? await storage.getUser(userId) : null;
+            
+            if (!user && customerId) {
+              console.log(`User not found by userId, trying stripeCustomerId: ${customerId}`);
+              const [userByCustomer] = await db
+                .select()
+                .from(users)
+                .where(eq(users.stripeCustomerId, customerId));
+              user = userByCustomer;
+            }
+            
             if (user) {
-              const { db } = await import('./db');
-              const { users } = await import('@shared/schema');
-              const { eq } = await import('drizzle-orm');
-              
               const oldTokens = user.purchasedTokens || 0;
               const newTokens = oldTokens + tokens;
               
@@ -1460,13 +1470,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 .set({
                   purchasedTokens: newTokens,
                 })
-                .where(eq(users.id, userId));
+                .where(eq(users.id, user.id));
               
-              console.log(`✅ Tokens added for user ${userId}: ${oldTokens} -> ${newTokens} (+${tokens}) via Checkout`);
+              console.log(`✅ Tokens added for user ${user.id}: ${oldTokens} -> ${newTokens} (+${tokens}) via Checkout`);
               
               // Create transaction record
               await storage.createTransaction({
-                userId,
+                userId: user.id,
                 amount: session.amount_total || 0,
                 tokens: tokens,
                 type: 'one-time',
@@ -1474,7 +1484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: 'completed',
               });
             } else {
-              console.error(`❌ User not found for userId: ${userId}`);
+              console.error(`❌ User not found for userId: ${userId}, customerId: ${customerId}`);
             }
           }
         } else if (type === 'subscription') {
