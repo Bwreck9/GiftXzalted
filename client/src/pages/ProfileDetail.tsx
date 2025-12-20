@@ -198,7 +198,7 @@ export default function ProfileDetail() {
   const { id } = useParams<{ id: string }>();
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addIdeaDialogOpen, setAddIdeaDialogOpen] = useState(false);
@@ -266,11 +266,12 @@ export default function ProfileDetail() {
 
   const { data: profile, isLoading: profileLoading } = useQuery<Profile>({
     queryKey: [`/api/profiles/${id}`],
+    enabled: !authLoading && !!user && !!id,
   });
 
   const { data: giftLists, isLoading: listsLoading } = useQuery<GiftList[]>({
     queryKey: [`/api/profiles/${id}/gift-lists`],
-    enabled: !!id,
+    enabled: !authLoading && !!user && !!id,
   });
 
   const deleteProfileMutation = useMutation({
@@ -941,10 +942,18 @@ export default function ProfileDetail() {
     queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
   };
 
-  if (profileLoading) {
+  if (authLoading || profileLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Please sign in to view this profile</div>
       </div>
     );
   }
