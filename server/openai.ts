@@ -16,10 +16,7 @@ export async function getGiftRecommendations(
     personalityTraits?: string[];
     interests?: string;
     closeness?: string | null;
-    budget?: string | null;
-    giftPreferences?: string[];
     dislikes?: string | null;
-    giftStyle?: string | null;
     location?: string | null;
     additionalNotes?: string | null;
   },
@@ -52,17 +49,8 @@ Current profile for ${profileData.name}:`;
     if (profileData.interests) {
       profileContext += `\n- Interests: ${profileData.interests}`;
     }
-    if (profileData.budget) {
-      profileContext += `\n- Budget: ${profileData.budget}`;
-    }
-    if (profileData.giftPreferences && profileData.giftPreferences.length > 0) {
-      profileContext += `\n- Gift Preferences: ${profileData.giftPreferences.join(', ')}`;
-    }
     if (profileData.dislikes) {
       profileContext += `\n- Dislikes/Avoid: ${profileData.dislikes}`;
-    }
-    if (profileData.giftStyle) {
-      profileContext += `\n- Gift Style: ${profileData.giftStyle === 'unique-thoughtful' ? 'Unique & Thoughtful' : 'Safe & Popular'}`;
     }
     if (profileData.location) {
       profileContext += `\n- Location: ${profileData.location}`;
@@ -73,9 +61,10 @@ Current profile for ${profileData.name}:`;
 
     profileContext += `\n\nInstructions:
 1. Provide thoughtful, personalized gift recommendations based on the profile above
-2. Consider their personality traits, interests, budget, and preferences
-3. Suggest exactly ${numIdeas} specific, practical gift ideas with clear reasoning based on the profile
-4. Return ONLY a valid JSON array (no markdown, no extra text) with this exact format:
+2. Pay close attention to their personality traits - these reveal deep insights about what makes them unique
+3. Consider their interests, relationship context, and any dislikes to avoid
+4. Suggest exactly ${numIdeas} specific, practical gift ideas with clear reasoning based on the profile
+5. Return ONLY a valid JSON array (no markdown, no extra text) with this exact format:
 [
   {
     "id": 1,
