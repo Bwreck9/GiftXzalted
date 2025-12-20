@@ -10,6 +10,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>; // For Replit Auth
   updateUserTokens(id: string, tokens: number): Promise<User>;
+  updateUserPurchasedTokens(id: string, purchasedTokens: number): Promise<User>;
 
   // Profiles
   getProfilesByUserId(userId: string): Promise<Profile[]>;
@@ -284,6 +285,15 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .update(users)
       .set({ tokens })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUserPurchasedTokens(id: string, purchasedTokens: number): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ purchasedTokens })
       .where(eq(users.id, id))
       .returning();
     return user;

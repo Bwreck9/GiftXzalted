@@ -269,9 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Give the test user tokens if they have none
         const freshUser = await storage.getUser(DEV_TEST_USER_ID);
         if (freshUser && (freshUser.tokens ?? 0) + (freshUser.purchasedTokens ?? 0) < 1000) {
-          await storage.updateUser(DEV_TEST_USER_ID, {
-            purchasedTokens: 10000,
-          });
+          await storage.updateUserPurchasedTokens(DEV_TEST_USER_ID, 10000);
         }
         
         const updatedUser = await storage.getUser(DEV_TEST_USER_ID);
