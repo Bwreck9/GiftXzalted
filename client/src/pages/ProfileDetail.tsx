@@ -9,13 +9,14 @@ import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { 
   Plus, Brain, Settings, Trash2, ArrowLeft, Pencil, Sparkles, 
-  Loader2, X, Info, Calendar, ChevronDown, ChevronUp, Check, Gift, GripVertical
+  Loader2, X, Info, Calendar, ChevronDown, ChevronUp, Check, Gift, GripVertical, SlidersHorizontal
 } from 'lucide-react';
 import {
   DndContext,
@@ -228,6 +229,12 @@ export default function ProfileDetail() {
   const [orderedSavedIdeas, setOrderedSavedIdeas] = useState<UnifiedIdea[]>([]);
   const newIdeaInputRef = useRef<HTMLInputElement>(null);
   
+  // Refine panel state for session context
+  const [refinePanelOpen, setRefinePanelOpen] = useState(false);
+  const [sessionPriceRange, setSessionPriceRange] = useState<string>('any');
+  const [sessionGiftType, setSessionGiftType] = useState<string>('any');
+  const [sessionCustomContext, setSessionCustomContext] = useState('');
+  
   // DnD sensors for drag and drop
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -347,7 +354,12 @@ export default function ProfileDetail() {
   });
 
   const generateMutation = useMutation({
-    mutationFn: async (giftListId: string) => {
+    mutationFn: async ({ giftListId, priceRange, giftType, customContext }: { 
+      giftListId: string; 
+      priceRange: string; 
+      giftType: string; 
+      customContext: string;
+    }) => {
       const tokenCost = (numIdeas / 10) * TOKENS_PER_10_IDEAS;
       
       if (user) {
@@ -368,13 +380,32 @@ export default function ProfileDetail() {
         });
       }
 
+      // Build content string with session context
+      let content = 'Generate gift recommendations';
+      if (priceRange !== 'any') {
+        const priceLabels: Record<string, string> = {
+          'under-25': 'under $25',
+          '25-50': 'between $25 and $50',
+          '50-100': 'between $50 and $100',
+          '100-plus': 'over $100'
+        };
+        content += `. Focus on gifts ${priceLabels[priceRange] || priceRange}`;
+      }
+      if (giftType !== 'any') {
+        content += `. Prefer ${giftType} gifts`;
+      }
+      if (customContext.trim()) {
+        content += `. Additional context: ${customContext.trim()}`;
+      }
+
       const res = await apiRequest('POST', '/api/messages', {
         profileId: id,
         giftListId,
-        content: 'Generate gift recommendations',
+        content,
         isUser: true,
         alreadyGeneratedIdeas: sessionGeneratedIdeas,
         numIdeas,
+        sessionContext: { priceRange, giftType, customContext },
       });
       return await res.json();
     },
@@ -811,7 +842,12 @@ export default function ProfileDetail() {
       }
     }
     
-    generateMutation.mutate(targetListId);
+    generateMutation.mutate({
+      giftListId: targetListId,
+      priceRange: sessionPriceRange,
+      giftType: sessionGiftType,
+      customContext: sessionCustomContext,
+    });
   };
 
   const handleAddInlineIdea = () => {
@@ -1354,6 +1390,15 @@ export default function ProfileDetail() {
                     </span>
                   </div>
                   <Button
+                    onClick={() => setRefinePanelOpen(!refinePanelOpen)}
+                    variant={refinePanelOpen ? "secondary" : "ghost"}
+                    size="icon"
+                    className="hover-elevate"
+                    data-testid="button-toggle-refine"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </Button>
+                  <Button
                     onClick={handleGenerate}
                     disabled={generateMutation.isPending}
                     size="sm"
@@ -1384,6 +1429,63 @@ export default function ProfileDetail() {
                   )}
                 </div>
               </div>
+              
+              {/* Refine Panel - Collapsible session context */}
+              {refinePanelOpen && (
+                <div className="mt-3 p-3 rounded-lg border bg-card/50 space-y-3" data-testid="refine-panel">
+                  {/* Price Range */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Price Range</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['any', 'under-25', '25-50', '50-100', '100-plus'].map(range => (
+                        <Badge
+                          key={range}
+                          variant={sessionPriceRange === range ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSessionPriceRange(range)}
+                          data-testid={`chip-price-${range}`}
+                        >
+                          {range === 'any' ? 'Any' : 
+                           range === 'under-25' ? 'Under $25' :
+                           range === '25-50' ? '$25-50' :
+                           range === '50-100' ? '$50-100' : '$100+'}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Gift Type */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Gift Type</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['any', 'physical', 'experience', 'subscription', 'handmade', 'digital'].map(type => (
+                        <Badge
+                          key={type}
+                          variant={sessionGiftType === type ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSessionGiftType(type)}
+                          data-testid={`chip-type-${type}`}
+                        >
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Custom Context */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Additional Context</Label>
+                    <Textarea
+                      value={sessionCustomContext}
+                      onChange={(e) => setSessionCustomContext(e.target.value)}
+                      placeholder="e.g., 'Looking for camping gear', 'Stocking stuffers only', 'Something for their new hobby'..."
+                      className="resize-none text-sm"
+                      rows={2}
+                      data-testid="input-custom-context"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             {filterOccasion !== 'all' && (
               <p className="text-xs text-muted-foreground">

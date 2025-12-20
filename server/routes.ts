@@ -53,6 +53,37 @@ function getProfileLimit(subscriptionTier: string | null): number {
   return PROFILE_LIMITS[tier as keyof typeof PROFILE_LIMITS] || PROFILE_LIMITS.free;
 }
 
+// Helper function to normalize gift idea titles for deduplication
+function normalizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '') // Remove punctuation
+    .replace(/\s+/g, ' ')        // Normalize whitespace
+    .trim();
+}
+
+// Helper function to check if two titles are similar (for near-duplicate detection)
+function isSimilarTitle(title1: string, title2: string): boolean {
+  const norm1 = normalizeTitle(title1);
+  const norm2 = normalizeTitle(title2);
+  
+  // Exact match after normalization
+  if (norm1 === norm2) return true;
+  
+  // Check if one contains the other (e.g., "Bluetooth Speaker" vs "Portable Bluetooth Speaker")
+  if (norm1.includes(norm2) || norm2.includes(norm1)) return true;
+  
+  // Check word overlap - if 80%+ of words match, consider similar
+  const words1 = norm1.split(' ').filter(w => w.length > 2);
+  const words2 = norm2.split(' ').filter(w => w.length > 2);
+  if (words1.length === 0 || words2.length === 0) return false;
+  
+  const commonWords = words1.filter(w => words2.includes(w));
+  const overlapRatio = commonWords.length / Math.min(words1.length, words2.length);
+  
+  return overlapRatio >= 0.8;
+}
+
 // Helper function to get total available tokens (subscription + purchased)
 function getTotalTokens(user: { tokens: number; purchasedTokens: number }): number {
   return (user.tokens || 0) + (user.purchasedTokens || 0);
@@ -676,7 +707,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Profile questionnaire not completed. Please fill out at least one question from the profile details." });
       }
 
-      // Get AI response
+      // Get ALL existing ideas for this profile (manual + AI-generated) for deduplication
+      const allGiftLists = await storage.getGiftListsByProfileId(profileId);
+      const allExistingIdeas: string[] = [];
+      
+      for (const list of allGiftLists) {
+        // Add manual ideas
+        if (list.manualIdeas && Array.isArray(list.manualIdeas)) {
+          allExistingIdeas.push(...list.manualIdeas);
+        }
+        // Add AI-generated ideas
+        if (list.premiumResults) {
+          try {
+            const aiIdeas = JSON.parse(list.premiumResults);
+            if (Array.isArray(aiIdeas)) {
+              allExistingIdeas.push(...aiIdeas.map((idea: any) => idea.title));
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      }
+      
+      // Combine with session-provided ideas for comprehensive avoidance list
+      const combinedIdeas = [...allExistingIdeas, ...(alreadyGeneratedIdeas || [])];
+      const fullAvoidanceList = combinedIdeas.filter((idea, index) => combinedIdeas.indexOf(idea) === index);
+      
+      // Over-generate by 50% to account for duplicates we'll filter out
+      const overGenerateCount = Math.ceil(validNumIdeas * 1.5);
+
+      // Get AI response with over-generation
       const aiResponse = await getGiftRecommendations(
         {
           name: profile.name,
@@ -695,8 +755,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } as any,
         content,
         conversationHistory,
-        alreadyGeneratedIdeas || [],
-        validNumIdeas
+        fullAvoidanceList,
+        overGenerateCount
       );
 
       // Deduct tokens FIRST (uses purchased tokens first, then subscription tokens)
@@ -740,14 +800,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Validate it's an array
               if (Array.isArray(newRecommendations)) {
-                // Get existing recommendations and merge (new ideas at top)
+                // Get existing recommendations for deduplication
                 const existingResults = giftList.premiumResults 
                   ? JSON.parse(giftList.premiumResults) 
                   : [];
                 
-                // Add timestamp and generation batch ID to new recommendations
+                // Build list of existing titles for similarity check
+                const existingTitles = [
+                  ...allExistingIdeas,
+                  ...existingResults.map((r: any) => r.title)
+                ];
+                
+                // Deduplicate: filter out ideas similar to existing ones
+                const uniqueNewRecommendations: any[] = [];
+                const seenInBatch: string[] = [];
+                
+                for (const rec of newRecommendations) {
+                  const title = rec.title;
+                  
+                  // Check against existing ideas
+                  const isDuplicateOfExisting = existingTitles.some(existing => 
+                    isSimilarTitle(title, existing)
+                  );
+                  
+                  // Check against other ideas in this batch (in case AI returned duplicates within the batch)
+                  const isDuplicateInBatch = seenInBatch.some(seen => 
+                    isSimilarTitle(title, seen)
+                  );
+                  
+                  if (!isDuplicateOfExisting && !isDuplicateInBatch) {
+                    uniqueNewRecommendations.push(rec);
+                    seenInBatch.push(title);
+                  }
+                  
+                  // Stop once we have enough unique ideas
+                  if (uniqueNewRecommendations.length >= validNumIdeas) {
+                    break;
+                  }
+                }
+                
+                // Add timestamp and generation batch ID to unique recommendations
                 const batchId = Date.now();
-                const numberedNewRecommendations = newRecommendations.map((rec: any, idx: number) => ({
+                const numberedNewRecommendations = uniqueNewRecommendations.map((rec: any, idx: number) => ({
                   ...rec,
                   batchId,
                   generatedAt: new Date().toISOString(),
@@ -759,7 +853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 await storage.updateGiftList(giftListId, {
                   premiumResults: JSON.stringify(mergedRecommendations),
                 });
-                console.log(`Added ${newRecommendations.length} new gift recommendations to list ${giftListId} (total: ${mergedRecommendations.length})`);
+                console.log(`Added ${uniqueNewRecommendations.length} unique gift recommendations to list ${giftListId} (filtered from ${newRecommendations.length}, total: ${mergedRecommendations.length})`);
               } else {
                 console.error("AI response is not an array:", newRecommendations);
               }
