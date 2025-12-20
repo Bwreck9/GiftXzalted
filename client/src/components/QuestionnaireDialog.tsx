@@ -25,6 +25,63 @@ import {
 } from '@/components/ui/select';
 import { z } from 'zod';
 
+// Interests organized by category
+const INTERESTS_CATEGORIES = {
+  'Sports & Fitness': [
+    'Running', 'Yoga', 'Gym/Weightlifting', 'Swimming', 'Cycling', 'Hiking', 
+    'Rock Climbing', 'Martial Arts', 'Golf', 'Tennis', 'Basketball', 'Soccer', 
+    'Skiing/Snowboarding', 'Surfing'
+  ],
+  'Arts & Creativity': [
+    'Painting', 'Drawing', 'Photography', 'Sculpting', 'Pottery', 'Graphic Design',
+    'Calligraphy', 'Knitting/Crocheting', 'Sewing', 'Jewelry Making', 'Woodworking', 'DIY Crafts'
+  ],
+  'Music': [
+    'Playing Instruments', 'Singing', 'DJing', 'Vinyl/Records', 'Concerts/Live Music',
+    'Music Production'
+  ],
+  'Gaming & Tech': [
+    'Video Games', 'Board Games', 'Card Games', 'Puzzles', 'VR/AR',
+    'PC Building', 'Coding/Programming', 'Gadgets', 'Drones'
+  ],
+  'Food & Drink': [
+    'Cooking', 'Baking', 'Grilling/BBQ', 'Wine', 'Craft Beer', 'Coffee',
+    'Cocktails', 'Food Photography', 'Restaurant Exploring'
+  ],
+  'Outdoors & Nature': [
+    'Camping', 'Fishing', 'Hunting', 'Birdwatching', 'Gardening', 'Stargazing',
+    'Kayaking/Canoeing', 'Horseback Riding', 'Nature Photography'
+  ],
+  'Learning & Mind': [
+    'Reading', 'Writing', 'Languages', 'History', 'Science', 'Philosophy',
+    'Podcasts', 'Documentaries', 'Trivia'
+  ],
+  'Wellness & Self-Care': [
+    'Meditation', 'Skincare', 'Aromatherapy', 'Journaling', 'Spa/Massage',
+    'Mental Health', 'Nutrition'
+  ],
+  'Entertainment': [
+    'Movies', 'TV/Streaming', 'Anime', 'Theater', 'Stand-up Comedy',
+    'True Crime', 'Reality TV'
+  ],
+  'Collecting': [
+    'Sneakers', 'Watches', 'Art', 'Vintage Items', 'Coins', 'Stamps',
+    'Sports Memorabilia', 'Funko Pops'
+  ],
+  'Travel & Culture': [
+    'Travel', 'Road Trips', 'Museums', 'Cultural Events', 'Theme Parks', 'Architecture'
+  ],
+  'Home & Lifestyle': [
+    'Interior Design', 'Home Improvement', 'Organization', 'Plants', 'Smart Home', 'Pets'
+  ],
+  'Fashion & Beauty': [
+    'Fashion', 'Streetwear', 'Makeup', 'Fragrance', 'Thrifting'
+  ],
+  'Social': [
+    'Volunteering', 'Networking', 'Book Clubs', 'Sports Leagues', 'Parties/Hosting'
+  ],
+} as const;
+
 const formSchema = insertProfileSchema.omit({
   userId: true,
   name: true,
@@ -45,6 +102,8 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
   const [customGender, setCustomGender] = useState('');
   const [customPersonalityOther, setCustomPersonalityOther] = useState('');
   const [additionalNotesCount, setAdditionalNotesCount] = useState(0);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [customInterestsOther, setCustomInterestsOther] = useState('');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -76,12 +135,40 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
         additionalNotes: existingProfile.additionalNotes || undefined,
       });
       setAdditionalNotesCount(existingProfile.additionalNotes?.length || 0);
+      
+      // Parse existing interests string to array
+      if (existingProfile.interests) {
+        const allKnownInterests: string[] = Object.values(INTERESTS_CATEGORIES).flat();
+        const parsed = existingProfile.interests.split(',').map(s => s.trim()).filter(Boolean);
+        const known: string[] = [];
+        const custom: string[] = [];
+        parsed.forEach(interest => {
+          if (allKnownInterests.includes(interest)) {
+            known.push(interest);
+          } else if (interest === 'Other') {
+            // Skip the "Other" marker itself
+          } else {
+            custom.push(interest);
+          }
+        });
+        setSelectedInterests(known.length > 0 || custom.length > 0 ? [...known, ...(custom.length > 0 ? ['Other'] : [])] : []);
+        setCustomInterestsOther(custom.join(', '));
+      } else {
+        setSelectedInterests([]);
+        setCustomInterestsOther('');
+      }
     }
   }, [existingProfile, form]);
 
   const handleSubmit = (data: FormValues) => {
+    // Convert selectedInterests array to comma-separated string
+    const interestsWithoutOther = selectedInterests.filter(i => i !== 'Other');
+    const customInterestsArray = customInterestsOther.split(',').map(s => s.trim()).filter(Boolean);
+    const allInterests = [...interestsWithoutOther, ...customInterestsArray];
+    
     const submitData = {
       ...data,
+      interests: allInterests.length > 0 ? allInterests.join(', ') : undefined,
       ...(data.personalityTraits?.includes('Other') && customPersonalityOther ? { customPersonalityOther } : {}),
     };
     onSubmit(submitData);
@@ -414,27 +501,71 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                 )}
               />
 
-              {/* Interests */}
-              <FormField
-                control={form.control}
-                name="interests"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>What are some of their main interests or hobbies?</FormLabel>
-                    <FormDescription className="text-xs">e.g., hiking, gaming, cooking, reading, fashion</FormDescription>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Tell us about their interests and hobbies..."
-                        maxLength={500}
-                        {...field}
-                        data-testid="textarea-interests"
-                        className="min-h-[80px] resize-none"
+              {/* Interests - Organized by Category */}
+              <FormItem>
+                <FormLabel>What are some of {existingProfile?.name ? `${existingProfile.name}'s` : 'their'} interests or hobbies?</FormLabel>
+                <FormDescription className="text-xs">Select all that apply</FormDescription>
+                
+                {Object.entries(INTERESTS_CATEGORIES).map(([category, interests]) => (
+                  <div key={category} className="mt-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">{category}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {interests.map((interest) => (
+                        <Card key={interest} className="hover-elevate">
+                          <label className="flex items-center gap-2 p-2 cursor-pointer">
+                            <Checkbox
+                              checked={selectedInterests.includes(interest)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedInterests(prev => [...prev, interest]);
+                                } else {
+                                  setSelectedInterests(prev => prev.filter(i => i !== interest));
+                                }
+                              }}
+                              data-testid={`checkbox-interest-${interest.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                            />
+                            <span className="text-sm">{interest}</span>
+                          </label>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Other interests */}
+                <div className="mt-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <Card className="hover-elevate">
+                      <label className="flex items-center gap-2 p-2 cursor-pointer">
+                        <Checkbox
+                          checked={selectedInterests.includes('Other')}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedInterests(prev => [...prev, 'Other']);
+                            } else {
+                              setSelectedInterests(prev => prev.filter(i => i !== 'Other'));
+                            }
+                          }}
+                          data-testid="checkbox-interest-other"
+                        />
+                        <span className="text-sm">Other</span>
+                      </label>
+                    </Card>
+                  </div>
+                  {selectedInterests.includes('Other') && (
+                    <div className="mt-2">
+                      <Input
+                        placeholder="List other interests (comma-separated)..."
+                        value={customInterestsOther}
+                        onChange={(e) => setCustomInterestsOther(e.target.value)}
+                        maxLength={300}
+                        data-testid="input-custom-interests"
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <p className="text-xs text-muted-foreground mt-1">e.g., Bonsai, Lockpicking, Urban Exploration</p>
+                    </div>
+                  )}
+                </div>
+              </FormItem>
 
               {/* Relationship */}
               <FormField
