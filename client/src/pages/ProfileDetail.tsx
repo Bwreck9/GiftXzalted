@@ -1484,6 +1484,20 @@ export default function ProfileDetail() {
                       data-testid="input-custom-context"
                     />
                   </div>
+                  
+                  {/* Close Button */}
+                  <div className="flex justify-end pt-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setRefinePanelOpen(false)}
+                      className="text-muted-foreground hover-elevate"
+                      data-testid="button-close-refine"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Close
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
