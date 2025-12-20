@@ -1328,58 +1328,61 @@ export default function ProfileDetail() {
 
           {/* Generated Ideas Section - Always visible */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-purple-500" />
-                Generated Ideas ({generatedIdeas.length})
-              </h2>
-              <div className="flex items-center gap-2">
-                <div className="flex flex-col gap-1 items-center">
-                  <div className="flex items-center gap-2 min-w-32 max-w-40">
-                    <span className="text-sm font-medium w-6 text-center" data-testid="display-num-ideas">{numIdeas}</span>
-                    <Slider
-                      value={[numIdeas]}
-                      onValueChange={([value]) => setNumIdeas(value)}
-                      min={10}
-                      max={50}
-                      step={10}
-                      className="flex-1"
-                      data-testid="slider-num-ideas"
-                    />
+            {/* Sticky header with generate button */}
+            <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm py-3 -mx-4 px-4 md:-mx-6 md:px-6 border-b border-transparent [&:not(:first-child)]:border-border">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-500" />
+                  Generated Ideas ({generatedIdeas.length})
+                </h2>
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-1 items-center">
+                    <div className="flex items-center gap-2 min-w-32 max-w-40">
+                      <span className="text-sm font-medium w-6 text-center" data-testid="display-num-ideas">{numIdeas}</span>
+                      <Slider
+                        value={[numIdeas]}
+                        onValueChange={([value]) => setNumIdeas(value)}
+                        min={10}
+                        max={50}
+                        step={10}
+                        className="flex-1"
+                        data-testid="slider-num-ideas"
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground" data-testid="display-token-cost">
+                      {(numIdeas / 10) * TOKENS_PER_10_IDEAS} tokens
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground" data-testid="display-token-cost">
-                    {(numIdeas / 10) * TOKENS_PER_10_IDEAS} tokens
-                  </span>
-                </div>
-                <Button
-                  onClick={handleGenerate}
-                  disabled={generateMutation.isPending}
-                  size="sm"
-                  className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
-                    !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < (numIdeas / 10) * TOKENS_PER_10_IDEAS ? 'opacity-60' : ''
-                  }`}
-                  data-testid="button-generate-ideas"
-                >
-                  {generateMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-1" />
-                      Generate
-                    </>
-                  )}
-                </Button>
-                {generatedIdeas.length > 0 && (
                   <Button
-                    onClick={() => setClearAllDialogOpen(true)}
-                    variant="ghost"
+                    onClick={handleGenerate}
+                    disabled={generateMutation.isPending}
                     size="sm"
-                    className="hover-elevate text-muted-foreground"
-                    data-testid="button-clear-all-generated"
+                    className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
+                      !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < (numIdeas / 10) * TOKENS_PER_10_IDEAS ? 'opacity-60' : ''
+                    }`}
+                    data-testid="button-generate-ideas"
                   >
-                    Clear all
+                    {generateMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-1" />
+                        Generate
+                      </>
+                    )}
                   </Button>
-                )}
+                  {generatedIdeas.length > 0 && (
+                    <Button
+                      onClick={() => setClearAllDialogOpen(true)}
+                      variant="ghost"
+                      size="sm"
+                      className="hover-elevate text-muted-foreground"
+                      data-testid="button-clear-all-generated"
+                    >
+                      Clear all
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
             {filterOccasion !== 'all' && (
