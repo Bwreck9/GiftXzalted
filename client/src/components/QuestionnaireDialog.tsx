@@ -55,10 +55,7 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
       interests: undefined,
       relationship: undefined,
       closeness: undefined,
-      budget: undefined,
-      giftPreferences: [],
       dislikes: undefined,
-      giftStyle: undefined,
       location: undefined,
       additionalNotes: undefined,
     },
@@ -74,10 +71,7 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
         interests: existingProfile.interests || undefined,
         relationship: existingProfile.relationship as any,
         closeness: existingProfile.closeness as any,
-        budget: existingProfile.budget as any,
-        giftPreferences: (existingProfile.giftPreferences || []) as any,
         dislikes: existingProfile.dislikes || undefined,
-        giftStyle: existingProfile.giftStyle as any,
         location: existingProfile.location || undefined,
         additionalNotes: existingProfile.additionalNotes || undefined,
       });
@@ -189,7 +183,7 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                 )}
               />
 
-              {/* Personality Traits */}
+              {/* Personality Traits - Organized by Category */}
               <FormField
                 control={form.control}
                 name="personalityTraits"
@@ -197,16 +191,19 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                   <FormItem>
                     <FormLabel>How would you describe {existingProfile?.name ? `${existingProfile.name}'s` : 'their'} personality?</FormLabel>
                     <FormDescription className="text-xs">Select all that apply</FormDescription>
-                    <div className="grid grid-cols-2 gap-3 mt-2">
-                      {['Adventurous', 'Thoughtful', 'Funny/Lighthearted', 'Introverted', 'Outgoing', 'Artistic', 'Tech-savvy', 'Sentimental', 'Other'].map((trait) => (
-                        <FormField
-                          key={trait}
-                          control={form.control}
-                          name="personalityTraits"
-                          render={({ field }) => (
-                            <FormItem key={trait} className="flex flex-row items-start space-x-3 space-y-0">
-                              <Card className="flex-1 hover-elevate">
-                                <label className="flex items-center gap-3 p-3 cursor-pointer">
+                    
+                    {/* Social/Lifestyle */}
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Social & Lifestyle</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {['Adventurous', 'Homebody', 'Outdoorsy', 'Foodie', 'Wellness-focused', 'Social butterfly', 'Party lover'].map((trait) => (
+                          <FormField
+                            key={trait}
+                            control={form.control}
+                            name="personalityTraits"
+                            render={({ field }) => (
+                              <Card className="hover-elevate">
+                                <label className="flex items-center gap-2 p-2 cursor-pointer">
                                   <FormControl>
                                     <Checkbox
                                       checked={field.value?.includes(trait as any)}
@@ -224,23 +221,194 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                                   <span className="text-sm">{trait}</span>
                                 </label>
                               </Card>
-                            </FormItem>
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Energy/Temperament */}
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Energy & Temperament</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {['Introverted', 'Outgoing', 'Laid-back', 'Energetic', 'Romantic', 'Funny/Lighthearted'].map((trait) => (
+                          <FormField
+                            key={trait}
+                            control={form.control}
+                            name="personalityTraits"
+                            render={({ field }) => (
+                              <Card className="hover-elevate">
+                                <label className="flex items-center gap-2 p-2 cursor-pointer">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(trait as any)}
+                                      onCheckedChange={(checked) => {
+                                        const current = field.value || [];
+                                        if (checked) {
+                                          field.onChange([...current, trait as any]);
+                                        } else {
+                                          field.onChange(current.filter((t) => t !== trait));
+                                        }
+                                      }}
+                                      data-testid={`checkbox-personality-${trait.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                                    />
+                                  </FormControl>
+                                  <span className="text-sm">{trait}</span>
+                                </label>
+                              </Card>
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Mind/Work Style */}
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Mind & Work Style</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {['Thoughtful', 'Analytical', 'Creative', 'Curious', 'Ambitious', 'Organized', 'Tech-savvy'].map((trait) => (
+                          <FormField
+                            key={trait}
+                            control={form.control}
+                            name="personalityTraits"
+                            render={({ field }) => (
+                              <Card className="hover-elevate">
+                                <label className="flex items-center gap-2 p-2 cursor-pointer">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(trait as any)}
+                                      onCheckedChange={(checked) => {
+                                        const current = field.value || [];
+                                        if (checked) {
+                                          field.onChange([...current, trait as any]);
+                                        } else {
+                                          field.onChange(current.filter((t) => t !== trait));
+                                        }
+                                      }}
+                                      data-testid={`checkbox-personality-${trait.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                                    />
+                                  </FormControl>
+                                  <span className="text-sm">{trait}</span>
+                                </label>
+                              </Card>
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Values/Identity */}
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Values & Identity</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {['Sentimental', 'Minimalist', 'Eco-conscious', 'Spiritual', 'Trendy/Fashion-forward', 'Nostalgic', 'Artistic'].map((trait) => (
+                          <FormField
+                            key={trait}
+                            control={form.control}
+                            name="personalityTraits"
+                            render={({ field }) => (
+                              <Card className="hover-elevate">
+                                <label className="flex items-center gap-2 p-2 cursor-pointer">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(trait as any)}
+                                      onCheckedChange={(checked) => {
+                                        const current = field.value || [];
+                                        if (checked) {
+                                          field.onChange([...current, trait as any]);
+                                        } else {
+                                          field.onChange(current.filter((t) => t !== trait));
+                                        }
+                                      }}
+                                      data-testid={`checkbox-personality-${trait.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                                    />
+                                  </FormControl>
+                                  <span className="text-sm">{trait}</span>
+                                </label>
+                              </Card>
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Interests-based */}
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Interests-based</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {['Bookworm', 'Sports enthusiast', 'Music lover', 'Gamer', 'DIY/Crafty', 'Collector', 'Pet lover'].map((trait) => (
+                          <FormField
+                            key={trait}
+                            control={form.control}
+                            name="personalityTraits"
+                            render={({ field }) => (
+                              <Card className="hover-elevate">
+                                <label className="flex items-center gap-2 p-2 cursor-pointer">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(trait as any)}
+                                      onCheckedChange={(checked) => {
+                                        const current = field.value || [];
+                                        if (checked) {
+                                          field.onChange([...current, trait as any]);
+                                        } else {
+                                          field.onChange(current.filter((t) => t !== trait));
+                                        }
+                                      }}
+                                      data-testid={`checkbox-personality-${trait.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                                    />
+                                  </FormControl>
+                                  <span className="text-sm">{trait}</span>
+                                </label>
+                              </Card>
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Other */}
+                    <div className="mt-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <FormField
+                          control={form.control}
+                          name="personalityTraits"
+                          render={({ field }) => (
+                            <Card className="hover-elevate">
+                              <label className="flex items-center gap-2 p-2 cursor-pointer">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes('Other' as any)}
+                                    onCheckedChange={(checked) => {
+                                      const current = field.value || [];
+                                      if (checked) {
+                                        field.onChange([...current, 'Other' as any]);
+                                      } else {
+                                        field.onChange(current.filter((t) => t !== 'Other'));
+                                      }
+                                    }}
+                                    data-testid="checkbox-personality-other"
+                                  />
+                                </FormControl>
+                                <span className="text-sm">Other</span>
+                              </label>
+                            </Card>
                           )}
                         />
-                      ))}
-                    </div>
-                    {personalityTraits?.includes('Other') && (
-                      <div className="mt-3">
-                        <Input
-                          placeholder="Describe their personality..."
-                          value={customPersonalityOther}
-                          onChange={(e) => setCustomPersonalityOther(e.target.value)}
-                          maxLength={200}
-                          data-testid="input-custom-personality"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Keep it concise - use keywords, not sentences</p>
                       </div>
-                    )}
+                      {personalityTraits?.includes('Other') && (
+                        <div className="mt-2">
+                          <Input
+                            placeholder="Describe their personality..."
+                            value={customPersonalityOther}
+                            onChange={(e) => setCustomPersonalityOther(e.target.value)}
+                            maxLength={200}
+                            data-testid="input-custom-personality"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">Keep it concise - use keywords, not sentences</p>
+                        </div>
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -332,79 +500,6 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                 )}
               />
 
-              {/* Budget */}
-              <FormField
-                control={form.control}
-                name="budget"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>What's your budget range for gifts?</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-budget">
-                          <SelectValue placeholder="Select budget range" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Under $25">Under $25</SelectItem>
-                        <SelectItem value="$25-$50">$25-$50</SelectItem>
-                        <SelectItem value="$50-$100">$50-$100</SelectItem>
-                        <SelectItem value="$100-$500">$100-$500</SelectItem>
-                        <SelectItem value="$500-$1,000">$500-$1,000</SelectItem>
-                        <SelectItem value="$1,000-$10,000">$1,000-$10,000</SelectItem>
-                        <SelectItem value="$10,000+">$10,000+</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Gift Preferences */}
-              <FormField
-                control={form.control}
-                name="giftPreferences"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Do they prefer:</FormLabel>
-                    <FormDescription className="text-xs">Select all that apply</FormDescription>
-                    <div className="grid grid-cols-2 gap-3 mt-2">
-                      {['Practical gifts', 'Sentimental/personalized gifts', 'Experiences', 'Funny/novelty items'].map((pref) => (
-                        <FormField
-                          key={pref}
-                          control={form.control}
-                          name="giftPreferences"
-                          render={({ field }) => (
-                            <FormItem key={pref} className="flex flex-row items-start space-x-3 space-y-0">
-                              <Card className="flex-1 hover-elevate">
-                                <label className="flex items-center gap-3 p-3 cursor-pointer">
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(pref as any)}
-                                      onCheckedChange={(checked) => {
-                                        const current = field.value || [];
-                                        if (checked) {
-                                          field.onChange([...current, pref as any]);
-                                        } else {
-                                          field.onChange(current.filter((p) => p !== pref));
-                                        }
-                                      }}
-                                      data-testid={`checkbox-gift-pref-${pref.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
-                                    />
-                                  </FormControl>
-                                  <span className="text-sm">{pref}</span>
-                                </label>
-                              </Card>
-                            </FormItem>
-                          )}
-                        />
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {/* Dislikes */}
               <FormField
                 control={form.control}
@@ -421,46 +516,6 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                         data-testid="textarea-dislikes"
                         className="min-h-[60px] resize-none"
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Gift Style */}
-              <FormField
-                control={form.control}
-                name="giftStyle"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Do you want the gift to be:</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="grid grid-cols-2 gap-3"
-                      >
-                        <Card className="hover-elevate">
-                          <label className="flex items-center gap-2 p-3 cursor-pointer">
-                            <RadioGroupItem 
-                              value="unique-thoughtful" 
-                              id="style-unique"
-                              data-testid="radio-gift-style-unique-thoughtful"
-                            />
-                            <span className="text-sm">Unique & Thoughtful</span>
-                          </label>
-                        </Card>
-                        <Card className="hover-elevate">
-                          <label className="flex items-center gap-2 p-3 cursor-pointer">
-                            <RadioGroupItem 
-                              value="safe-popular" 
-                              id="style-safe"
-                              data-testid="radio-gift-style-safe-popular"
-                            />
-                            <span className="text-sm">Safe & Popular</span>
-                          </label>
-                        </Card>
-                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

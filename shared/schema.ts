@@ -180,14 +180,24 @@ export const insertProfileSchema = createInsertSchema(profiles).omit({
   // Questionnaire fields - all optional
   ageRange: z.enum(['Child (0-12)', 'Teen (13-19)', 'Young Adult (20-30)', 'Adult 1 (31-50)', 'Adult 2 (51-70)', 'Senior 70+']).optional(),
   gender: z.string().max(500).optional(), // Male, Female, or custom text (500 char limit for custom)
-  personalityTraits: z.array(z.enum(['Adventurous', 'Thoughtful', 'Funny/Lighthearted', 'Introverted', 'Outgoing', 'Artistic', 'Tech-savvy', 'Sentimental', 'Other'])).optional(),
+  personalityTraits: z.array(z.enum([
+    // Social/Lifestyle
+    'Adventurous', 'Homebody', 'Outdoorsy', 'Foodie', 'Wellness-focused', 'Social butterfly', 'Party lover',
+    // Energy/Temperament
+    'Introverted', 'Outgoing', 'Laid-back', 'Energetic', 'Romantic', 'Funny/Lighthearted',
+    // Mind/Work Style
+    'Thoughtful', 'Analytical', 'Creative', 'Curious', 'Ambitious', 'Organized', 'Tech-savvy',
+    // Values/Identity
+    'Sentimental', 'Minimalist', 'Eco-conscious', 'Spiritual', 'Trendy/Fashion-forward', 'Nostalgic', 'Artistic',
+    // Interests-based
+    'Bookworm', 'Sports enthusiast', 'Music lover', 'Gamer', 'DIY/Crafty', 'Collector', 'Pet lover',
+    // Other
+    'Other'
+  ])).optional(),
   interests: z.string().max(500).optional(), // Text field for interests
   relationship: z.enum(['Partner', 'Family', 'Friend', 'Coworker', 'Acquaintance', 'Classmate']).optional(),
   closeness: z.enum(['Very close', 'Somewhat close', 'Casual']).optional(),
-  budget: z.enum(['Under $25', '$25-$50', '$50-$100', '$100-$500', '$500-$1,000', '$1,000+', '$10,000+']).optional(),
-  giftPreferences: z.array(z.enum(['Practical gifts', 'Sentimental/personalized gifts', 'Experiences', 'Funny/novelty items'])).optional(),
   dislikes: z.string().max(500).optional(), // No-go areas
-  giftStyle: z.enum(['unique-thoughtful', 'safe-popular']).optional(),
   location: z.string().max(500).optional(), // City/country
   additionalNotes: z.string().max(2000).optional(), // Extra context
   
