@@ -233,6 +233,8 @@ export default function ProfileDetail() {
   const [refinePanelOpen, setRefinePanelOpen] = useState(false);
   const [sessionPriceRange, setSessionPriceRange] = useState<string>('any');
   const [sessionGiftType, setSessionGiftType] = useState<string>('any');
+  const [sessionGiftPreference, setSessionGiftPreference] = useState<string>('any');
+  const [sessionGiftStyle, setSessionGiftStyle] = useState<string>('any');
   const [sessionCustomContext, setSessionCustomContext] = useState('');
   
   // DnD sensors for drag and drop
@@ -354,10 +356,12 @@ export default function ProfileDetail() {
   });
 
   const generateMutation = useMutation({
-    mutationFn: async ({ giftListId, priceRange, giftType, customContext }: { 
+    mutationFn: async ({ giftListId, priceRange, giftType, giftPreference, giftStyle, customContext }: { 
       giftListId: string; 
       priceRange: string; 
       giftType: string; 
+      giftPreference: string;
+      giftStyle: string;
       customContext: string;
     }) => {
       const tokenCost = (numIdeas / 10) * TOKENS_PER_10_IDEAS;
@@ -394,6 +398,20 @@ export default function ProfileDetail() {
       if (giftType !== 'any') {
         content += `. Prefer ${giftType} gifts`;
       }
+      if (giftPreference !== 'any') {
+        const prefLabels: Record<string, string> = {
+          'practical': 'practical/useful items',
+          'sentimental': 'sentimental/personalized gifts',
+          'experiences': 'experiences over physical items',
+          'funny': 'funny/novelty gifts'
+        };
+        content += `. They prefer ${prefLabels[giftPreference] || giftPreference}`;
+      }
+      if (giftStyle !== 'any') {
+        content += giftStyle === 'unique' 
+          ? `. Focus on unique and thoughtful ideas` 
+          : `. Focus on safe and popular choices`;
+      }
       if (customContext.trim()) {
         content += `. Additional context: ${customContext.trim()}`;
       }
@@ -405,7 +423,7 @@ export default function ProfileDetail() {
         isUser: true,
         alreadyGeneratedIdeas: sessionGeneratedIdeas,
         numIdeas,
-        sessionContext: { priceRange, giftType, customContext },
+        sessionContext: { priceRange, giftType, giftPreference, giftStyle, customContext },
       });
       return await res.json();
     },
@@ -846,6 +864,8 @@ export default function ProfileDetail() {
       giftListId: targetListId,
       priceRange: sessionPriceRange,
       giftType: sessionGiftType,
+      giftPreference: sessionGiftPreference,
+      giftStyle: sessionGiftStyle,
       customContext: sessionCustomContext,
     });
   };
@@ -1467,6 +1487,46 @@ export default function ProfileDetail() {
                           data-testid={`chip-type-${type}`}
                         >
                           {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Gift Preference */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">They Prefer</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['any', 'practical', 'sentimental', 'experiences', 'funny'].map(pref => (
+                        <Badge
+                          key={pref}
+                          variant={sessionGiftPreference === pref ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSessionGiftPreference(pref)}
+                          data-testid={`chip-pref-${pref}`}
+                        >
+                          {pref === 'any' ? 'Any' :
+                           pref === 'practical' ? 'Practical' :
+                           pref === 'sentimental' ? 'Sentimental' :
+                           pref === 'experiences' ? 'Experiences' : 'Funny/Novelty'}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Gift Style */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Gift Style</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['any', 'unique', 'safe'].map(style => (
+                        <Badge
+                          key={style}
+                          variant={sessionGiftStyle === style ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSessionGiftStyle(style)}
+                          data-testid={`chip-style-${style}`}
+                        >
+                          {style === 'any' ? 'Any' :
+                           style === 'unique' ? 'Unique & Thoughtful' : 'Safe & Popular'}
                         </Badge>
                       ))}
                     </div>
