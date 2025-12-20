@@ -24,6 +24,15 @@ Gift Xzalted is an AI-powered application designed to help users find the perfec
   - Add Idea dialog with occasion dropdown (Birthday, Christmas, Anniversary, etc.) + custom option
   - Filter by occasion dropdown
   - "Add to list" functionality to save AI suggestions
+  - **Refine Panel:** Collapsible panel next to Generate button with session-specific filters:
+    - Price range chips (Under $25, $25-50, $50-100, $100+)
+    - Gift type chips (Physical, Experience, Subscription, Handmade, Digital)
+    - Custom context textarea for session-specific instructions
+  - **Deduplication System:** Server-side filtering to prevent duplicate ideas:
+    - Title normalization (lowercase, punctuation removal)
+    - Similarity detection (80% word overlap threshold)
+    - Over-generation (50% extra requested from AI)
+    - Post-processing filter against all existing ideas (manual + AI)
 - **Landing Page (Non-Authenticated):** Prioritizes sign-in, features compact utility buttons (Install App + Theme Toggle), and four gradient-styled feature cards highlighting app benefits.
 - **Pricing Page:** Displays profile plans (Free, Basic, Premium, Enterprise) and one-time token purchases.
 - **Checkout Page:** Mini-checkout UX with a centered card, gradient quantity display, and prominent total price.
