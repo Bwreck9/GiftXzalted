@@ -53,16 +53,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    // Check for redirect result on mount
-    checkRedirectResult().then((user) => {
-      if (user) {
-        setFirebaseUser(user);
-        syncUserWithBackend(user);
+  // Check for dev token and fetch user (development only)
+  const checkDevToken = async () => {
+    const devToken = localStorage.getItem('devToken');
+    if (devToken) {
+      try {
+        const response = await fetch('/api/auth/user', {
+          headers: { 'Authorization': `Bearer ${devToken}` },
+        });
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          return true;
+        } else {
+          // Invalid dev token, clear it
+          localStorage.removeItem('devToken');
+        }
+      } catch (error) {
+        console.error('Dev token check failed:', error);
+        localStorage.removeItem('devToken');
       }
-    });
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    const initAuth = async () => {
+      // Check for dev token first (development only)
+      const hasDevAuth = await checkDevToken();
+      if (hasDevAuth) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Check for redirect result on mount
+      checkRedirectResult().then((user) => {
+        if (user) {
+          setFirebaseUser(user);
+          syncUserWithBackend(user);
+        }
+      });
+    };
+
+    initAuth();
 
     const unsubscribe = onAuthChange(async (fbUser) => {
+      // Skip Firebase auth if using dev token
+      if (localStorage.getItem('devToken')) {
+        return;
+      }
       setFirebaseUser(fbUser);
       await syncUserWithBackend(fbUser);
       setIsLoading(false);
@@ -72,6 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    // Clear dev token if present
+    localStorage.removeItem('devToken');
     await firebaseSignOut();
     setUser(null);
   };

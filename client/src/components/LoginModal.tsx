@@ -12,8 +12,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail } from 'lucide-react';
+import { queryClient } from '@/lib/queryClient';
+import { Loader2, Mail, Bug } from 'lucide-react';
 import { SiGoogle } from 'react-icons/si';
+
+// Check if we're in development mode
+const isDev = import.meta.env.DEV;
 
 interface LoginModalProps {
   open: boolean;
@@ -26,6 +30,39 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
   const { toast } = useToast();
+
+  const handleDevLogin = async () => {
+    if (!isDev) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/auth/dev-login', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.devToken) {
+        // Store the dev token for API calls
+        localStorage.setItem('devToken', data.devToken);
+        // Invalidate user query to trigger refetch with new token
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+        toast({
+          title: 'Dev Login Successful',
+          description: `Logged in as ${data.user?.firstName} ${data.user?.lastName} with ${data.user?.purchasedTokens || 0} tokens`,
+        });
+        onOpenChange(false);
+        // Force a page reload to pick up the new auth state
+        window.location.reload();
+      } else {
+        throw new Error(data.message || 'Dev login failed');
+      }
+    } catch (error: any) {
+      console.error('Dev login error:', error);
+      toast({
+        title: 'Dev login failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -157,6 +194,25 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               </>
             )}
           </Button>
+
+          {isDev && (
+            <Button
+              onClick={handleDevLogin}
+              disabled={isLoading}
+              variant="outline"
+              className="w-full h-10 text-sm border-dashed border-orange-500 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950"
+              data-testid="button-dev-login"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Bug className="h-4 w-4 mr-2" />
+                  Dev Login (Test Account)
+                </>
+              )}
+            </Button>
+          )}
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">

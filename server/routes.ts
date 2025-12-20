@@ -206,6 +206,11 @@ async function checkAndResetSubscriptionTokens(userId: string) {
   }
 }
 
+// Development-only constants for test login
+// Token from env for security, with fallback only in development
+const DEV_TEST_USER_ID = 'dev-test-user-123';
+const DEV_TEST_TOKEN = process.env.DEV_TEST_TOKEN || (process.env.NODE_ENV !== 'production' ? 'dev-test-token-local' : '');
+
 // Firebase Auth middleware - verifies token and attaches user to request
 const isAuthenticated: RequestHandler = async (req: any, res, next) => {
   const authHeader = req.headers.authorization;
@@ -215,6 +220,17 @@ const isAuthenticated: RequestHandler = async (req: any, res, next) => {
   }
   
   const token = authHeader.split('Bearer ')[1];
+  
+  // Development-only: accept dev test token
+  if (process.env.NODE_ENV !== 'production' && token === DEV_TEST_TOKEN) {
+    req.user = {
+      uid: DEV_TEST_USER_ID,
+      email: 'devtest@example.com',
+      name: 'Dev Tester',
+      picture: null,
+    };
+    return next();
+  }
   
   try {
     const decodedToken = await verifyFirebaseToken(token);
@@ -237,6 +253,42 @@ const isAuthenticated: RequestHandler = async (req: any, res, next) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Development-only test login (bypasses Firebase)
+  if (process.env.NODE_ENV !== 'production') {
+    app.post('/api/auth/dev-login', async (req: any, res) => {
+      try {
+        // Create or get test user with generous tokens
+        const user = await storage.upsertUser({
+          id: DEV_TEST_USER_ID,
+          email: 'devtest@example.com',
+          firstName: 'Dev',
+          lastName: 'Tester',
+          profileImageUrl: null,
+        });
+        
+        // Give the test user tokens if they have none
+        const freshUser = await storage.getUser(DEV_TEST_USER_ID);
+        if (freshUser && (freshUser.tokens ?? 0) + (freshUser.purchasedTokens ?? 0) < 1000) {
+          await storage.updateUser(DEV_TEST_USER_ID, {
+            purchasedTokens: 10000,
+          });
+        }
+        
+        const updatedUser = await storage.getUser(DEV_TEST_USER_ID);
+        res.json({ 
+          user: updatedUser, 
+          devToken: DEV_TEST_TOKEN,
+          message: 'Dev login successful. Use the devToken in Authorization header.'
+        });
+      } catch (error) {
+        console.error("Dev login error:", error);
+        res.status(500).json({ message: "Dev login failed" });
+      }
+    });
+    
+    console.log('🔧 Dev login enabled: POST /api/auth/dev-login');
+  }
+
   // Firebase Auth - sync user with backend and return user data
   app.post('/api/auth/firebase', async (req: any, res) => {
     const authHeader = req.headers.authorization;

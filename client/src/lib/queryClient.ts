@@ -9,6 +9,13 @@ async function throwIfResNotOk(res: Response) {
 }
 
 async function getAuthHeaders(): Promise<HeadersInit> {
+  // Check for dev token first (development only)
+  const devToken = localStorage.getItem('devToken');
+  if (devToken) {
+    return { Authorization: `Bearer ${devToken}` };
+  }
+  
+  // Fall back to Firebase token
   const token = await getIdToken();
   if (token) {
     return { Authorization: `Bearer ${token}` };
