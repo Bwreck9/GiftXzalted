@@ -29,8 +29,9 @@ import { z } from 'zod';
 const INTERESTS_CATEGORIES = {
   'Sports & Fitness': [
     'Running', 'Yoga', 'Gym/Weightlifting', 'Swimming', 'Cycling', 'Hiking', 
-    'Rock Climbing', 'Martial Arts', 'Golf', 'Tennis', 'Basketball', 'Soccer', 
-    'Skiing/Snowboarding', 'Surfing'
+    'Rock Climbing', 'Martial Arts', 'Golf', 'Tennis', 'Basketball', 'Soccer',
+    'Baseball', 'Football', 'Hockey', 'Volleyball', 'Pickleball', 'CrossFit',
+    'Boxing', 'Pilates', 'Skiing/Snowboarding', 'Surfing'
   ],
   'Arts & Creativity': [
     'Painting', 'Drawing', 'Photography', 'Sculpting', 'Pottery', 'Graphic Design',
@@ -53,32 +54,25 @@ const INTERESTS_CATEGORIES = {
     'Kayaking/Canoeing', 'Horseback Riding', 'Nature Photography'
   ],
   'Learning & Mind': [
-    'Reading', 'Writing', 'Languages', 'History', 'Science', 'Philosophy',
-    'Podcasts', 'Documentaries', 'Trivia'
+    'Reading', 'Writing', 'Languages', 'History', 'Science', 'Philosophy', 'Trivia'
   ],
   'Wellness & Self-Care': [
     'Meditation', 'Skincare', 'Aromatherapy', 'Journaling', 'Spa/Massage',
     'Mental Health', 'Nutrition'
   ],
-  'Entertainment': [
-    'Movies', 'TV/Streaming', 'Anime', 'Theater', 'Stand-up Comedy',
-    'True Crime', 'Reality TV'
+  'Entertainment - Formats': [
+    'Movies', 'TV/Streaming', 'Theater/Musicals', 'Podcasts', 'Live Events/Concerts'
   ],
-  'Collecting': [
-    'Sneakers', 'Watches', 'Art', 'Vintage Items', 'Coins', 'Stamps',
-    'Sports Memorabilia', 'Funko Pops'
+  'Entertainment - Genres': [
+    'Action', 'Comedy', 'Drama', 'Thriller/Suspense', 'Horror', 'Sci-Fi', 'Fantasy',
+    'Romance', 'Animated', 'Anime', 'Superhero', 'Crime/Mystery', 'True Crime',
+    'Documentaries', 'Reality TV', 'Stand-up Comedy'
   ],
   'Travel & Culture': [
     'Travel', 'Road Trips', 'Museums', 'Cultural Events', 'Theme Parks', 'Architecture'
   ],
-  'Home & Lifestyle': [
-    'Interior Design', 'Home Improvement', 'Organization', 'Plants', 'Smart Home', 'Pets'
-  ],
   'Fashion & Beauty': [
     'Fashion', 'Streetwear', 'Makeup', 'Fragrance', 'Thrifting'
-  ],
-  'Social': [
-    'Volunteering', 'Networking', 'Book Clubs', 'Sports Leagues', 'Parties/Hosting'
   ],
 } as const;
 
@@ -270,6 +264,70 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                 )}
               />
 
+              {/* Relationship */}
+              <FormField
+                control={form.control}
+                name="relationship"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What's your relationship to {existingProfile?.name || 'them'}?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                      >
+                        {['Partner', 'Family', 'Friend', 'Coworker', 'Acquaintance', 'Classmate'].map((rel) => (
+                          <Card key={rel} className="hover-elevate">
+                            <label className="flex items-center gap-2 p-3 cursor-pointer">
+                              <RadioGroupItem 
+                                value={rel} 
+                                id={`rel-${rel}`}
+                                data-testid={`radio-relationship-${rel.toLowerCase()}`}
+                              />
+                              <span className="text-sm">{rel}</span>
+                            </label>
+                          </Card>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Closeness */}
+              <FormField
+                control={form.control}
+                name="closeness"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How close are you?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-3 gap-3"
+                      >
+                        {['Very close', 'Somewhat close', 'Casual'].map((close) => (
+                          <Card key={close} className="hover-elevate">
+                            <label className="flex items-center gap-2 p-3 cursor-pointer">
+                              <RadioGroupItem 
+                                value={close} 
+                                id={`close-${close}`}
+                                data-testid={`radio-closeness-${close.toLowerCase().replace(/\s/g, '-')}`}
+                              />
+                              <span className="text-sm">{close}</span>
+                            </label>
+                          </Card>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {/* Personality Traits - Organized by Category */}
               <FormField
                 control={form.control}
@@ -418,41 +476,6 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                       </div>
                     </div>
                     
-                    {/* Interests-based */}
-                    <div className="mt-3">
-                      <p className="text-xs font-medium text-muted-foreground mb-2">Interests-based</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {['Bookworm', 'Sports enthusiast', 'Music lover', 'Gamer', 'DIY/Crafty', 'Collector', 'Pet lover'].map((trait) => (
-                          <FormField
-                            key={trait}
-                            control={form.control}
-                            name="personalityTraits"
-                            render={({ field }) => (
-                              <Card className="hover-elevate">
-                                <label className="flex items-center gap-2 p-2 cursor-pointer">
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(trait as any)}
-                                      onCheckedChange={(checked) => {
-                                        const current = field.value || [];
-                                        if (checked) {
-                                          field.onChange([...current, trait as any]);
-                                        } else {
-                                          field.onChange(current.filter((t) => t !== trait));
-                                        }
-                                      }}
-                                      data-testid={`checkbox-personality-${trait.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
-                                    />
-                                  </FormControl>
-                                  <span className="text-sm">{trait}</span>
-                                </label>
-                              </Card>
-                            )}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    
                     {/* Other */}
                     <div className="mt-3">
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -564,70 +587,6 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                   )}
                 </div>
               </FormItem>
-
-              {/* Relationship */}
-              <FormField
-                control={form.control}
-                name="relationship"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>What's your relationship to {existingProfile?.name || 'them'}?</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="grid grid-cols-2 sm:grid-cols-3 gap-3"
-                      >
-                        {['Partner', 'Family', 'Friend', 'Coworker', 'Acquaintance', 'Classmate'].map((rel) => (
-                          <Card key={rel} className="hover-elevate">
-                            <label className="flex items-center gap-2 p-3 cursor-pointer">
-                              <RadioGroupItem 
-                                value={rel} 
-                                id={`rel-${rel}`}
-                                data-testid={`radio-relationship-${rel.toLowerCase()}`}
-                              />
-                              <span className="text-sm">{rel}</span>
-                            </label>
-                          </Card>
-                        ))}
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Closeness */}
-              <FormField
-                control={form.control}
-                name="closeness"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>How close are you?</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="grid grid-cols-3 gap-3"
-                      >
-                        {['Very close', 'Somewhat close', 'Casual'].map((close) => (
-                          <Card key={close} className="hover-elevate">
-                            <label className="flex items-center gap-2 p-3 cursor-pointer">
-                              <RadioGroupItem 
-                                value={close} 
-                                id={`close-${close}`}
-                                data-testid={`radio-closeness-${close.toLowerCase().replace(/\s/g, '-')}`}
-                              />
-                              <span className="text-sm">{close}</span>
-                            </label>
-                          </Card>
-                        ))}
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               {/* Dislikes */}
               <FormField
