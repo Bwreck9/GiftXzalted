@@ -1393,9 +1393,6 @@ export default function ProfileDetail() {
                   Generated Ideas ({generatedIdeas.length})
                 </h2>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground" data-testid="display-token-cost">
-                    {TOKENS_PER_10_IDEAS} tokens
-                  </span>
                   <Button
                     onClick={() => setRefinePanelOpen(!refinePanelOpen)}
                     variant="outline"
@@ -1420,7 +1417,7 @@ export default function ProfileDetail() {
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4 mr-1" />
-                        Generate
+                        Generate ({TOKENS_PER_10_IDEAS} tokens)
                       </>
                     )}
                   </Button>
