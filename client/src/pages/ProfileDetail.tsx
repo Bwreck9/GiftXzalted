@@ -13,7 +13,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
 import { 
   Plus, Brain, Settings, Trash2, ArrowLeft, Pencil, Sparkles, 
   Loader2, X, Info, Calendar, ChevronDown, ChevronUp, Check, Gift, GripVertical, SlidersHorizontal
@@ -209,7 +208,7 @@ export default function ProfileDetail() {
   const [newIdeaOccasion, setNewIdeaOccasion] = useState('');
   const [customOccasion, setCustomOccasion] = useState('');
   const [filterOccasion, setFilterOccasion] = useState('all');
-  const [numIdeas, setNumIdeas] = useState(10);
+  const numIdeas = 10; // Fixed at 10 ideas per generation
   const [sessionGeneratedIdeas, setSessionGeneratedIdeas] = useState<string[]>([]);
   const [newInlineIdea, setNewInlineIdea] = useState<{ title: string; occasion: string } | null>(null);
   const [savedIdeasCollapsed, setSavedIdeasCollapsed] = useState(false);
@@ -391,7 +390,9 @@ export default function ProfileDetail() {
           'under-25': 'under $25',
           '25-50': 'between $25 and $50',
           '50-100': 'between $50 and $100',
-          '100-plus': 'over $100'
+          '100-500': 'between $100 and $500',
+          '500-1000': 'between $500 and $1000',
+          '1000-plus': 'over $1000'
         };
         content += `. Focus on gifts ${priceLabels[priceRange] || priceRange}`;
       }
@@ -1392,38 +1393,25 @@ export default function ProfileDetail() {
                   Generated Ideas ({generatedIdeas.length})
                 </h2>
                 <div className="flex items-center gap-2">
-                  <div className="flex flex-col gap-1 items-center">
-                    <div className="flex items-center gap-2 min-w-32 max-w-40">
-                      <span className="text-sm font-medium w-6 text-center" data-testid="display-num-ideas">{numIdeas}</span>
-                      <Slider
-                        value={[numIdeas]}
-                        onValueChange={([value]) => setNumIdeas(value)}
-                        min={10}
-                        max={50}
-                        step={10}
-                        className="flex-1"
-                        data-testid="slider-num-ideas"
-                      />
-                    </div>
-                    <span className="text-xs text-muted-foreground" data-testid="display-token-cost">
-                      {(numIdeas / 10) * TOKENS_PER_10_IDEAS} tokens
-                    </span>
-                  </div>
+                  <span className="text-xs text-muted-foreground" data-testid="display-token-cost">
+                    {TOKENS_PER_10_IDEAS} tokens
+                  </span>
                   <Button
                     onClick={() => setRefinePanelOpen(!refinePanelOpen)}
-                    variant={refinePanelOpen ? "secondary" : "ghost"}
-                    size="icon"
-                    className="hover-elevate"
+                    variant="outline"
+                    size="sm"
+                    className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-purple-400/50 hover:border-purple-400 hover-elevate"
                     data-testid="button-toggle-refine"
                   >
-                    <SlidersHorizontal className="h-4 w-4" />
+                    <SlidersHorizontal className="h-4 w-4 mr-1" />
+                    Refine
                   </Button>
                   <Button
                     onClick={handleGenerate}
                     disabled={generateMutation.isPending}
                     size="sm"
                     className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border-0 hover-elevate active-elevate-2 ${
-                      !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < (numIdeas / 10) * TOKENS_PER_10_IDEAS ? 'opacity-60' : ''
+                      !user || ((user.tokens ?? 0) + (user.purchasedTokens ?? 0)) < TOKENS_PER_10_IDEAS ? 'opacity-60' : ''
                     }`}
                     data-testid="button-generate-ideas"
                   >
@@ -1457,7 +1445,7 @@ export default function ProfileDetail() {
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Price Range</Label>
                     <div className="flex flex-wrap gap-1.5">
-                      {['any', 'under-25', '25-50', '50-100', '100-plus'].map(range => (
+                      {['any', 'under-25', '25-50', '50-100', '100-500', '500-1000', '1000-plus'].map(range => (
                         <Badge
                           key={range}
                           variant={sessionPriceRange === range ? "default" : "outline"}
@@ -1468,7 +1456,9 @@ export default function ProfileDetail() {
                           {range === 'any' ? 'Any' : 
                            range === 'under-25' ? 'Under $25' :
                            range === '25-50' ? '$25-50' :
-                           range === '50-100' ? '$50-100' : '$100+'}
+                           range === '50-100' ? '$50-100' :
+                           range === '100-500' ? '$100-500' :
+                           range === '500-1000' ? '$500-1000' : '$1000+'}
                         </Badge>
                       ))}
                     </div>
@@ -1486,7 +1476,9 @@ export default function ProfileDetail() {
                           onClick={() => setSessionGiftType(type)}
                           data-testid={`chip-type-${type}`}
                         >
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                          {type === 'any' ? 'Any' :
+                           type === 'physical' ? 'Physical item' :
+                           type.charAt(0).toUpperCase() + type.slice(1)}
                         </Badge>
                       ))}
                     </div>
@@ -1744,7 +1736,7 @@ export default function ProfileDetail() {
           <DialogHeader>
             <DialogTitle>Need More Tokens</DialogTitle>
             <DialogDescription>
-              You need {(numIdeas / 10) * TOKENS_PER_10_IDEAS} tokens to generate {numIdeas} gift ideas.
+              You need {TOKENS_PER_10_IDEAS} tokens to generate 10 gift ideas.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
