@@ -72,7 +72,9 @@ const INTERESTS_CATEGORIES = {
     'Travel', 'Road Trips', 'Museums', 'Cultural Events', 'Theme Parks', 'Architecture'
   ],
   'Fashion & Beauty': [
-    'Fashion', 'Streetwear', 'Makeup', 'Fragrance', 'Thrifting'
+    'Fashion', 'Streetwear', 'Makeup', 'Fragrance', 'Thrifting', 'Skincare',
+    'Haircare/Styling', 'Nail Art', 'Jewelry/Accessories', 'Watches', 'Sneakers',
+    'Vintage/Retro', 'Designer/Luxury', 'Athleisure', "Men's Grooming", 'Hair Color/Wigs'
   ],
 } as const;
 
