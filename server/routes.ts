@@ -783,31 +783,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const combinedIdeas = [...allExistingIdeas, ...(alreadyGeneratedIdeas || [])];
       const fullAvoidanceList = combinedIdeas.filter((idea, index) => combinedIdeas.indexOf(idea) === index);
       
-      // Over-generate by 50% to account for duplicates we'll filter out
-      const overGenerateCount = Math.ceil(validNumIdeas * 1.5);
-
-      // Get AI response with over-generation
-      const aiResponse = await getGiftRecommendations(
-        {
-          name: profile.name,
-          ageRange: profile.ageRange || null,
-          gender: profile.gender || null,
-          relationship: profile.relationship || null,
-          personalityTraits: profile.personalityTraits || [],
-          interests: profile.interests || '',
-          closeness: profile.closeness || null,
-          budget: profile.budget || null,
-          giftPreferences: profile.giftPreferences || [],
-          dislikes: profile.dislikes || null,
-          giftStyle: profile.giftStyle || null,
-          location: profile.location || null,
-          additionalNotes: profile.additionalNotes || null,
-        } as any,
-        content,
-        conversationHistory,
-        fullAvoidanceList,
-        overGenerateCount
-      );
+      // Multi-attempt generation to guarantee exactly 10 unique ideas
+      const MAX_ATTEMPTS = 3;
+      const IDEAS_PER_ATTEMPT = 25; // Request more per attempt to improve success rate
+      const allUniqueIdeas: any[] = [];
+      const allSeenTitles: string[] = [...fullAvoidanceList];
+      let allRawIdeas: any[] = [];
+      
+      for (let attempt = 0; attempt < MAX_ATTEMPTS && allUniqueIdeas.length < validNumIdeas; attempt++) {
+        // Calculate how many more we need
+        const remainingNeeded = validNumIdeas - allUniqueIdeas.length;
+        const requestCount = Math.max(IDEAS_PER_ATTEMPT, remainingNeeded * 2);
+        
+        // Get AI response
+        const aiResponse = await getGiftRecommendations(
+          {
+            name: profile.name,
+            ageRange: profile.ageRange || null,
+            gender: profile.gender || null,
+            relationship: profile.relationship || null,
+            personalityTraits: profile.personalityTraits || [],
+            interests: profile.interests || '',
+            closeness: profile.closeness || null,
+            budget: profile.budget || null,
+            giftPreferences: profile.giftPreferences || [],
+            dislikes: profile.dislikes || null,
+            giftStyle: profile.giftStyle || null,
+            location: profile.location || null,
+            additionalNotes: profile.additionalNotes || null,
+          } as any,
+          content,
+          conversationHistory,
+          allSeenTitles,
+          requestCount
+        );
+        
+        // Parse and deduplicate
+        try {
+          let cleanedResponse = aiResponse.trim();
+          if (cleanedResponse.startsWith('```')) {
+            cleanedResponse = cleanedResponse.replace(/^```(?:json|JSON)?\s*/i, '').replace(/\s*```$/i, '');
+          }
+          
+          const batchIdeas = JSON.parse(cleanedResponse);
+          if (Array.isArray(batchIdeas)) {
+            allRawIdeas.push(...batchIdeas);
+            
+            for (const idea of batchIdeas) {
+              if (allUniqueIdeas.length >= validNumIdeas) break;
+              
+              const title = idea.title;
+              const isDuplicate = allSeenTitles.some(existing => isSimilarTitle(title, existing));
+              
+              if (!isDuplicate) {
+                allUniqueIdeas.push(idea);
+                allSeenTitles.push(title);
+              }
+            }
+          }
+        } catch (parseError) {
+          console.error(`Attempt ${attempt + 1}: Failed to parse AI response`, parseError);
+        }
+        
+        if (allUniqueIdeas.length < validNumIdeas) {
+          console.log(`Attempt ${attempt + 1}: Got ${allUniqueIdeas.length}/${validNumIdeas} unique ideas, retrying...`);
+        }
+      }
+      
+      console.log(`Generated ${allUniqueIdeas.length} unique ideas from ${allRawIdeas.length} total suggestions across ${MAX_ATTEMPTS} max attempts`);
+      
+      // Create final AI response JSON for storage
+      const finalAiResponse = JSON.stringify(allUniqueIdeas.slice(0, validNumIdeas));
 
       // Deduct tokens FIRST (uses purchased tokens first, then subscription tokens)
       // This prevents saving the AI response if token deduction fails
@@ -829,7 +875,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assistantMessage = await storage.createMessage({
           profileId,
           role: 'assistant',
-          content: aiResponse,
+          content: finalAiResponse,
         });
         
         // If this is a gift list generation, also save to gift list premiumResults
@@ -837,81 +883,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const giftList = await storage.getGiftList(giftListId);
           
           if (giftList && giftList.profileId === profileId) {
-            // Parse the AI response to extract gift recommendations
-            // Expected format: JSON array of {id, title, reason}
-            try {
-              // Remove markdown code blocks if present (case-insensitive)
-              let cleanedResponse = aiResponse.trim();
-              if (cleanedResponse.startsWith('```')) {
-                cleanedResponse = cleanedResponse.replace(/^```(?:json|JSON)?\s*/i, '').replace(/\s*```$/i, '');
-              }
-              
-              const newRecommendations = JSON.parse(cleanedResponse);
-              
-              // Validate it's an array
-              if (Array.isArray(newRecommendations)) {
-                // Get existing recommendations for deduplication
-                const existingResults = giftList.premiumResults 
-                  ? JSON.parse(giftList.premiumResults) 
-                  : [];
-                
-                // Build list of existing titles for similarity check
-                const existingTitles = [
-                  ...allExistingIdeas,
-                  ...existingResults.map((r: any) => r.title)
-                ];
-                
-                // Deduplicate: filter out ideas similar to existing ones
-                const uniqueNewRecommendations: any[] = [];
-                const seenInBatch: string[] = [];
-                
-                for (const rec of newRecommendations) {
-                  const title = rec.title;
-                  
-                  // Check against existing ideas
-                  const isDuplicateOfExisting = existingTitles.some(existing => 
-                    isSimilarTitle(title, existing)
-                  );
-                  
-                  // Check against other ideas in this batch (in case AI returned duplicates within the batch)
-                  const isDuplicateInBatch = seenInBatch.some(seen => 
-                    isSimilarTitle(title, seen)
-                  );
-                  
-                  if (!isDuplicateOfExisting && !isDuplicateInBatch) {
-                    uniqueNewRecommendations.push(rec);
-                    seenInBatch.push(title);
-                  }
-                  
-                  // Stop once we have enough unique ideas
-                  if (uniqueNewRecommendations.length >= validNumIdeas) {
-                    break;
-                  }
-                }
-                
-                // Add timestamp and generation batch ID to unique recommendations
-                const batchId = Date.now();
-                const numberedNewRecommendations = uniqueNewRecommendations.map((rec: any, idx: number) => ({
-                  ...rec,
-                  batchId,
-                  generatedAt: new Date().toISOString(),
-                }));
-                
-                // Prepend new recommendations to existing (newest at top)
-                const mergedRecommendations = [...numberedNewRecommendations, ...existingResults];
-                
-                await storage.updateGiftList(giftListId, {
-                  premiumResults: JSON.stringify(mergedRecommendations),
-                });
-                console.log(`Added ${uniqueNewRecommendations.length} unique gift recommendations to list ${giftListId} (filtered from ${newRecommendations.length}, total: ${mergedRecommendations.length})`);
-              } else {
-                console.error("AI response is not an array:", newRecommendations);
-              }
-            } catch (parseError) {
-              console.error("Failed to parse AI response as JSON:", parseError);
-              console.log("AI Response:", aiResponse);
-              // Continue anyway - the message was saved
-            }
+            // Use the already-deduplicated unique ideas
+            const uniqueNewRecommendations = allUniqueIdeas.slice(0, validNumIdeas);
+            
+            // Get existing recommendations
+            const existingResults = giftList.premiumResults 
+              ? JSON.parse(giftList.premiumResults) 
+              : [];
+            
+            // Add timestamp and generation batch ID to unique recommendations
+            const batchId = Date.now();
+            const numberedNewRecommendations = uniqueNewRecommendations.map((rec: any, idx: number) => ({
+              ...rec,
+              batchId,
+              generatedAt: new Date().toISOString(),
+            }));
+            
+            // Prepend new recommendations to existing (newest at top)
+            const mergedRecommendations = [...numberedNewRecommendations, ...existingResults];
+            
+            await storage.updateGiftList(giftListId, {
+              premiumResults: JSON.stringify(mergedRecommendations),
+            });
+            console.log(`Added ${uniqueNewRecommendations.length} unique gift recommendations to list ${giftListId} (total: ${mergedRecommendations.length})`);
           }
         }
       } catch (error: any) {
@@ -922,7 +916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ 
         ...assistantMessage, 
-        aiResponse // Include the raw AI response for frontend session tracking
+        aiResponse: finalAiResponse // Include the raw AI response for frontend session tracking
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
