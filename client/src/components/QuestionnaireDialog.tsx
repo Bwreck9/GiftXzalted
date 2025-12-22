@@ -277,7 +277,6 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
                 render={() => (
                   <FormItem>
                     <FormLabel>How would you describe {existingProfile?.name ? `${existingProfile.name}'s` : 'their'} personality?</FormLabel>
-                    <FormDescription className="text-xs">Select all that apply</FormDescription>
                     
                     {/* Social/Lifestyle */}
                     <div className="mt-3">
@@ -504,7 +503,6 @@ export function QuestionnaireDialog({ open, onOpenChange, onSubmit, isSubmitting
               {/* Interests - Organized by Category */}
               <FormItem>
                 <FormLabel>What are some of {existingProfile?.name ? `${existingProfile.name}'s` : 'their'} interests or hobbies?</FormLabel>
-                <FormDescription className="text-xs">Select all that apply</FormDescription>
                 
                 {Object.entries(INTERESTS_CATEGORIES).map(([category, interests]) => (
                   <div key={category} className="mt-3">
