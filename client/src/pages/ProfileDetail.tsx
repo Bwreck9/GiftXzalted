@@ -1419,7 +1419,7 @@ export default function ProfileDetail() {
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4 mr-1" />
-                        Generate ({TOKENS_PER_10_IDEAS} tokens)
+                        Generate
                       </>
                     )}
                   </Button>
