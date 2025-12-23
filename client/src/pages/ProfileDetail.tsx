@@ -198,7 +198,7 @@ export default function ProfileDetail() {
   const { id } = useParams<{ id: string }>();
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, refreshUser } = useAuth();
   const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addIdeaDialogOpen, setAddIdeaDialogOpen] = useState(false);
@@ -446,10 +446,12 @@ export default function ProfileDetail() {
       }
       await queryClient.invalidateQueries({ queryKey: [`/api/profiles/${id}/gift-lists`] });
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      await refreshUser(); // Refresh AuthContext to update token display in header
       toast({ title: 'Gift ideas generated!' });
     },
-    onError: (error: any) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+    onError: async (error: any) => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      await refreshUser(); // Refresh AuthContext to restore token display if refunded
       if (error.message?.includes('402') || error.message?.includes('Insufficient tokens')) {
         toast({ title: 'Not enough tokens', description: 'Purchase more tokens to generate ideas', variant: 'destructive' });
       } else {
