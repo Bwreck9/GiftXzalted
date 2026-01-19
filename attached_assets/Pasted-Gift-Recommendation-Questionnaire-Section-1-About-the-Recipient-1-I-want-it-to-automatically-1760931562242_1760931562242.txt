@@ -1,0 +1,104 @@
+Gift Recommendation Questionnaire
+
+**Section 1: About the Recipient**
+
+1. I want it to automatically to display the profile name here.
+    
+2. What’s the age range?
+    
+    - ☐ Child (0–12)
+        
+    - ☐ Teen (13–19)
+        
+    - ☐ Young Adult (20–30)
+        
+    - ☐ Adult (31–50)
+        
+    - ☐ Senior (50+)
+        
+3. Gender identity (optional):  I want a drop down selection Male / Female / Other.  If Other is selected then allow a textbox with a 500 character limit.  Put a disclaimer to the effect of "The AI will understand" but maybe word it nicer somehow.
+    
+4. How would you describe their personality?
+    
+    - ☐ Adventurous
+        
+    - ☐ Thoughtful
+        
+    - ☐ Funny / Lighthearted
+        
+    - ☐ Introverted
+        
+    - ☐ Outgoing
+        
+    - ☐ Artistic
+        
+    - ☐ Tech-savvy
+        
+    - ☐ Sentimental  
+        _(You can select multiple)_
+        
+1. What are some of their main interests or hobbies? (e.g., hiking, gaming, cooking, reading, fashion).  Make this a textbox.
+    
+
+---
+
+**Section 2: Occasion & Relationship**  
+7. What’s your relationship to them?
+    
+    - ☐ Partner
+        
+    - ☐ Family
+        
+    - ☐ Friend
+        
+    - ☐ Coworker
+        
+    - ☐ Acquaintance
+        
+8. How close are you?
+    
+    - ☐ Very close
+        
+    - ☐ Somewhat close
+        
+    - ☐ Casual
+        
+
+---
+
+**Section 3: Preferences & Constraints**  
+9. What’s your budget range?
+
+- ☐ Under $25
+    
+- ☐ $25–$50
+    
+- ☐ $50–$100
+    
+- ☐ $100+
+    
+
+10. Do they prefer: 
+    
+
+- ☐ Practical gifts
+    
+- ☐ Sentimental / personalized gifts
+    
+- ☐ Experiences (tickets, trips, events)
+    
+- ☐ Funny / novelty items
+    
+
+11. Any dislikes or no-go areas? (e.g., no alcohol, no perfumes, avoid tech)
+    
+12. Do you want the gift to be **unique and thoughtful** or **safe and popular**?
+    
+
+---
+
+**Section 4: Optional Details**  
+13. Where do they live (city/country)?  
+_(Helps tailor weather, regional, or store-based ideas)_  
+14. Anything else you’d like to mention about them?  
+_(e.g., “They love their dog more than anything,” “They recently started a new job,” etc.)_

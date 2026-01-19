@@ -1,0 +1,191 @@
+You are working inside my existing Gift Xzalted web app in this Replit project.
+
+Your tasks are LAYOUT + UX REFACTOR ONLY. 
+Do NOT rewrite everything from scratch and do NOT change my authentication or data wiring. 
+Reuse my existing components / styles where possible.
+
+GOAL:
+Make the app feel like a streamlined gift-shopping and recommendation tool with:
+1) A useful landing page (logged out)
+2) A simple profiles dashboard (logged in)
+3) One unified gift list per person
+4) Space to surface Amazon affiliate gift collections using placeholder data for now
+
+IMPORTANT: 
+- Keep the current dark theme and visual vibe.
+- Make everything fully responsive for desktop AND mobile.
+- Prioritize fewer clicks and clear flows over fancy animations.
+
+------------------------------------------------
+1. LANDING PAGE (LOGGED OUT)
+------------------------------------------------
+Current: “Start your gift list” + sign-in button + 4 info cards most people won’t read.
+
+New behavior:
+- Keep a prominent CTA button that signs the user in / up.
+  Text: “Sign in to get personalized gift ideas”.
+- Above the fold:
+  - App name/logo
+  - Short headline: “Start your gift list – remember ideas and get tailored recommendations.”
+  - Subtext line: “Browse curated gift collections or sign in for personalized ideas.”
+  - Main CTA button: [Sign in to get started]
+
+Below that, add two new sections designed to work even when the user is logged out:
+
+A) “Featured Gift Collections”
+   - A horizontally scrollable row on mobile, grid layout on desktop.
+   - Each collection is a card with:
+     - Title (e.g., “Baby Gifts”, “Kids Gifts”, “Teen Gifts”, “Adult Gifts”, “For Grandparents”, etc.)
+     - Short description
+     - A “Shop Collection” button that links to a placeholder Amazon URL for now.
+   - Use a static in-memory array to hold these collections. 
+     Example shape (use this or something very close):
+       const featuredCollections = [
+         {
+           id: 'baby',
+           title: 'Baby Gifts',
+           description: 'Sweet and practical gifts for new parents and babies.',
+           url: 'https://www.amazon.com/...',
+           tags: ['baby', '0-2', 'family']
+         },
+         {
+           id: 'kids',
+           title: 'Kids Gifts',
+           description: 'Fun ideas for kids who love to play and explore.',
+           url: 'https://www.amazon.com/...',
+           tags: ['kids', '3-12']
+         },
+         ...
+       ];
+
+   - Build a small <GiftCollectionCard /> component that reads a collection and renders it.
+
+B) “Trending Gifts”
+   - A simple product card list (grid on desktop, vertical on mobile).
+   - Also backed by a static array for now:
+       const trendingGifts = [
+         {
+           id: 'cozy-blanket',
+           name: 'Cozy Weighted Blanket',
+           shortDescription: 'Perfect for relaxing nights in.',
+           url: 'https://www.amazon.com/...',
+           priceRange: '$$',
+           tags: ['adult', 'home', 'comfort']
+         },
+         ...
+       ];
+   - Each card should include name, short description, price range, and a “View on Amazon” button.
+
+Make sure the landing page visually separates:
+- Hero section (headline + CTA)
+- Featured Collections
+- Trending Gifts
+
+------------------------------------------------
+2. PROFILES PAGE (LOGGED IN)
+------------------------------------------------
+Current: After login, the user sees a grid of profiles (Lauren, Mom, Connor, etc.) and that’s mostly it.
+
+New behavior:
+- Keep the existing profile grid and “Create New Profile” button.
+- Add a simple greeting and clarity:
+  - “Your Gift Profiles”
+  - Subtext: “Pick a person to view and manage their gift ideas.”
+
+Below the profile grid, reuse the same “Featured Gift Collections” and “Trending Gifts” sections from the landing page:
+- They should render whether or not the user clicks a profile.
+- This means users can still browse and click Amazon affiliate links even if they’re not actively using the profile/gift list features.
+
+Implementation details:
+- Factor the collections and trending components out into reusable components (e.g., <FeaturedCollections /> and <TrendingGifts />).
+- Use the SAME placeholder data arrays in a shared module to avoid duplication.
+
+------------------------------------------------
+3. PROFILE DETAIL PAGE (UNIFIED GIFT LIST)
+------------------------------------------------
+Current: When you click a profile (e.g., Lauren), you see a list of “Gift Lists” (like “Anniversary”). Then inside that, you see ideas and generated ideas. There is also a “Train Agent” questionnaire modal.
+
+I want you to simplify this:
+
+New behavior:
+- When a user clicks a profile, it should go DIRECTLY into that person’s unified gift page.
+- Remove the extra “Gift Lists” layer (no more event-specific lists for now).
+- There should be ONE main list of gift ideas per person, with optional tags (like birthday, Christmas, anniversary) – implemented as metadata, not separate lists.
+
+Layout for the profile page:
+
+Top section:
+- Back button: “Back to profiles”
+- Profile avatar + name (reuse existing)
+- Personality / interest tags if they already exist (optional)
+- A prominent button: [Train this profile] that opens the existing questionnaire (reuse the current behavior, just move the entry point).
+- Short explanation under the button: “Answer a few quick questions to personalize gift ideas for this person.”
+
+Middle section: “Saved Gift Ideas”
+- This is the main list where manually added ideas and accepted AI ideas are stored.
+- Display them as rows or cards with:
+  - Idea title
+  - Optional short note
+  - Occasion tags (e.g., birthday, Christmas, anniversary) – implemented simply as a list of strings for now.
+  - Action icons: open any stored URL in a new tab (if present), and remove.
+
+Below saved ideas: a clear button:
+- [Generate new gift ideas]
+- Clicking it should trigger the existing AI generation flow that populates a “Generated Ideas” area.
+
+Bottom section: “Generated Ideas”
+- Show generated ideas in cards, each with:
+  - Title
+  - Short description
+  - A "+ Add to saved list" button.
+- When the user adds one, move it into “Saved Gift Ideas.”
+
+Filters:
+- Above the Saved Ideas section, add simple filter controls:
+  - Occasions (dropdown or pill buttons): All, Birthday, Christmas, Anniversary, Other.
+  - Price range: All, $, $$, $$$ if you already model price, else leave out for now.
+- Filter should work only on the client (no need for backend changes for now) and should not break if tags are missing.
+
+Important:
+- Do NOT remove any existing data models; instead, if the code currently expects lists per event, adapt it so that:
+  - There is a default “master list” for the profile.
+  - Existing list data can be merged into that master list in memory.
+  - For now, keep storage minimal and compatible with how we already save gift ideas.
+
+------------------------------------------------
+4. RESPONSIVE DESIGN REQUIREMENTS
+------------------------------------------------
+Desktop:
+- Use grid layouts where appropriate:
+  - Landing page: hero on top, then two rows: Featured Collections (cards) and Trending Gifts (cards).
+  - Profiles page: profile card grid at top, affiliate sections below.
+- Ensure there is sensible max-width and horizontal centering so the app doesn’t stretch too wide on very large monitors.
+
+Mobile:
+- Everything stacks vertically.
+- Collections and trending cards should become horizontal scroll carousels OR single-column lists.
+- All CTAs must remain easily tappable with fingers (don’t make small text-only links).
+
+------------------------------------------------
+5. EXTENSIBILITY FOR FUTURE AMAZON TABLE/API
+------------------------------------------------
+Design the placeholder data for collections and trending gifts in a way that can later be swapped for a database or API call:
+- Keep the shape of the data consistent and organized.
+- Put the static arrays in a separate module (e.g., `data/affiliateCollections.ts` or similar) so I can replace them with an API call later without changing the component props.
+
+Do NOT actually integrate a database right now. 
+Just prepare it so that when I have a table of Amazon URLs, I can replace the static arrays with a fetch/API call that returns the same structure.
+
+------------------------------------------------
+6. CLEANUP & COMMENTS
+------------------------------------------------
+- Add comments at the top of the new/updated components explaining:
+  - What they render (e.g., “Renders reusable featured gift collections section based on affiliate data”).
+  - Where to later plug in API / database calls.
+- Avoid unnecessary new dependencies.
+- Keep the code readable and aligned with the style of the existing project.
+
+Once you’ve made these changes, briefly summarize in comments or a short README note:
+- which components were added/modified,
+- where the placeholder affiliate data lives,
+- how the profile page flow changed (no more event-specific gift lists; one unified list per profile).

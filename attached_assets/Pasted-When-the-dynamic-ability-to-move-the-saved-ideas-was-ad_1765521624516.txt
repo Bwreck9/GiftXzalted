@@ -1,0 +1,16 @@
+When the dynamic ability to move the saved ideas was added, we lost the double columns in the desktop view.  Put the double columns back please.
+
+Inside the profile, the occasions dropdown.  I want to be able to add/rename/delete occasions.  ADD would be at the top, above the already existing occasions.  I'm thinking a gear to the right of the occasion that offers rename and delete (if rename is selected, they can type a new name and all the ideas using that occasion get renamed) (if delete is selected and there are ideas using that occasion, then the customer must first choose to delete all the ideas using that occasion OR pick another existing occasion to update all the ideas to before it can be deleted).  Note:  On new profile creation, auto-add the occasions General, Birthday, Christmas, Anniversary.
+
+In the profile, in the dropdown that controls the amount of ideas being generated, you did good adding the 10 ideas (200 tokens) to the dropdown, BUT when the dropdown is not selected, I just want the number displayed.  Now that I'm thinking about it.  Maybe a slider would look better.  10 - 50, and below it display the token cost dynamically based on the selected value.
+
+When the clear all button is clicked, can the pop-up message display using our app's theme colors instead of a generic white browser pop-up with blue buttons??
+
+When saved ideas are deleted, the ideas move around.  Just delete in place.  I think what's happening is that it's re-aligning them based on their occasion, which I do not want, if they want to organize by occasion, then they can filter by occasion.  When "All occasions" is selected, I want them to align as the customer places them.  Manually added ideas get added to the top of the list.  AI ideas that are saved get added to the bottom of the list.
+
+On the profiles page, the Important Dates that are inside the rename/recolor section need to be their own pop-up window and listed inside the profile gear as "Important Dates" and removed from the rename/recolor selection.  When the important dates are input, they need to display on the profile box on the profile page.  I don't need to see the important dates inside the profile where the ideas are.  I'm thinking we give the customer the ability to add custom dates with add/remove behavior.  Thinking a hard limit of 10 dates that can be displayed in the profile on the profiles page.  Since we added the package that can move things around, can we allow the customer to move the profiles around on the profiles page too??
+
+<BIG ISSUE>
+From the Stripe Checkout page, when the back button is clicked it takes you to /payment-cancelled which is just a blank white page.  (AND it makes me hard refresh to restore the app functionality) Probably should re-direct back to the pricing page.
+
+Remember to ask questions as needed before execution.

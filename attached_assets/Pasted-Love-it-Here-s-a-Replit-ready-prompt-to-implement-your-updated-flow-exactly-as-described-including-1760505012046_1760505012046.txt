@@ -1,0 +1,175 @@
+Love it. Here’s a Replit-ready prompt to implement your updated flow exactly as described, including Google sign-in on the landing, profile cards with colors + rename, a Settings modal, a “New Profile Questionnaire” CTA, per-profile pages, an all-profiles page, token-gated submit with draft persistence, and Copy to Clipboard for premium results.
+
+Prompt for Replit — Landing, Profiles, Questionnaire, Settings, Clipboard
+You are updating the “Gift Spark” web app. 
+Stack: React + React Router + Tailwind (or minimal CSS). Assume an auth provider for Google and a token balance in user state.
+
+GOALS
+1) Landing page shows “Sign in with Google” when logged out. 
+   After sign-in, the landing shows the user’s profile cards (name + color), a Settings button, and a “New Profile Questionnaire” CTA.
+2) Profiles have editable name and color. Provide Rename, Edit, Clear via Settings.
+3) “New Profile Questionnaire” opens the questionnaire. User may fill without auth, but submission requires login + tokens. Preserve draft during sign-in.
+4) Clicking a profile card opens that **single profile page** with manual fields (free) and a premium responses section (with “Copy to Clipboard” for each response).
+5) “View profiles” opens a **profiles list page** showing all profiles at once in list format (header links to profile page), manual fields inline, premium responses below.
+6) We don’t need chat history; just persist the table/list responses per profile (overwrite when re-run).
+7) Add a global Settings control on the landing page that manages the selected profile: Rename, Edit color, Clear (confirm), Delete (optional).
+
+ROUTES
+- `/`                => LandingPage
+- `/profiles`        => ProfilesPage (list view)
+- `/profile/:id`     => ProfileDetailPage (single)
+- `/questionnaire`   => QuestionnairePage
+- `/login`           => Google sign-in page (after login, redirect to ?next=)
+- `/pricing`         => purchase tokens (return via ?return=)
+
+STATE & STORAGE
+- User auth: `user` (null | { id, email, name, tokenBalance })
+- Profiles: array stored per user (persist to localStorage for now if no backend).
+  Type:
+
+
+type Profile = {
+id: string; // uuid
+name: string; // user-defined, e.g., "Emily"
+color: string; // hex or preset key
+manualIdeas: string[];// free notes/ideas
+premiumResults: Array<{ id:string; title:string; reason:string; createdAt:string }>;
+updatedAt: string;
+}
+
+- Local persistence keys:
+- `gs_profiles_<userId>`
+- `gs_qs_draft_v1` (questionnaire draft)
+- On login: load `gs_profiles_<userId>`; if missing, seed empty array.
+
+LANDING PAGE ( `/` )
+- If NOT authenticated:
+- Show hero H1 + subcopy
+- Button: **Sign in with Google** (data-testid="landing-google")
+  -> navigate(`/login?next=/`)
+- If authenticated:
+- Show horizontal header: “Gift Spark” + right-side buttons:
+  • **New Profile Questionnaire** (primary)  (data-testid="landing-new-profile")
+    -> navigate(`/questionnaire`)
+  • **View profiles** (secondary)            (data-testid="landing-view-profiles")
+    -> navigate(`/profiles`)
+  • **Settings** (ghost) opens modal for selected profile actions (see SETTINGS below)
+- Show grid of profile cards (responsive):
+  • Card shows color swatch + name
+  • Click -> navigate(`/profile/<id>`)  (data-testid="profile-card-<id>`)
+  • Kebab menu on each card opens per-profile actions (Rename, Change Color, Clear, Delete)
+- CTA to “Create Profile from Questionnaire” duplicates “New Profile Questionnaire”.
+
+PROFILE COLORS
+- Provide 8 presets + custom color picker.
+- Save selected color to profile.
+
+SETTINGS (Modal / Drawer)
+- Triggered by “Settings” in landing header OR kebab on each card.
+- Actions on the chosen profile:
+- Rename (inline input + Save)
+- Change Color (presets + input)
+- Clear profile (confirm; clears manualIdeas + premiumResults)
+- Delete profile (optional)
+- data-testids:
+- settings-open, settings-save, settings-clear, settings-delete
+
+NEW PROFILE QUESTIONNAIRE ( `/questionnaire` )
+- Users can fill without auth; persist draft with a reusable hook:
+- Create `usePersistedDraft(key)` (see code below).
+- key = `gs_qs_draft_v1`
+- **Submit** button behavior:
+1) If user NOT authenticated:
+   - Show inline message: “Your selections are temporarily saved during registration.”
+   - navigate(`/login?next=/questionnaire`)
+   - On return, rehydrate draft from localStorage.
+2) If user authenticated but tokenBalance <= 0:
+   - Open modal: “You’re almost there — this feature uses Premium Tokens.”
+     Buttons: **Buy Premium Tokens** -> navigate(`/pricing?intent=topup&return=/questionnaire`)
+              **Cancel**
+   - After purchase (tokenBalance increases), auto-close modal, re-trigger submit.
+3) If user authenticated and tokenBalance > 0:
+   - Create a new Profile with name = first-name field from form (or “New Profile” if blank)
+   - Or, if form selected an existing profile destination, attach results to that profile
+   - Generate premium results; store to profile.premiumResults (overwrite previous if desired)
+   - Decrement tokens.
+   - clearDraft(); navigate(`/profile/<newOrSelectedProfileId>`)
+
+- Disable Submit until required form fields are valid.
+- Top banner text: “Preview the form now — you’ll sign in before submitting. We’ll keep your selections saved.”
+
+PROFILES PAGE ( `/profiles` )
+- List all profiles (list format). For each profile:
+- **Header** (clickable) -> `/profile/<id>` (data-testid="list-profile-link-<id>`)
+- **Manual (free) ideas**: simple textarea + “Save” (persists to profile.manualIdeas as array by splitting by newline or comma)
+- **Premium responses** (stacked cards):
+  - show title + reason + createdAt
+  - **Copy to Clipboard** button on each item
+    -> `navigator.clipboard.writeText(JSON.stringify(item))`
+    -> show toast “Copied!”
+- Button to “New Profile Questionnaire”
+
+PROFILE DETAIL PAGE ( `/profile/:id` )
+- Same sections as list item but focused on a single profile.
+- Colored header bar using profile.color.
+- Manual ideas textarea with Save.
+- Premium responses cards with Copy button.
+- Optional “Run questionnaire again” CTA (routes to /questionnaire with ?profileId=<id>)
+
+COPY TO CLIPBOARD
+- Utility function with toast feedback and aria-live region.
+- Add data-testid="copy-premium-<profileId>-<resultId>"
+
+HOOK — usePersistedDraft (TypeScript OK)
+---------------------------------------
+Create src/hooks/usePersistedDraft.ts:
+
+
+import { useEffect, useRef, useState } from 'react';
+export function usePersistedDraft<T = any>(key: string, initial: T) {
+const [draft, setDraft] = useState<T>(() => {
+try { return JSON.parse(localStorage.getItem(key) || 'null') ?? initial; }
+catch { return initial; }
+});
+const t = useRef<number | null>(null);
+useEffect(() => {
+if (t.current) window.clearTimeout(t.current);
+t.current = window.setTimeout(() => {
+try { localStorage.setItem(key, JSON.stringify(draft)); } catch {}
+}, 300);
+return () => { if (t.current) window.clearTimeout(t.current); };
+}, [key, draft]);
+const clearDraft = () => { localStorage.removeItem(key); setDraft(initial); };
+return { draft, setDraft, clearDraft, draftId: key };
+}
+
+
+AUTH REDIRECTS
+- On login success, read `next` (and optional `return`) params:
+  - navigate to `next || '/'`
+  - Questionnaire page reads from localStorage to rehydrate draft.
+
+TOKEN GATE MODAL
+- Title: “You’re almost there”
+- Copy: “This feature uses Premium Tokens. Grab a quick Top-Up and we’ll finish your suggestions right away.”
+- CTA: **Buy Premium Tokens** -> `/pricing?intent=topup&return=/questionnaire`
+- After successful purchase, call a callback to resume submission.
+
+UI & ACCESSIBILITY
+- Buttons: primary (solid blue), secondary (outline), ghost for less prominent.
+- Focus rings: `focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`
+- ARIA labels on Settings, Copy, Submit, and color selector.
+- Semantic headings on each page.
+
+TEST IDS
+- landing-google, landing-new-profile, landing-view-profiles, settings-open, settings-save,
+  list-profile-link-<id>, copy-premium-<profileId>-<resultId>, questionnaire-submit,
+  tokens-modal-open, buy-premium-tokens
+
+DONE CRITERIA
+- Landing shows Google button when logged out; after login shows profile grid + Settings + New Profile Questionnaire + View Profiles.
+- Profiles can be renamed/recolored/cleared.
+- New Profile Questionnaire preview works logged-out; submission requires login + tokens.
+- Draft persists through login and token purchase; no answers lost.
+- Clicking a profile opens its page; “View profiles” shows list with manual + premium sections.
+- Copy-to-Clipboard works on premium results with toast confirmation.

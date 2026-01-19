@@ -1,0 +1,19 @@
+Note:  Now that we're fine-tuning, I really need you to ask questions to confirm what I want before making assumptions to confirm we're on the same page.  You've done well overall, but I'm having to undo some of the decisions you've made.  (Example:  On mobile view, I asked you to clean up the buttons and make it fit better.  You took it upon yourself to rename the "Generate" button to "AI" on the mobile view.  I need this reverted back to display "Generate".  ALSO while you did this, you removed the token amount display ).  Since we're low on screen real estate I see why you did it, but I still want what I want.  When a profile is selected, the dropdown that determines how many ideas to generate at a time, in the dropdown display 10 ideas (200 tokens), 20 ideas (400 tokens).  30 ideas (600 tokens).  Etc.
+
+When a profile is selected, the occasions dropdown doesn't need to say "Filter" to the left of it.  The gear button needs to be displayed right next to the name of the profile.  And we lost the big "Train Agent" button when we added it to the gear.  I want both, a big "Train Agent" button and "Train Agent" to be listed in the gear next to the profile name (when inside the profile).  Actually, rename "Train Agent" to "Customize Profile" in both places.
+
+When the ADD button is clicked and an idea is manually entered, it needs to display FIRST in the Saved Ideas section (currently it displays at the bottom).  Also when the add button is clicked, if "All Occasions" is selected then it displays "GeneralGeneral" as the default option when it should only display "General"
+
+On mobile view, the "Generate" button displays "AI"  it needs to display "Generate". 
+
+On desktop view (and I suspect mobi)
+On desktop view, the Saved Ideas section needs to be two column.
+
+Allow the Saved Ideas to be collapsible.  Add a downward arrow to collapse, and an upward arrow to restore.
+
+In the Saved Ideas, please add the ability for them to be re-arranged by the customer (drag & drop).  
+
+In the saved ideas section, next to the occasion metadata tag, I want the same gift icon used in the title to be added.  When clicked it swaps to show "Purchased".  And when Purchased is clicked have it go back to the gift icon.
+
+Update "Generated Suggestions" to display as "Generated Ideas"
+When an idea is added, saved, or removed from saved ideas or generated ideas, can you add some form of effect to indicate it was added and removed.  Thinking a quick flash of color like a border color.  Red on removals.  Blue on additions & saves.  It'd be cool if the effect felt nice as in like soothing... it lights up but then fades as the action is taking place.  Open to other ideas also, but right now it kind of blends together as things get added, removed, and saved.  It's working, but visually it doesn't actually seem like it's working because nothing moves or no visual identifier or no color or something.
